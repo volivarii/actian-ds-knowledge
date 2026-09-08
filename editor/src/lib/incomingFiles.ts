@@ -9,7 +9,7 @@
 // "Generated" is read from `getPathTier`, never restated as a list of prefixes
 // here — a domain that later gains a dist tree is then covered without an edit
 // in this file.
-import { getPathTier } from "./pathTiers";
+import { isGeneratedTarget } from "./pathTiers";
 import type { IncomingRef } from "./referenceIndex";
 
 export interface IncomingFile {
@@ -26,17 +26,6 @@ export interface IncomingFiles {
    *  knows tokens.md feeds the bundle would otherwise read the shorter list as
    *  the rail having lost them. */
   generatedExcluded: number;
-}
-
-/** A target the editor cannot open: CI-derived dist, the Figma-synced token
- *  outputs, the generated root index, the lockstep manifest. `getPathTier`
- *  marks all of them red, and red is exactly "regenerated, do not edit".
- *
- *  Exported because the relations rail is not the only surface that offers a
- *  reference as a destination — `AnchorReferencesPopover` navigates on click
- *  too, and a rule applied to one of them is a rule that recurs in the other. */
-export function isGeneratedTarget(path: string): boolean {
-  return getPathTier(path).severity === "red";
 }
 
 export function incomingFiles(refs: IncomingRef[]): IncomingFiles {

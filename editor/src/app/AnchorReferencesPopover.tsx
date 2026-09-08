@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Flex, Heading, Popover, Text } from "@radix-ui/themes";
 import { findReferences, findDefinitions } from "../lib/anchorIndex";
-import { isGeneratedTarget } from "../lib/incomingFiles";
+import { isGeneratedTarget } from "../lib/pathTiers";
 
 export interface AnchorReferencesPopoverProps {
   slug: string;

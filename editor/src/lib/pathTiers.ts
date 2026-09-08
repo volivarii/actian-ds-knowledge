@@ -120,3 +120,17 @@ export function getPathTier(path: string): TierInfo {
     severity: "none",
   };
 }
+
+/** A path the editor cannot open, because CI or the Figma sync owns it: any
+ *  domain `dist/` tree, the derived token outputs, the generated root index,
+ *  the lockstep manifest. Every one of them is a red tier above, so this reads
+ *  the classification rather than restating the prefixes — a domain that later
+ *  gains a dist tree is covered without an edit here.
+ *
+ *  Callers are the surfaces that offer a reference as a DESTINATION: the
+ *  relations rail, its outline count pills, and AnchorReferencesPopover. A row
+ *  pointing at one of these navigates away from the author's work to the
+ *  RefusalBanner (#684). */
+export function isGeneratedTarget(path: string): boolean {
+  return getPathTier(path).severity === "red";
+}

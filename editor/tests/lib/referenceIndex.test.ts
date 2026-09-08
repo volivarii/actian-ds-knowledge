@@ -217,3 +217,66 @@ test("searchReferenceTargets: a section prefix match and a component substring m
   );
   assert.equal(out[0]!.kind, "section");
 });
+
+// ── #684 consistency: the pill and the rail must count the same set ─────────
+//
+// The outline pill and the "Referenced by" rail sit a hand's width apart on the
+// same screen and both count distinct files. Once the rail stopped listing
+// generated targets, a pill that still counts them puts two numbers in the SAME
+// UNIT next to each other that disagree, which reads as a bug rather than as
+// two different measures. The pill counts what the rail will show.
+test("countsBySection: a generated referrer is not counted, because the rail will not list it", () => {
+  const path = "foundations/src/tokens.md";
+  const text = "## Tokens {#token-basics}\n\nBody.\n";
+  setCachedIndexForTesting({
+    entries: new Map([
+      [
+        "token-basics",
+        {
+          slug: "token-basics",
+          definedIn: [path],
+          referencedBy: [
+            "content/src/writing/voice-and-tone.md",
+            "foundations/dist/foundations.bundle.json",
+            "components/dist/guidelines/badge.json",
+            path,
+          ],
+        },
+      ],
+    ]),
+    scannedAt: 0,
+    scannedPaths: [path],
+    texts: new Map(),
+  });
+
+  const counts = countsBySection(path, text, 0);
+  // One editable referrer. The two dist files and the self-reference are out.
+  assert.equal(counts.get("token-basics"), 1);
+  setCachedIndexForTesting(null);
+});
+
+test("countsBySection: an anchor referenced only from generated files carries no pill at all", () => {
+  const path = "foundations/src/tokens.md";
+  const text = "## Tokens {#token-basics}\n\nBody.\n";
+  setCachedIndexForTesting({
+    entries: new Map([
+      [
+        "token-basics",
+        {
+          slug: "token-basics",
+          definedIn: [path],
+          referencedBy: ["foundations/dist/foundations.bundle.json"],
+        },
+      ],
+    ]),
+    scannedAt: 0,
+    scannedPaths: [path],
+    texts: new Map(),
+  });
+
+  // Not 0: a pill is set only when the count is above zero, so the absence of
+  // the key is the assertion. A "0" pill would claim a relationship the rail
+  // will show nothing for.
+  assert.equal(countsBySection(path, text, 0).has("token-basics"), false);
+  setCachedIndexForTesting(null);
+});
