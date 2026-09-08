@@ -76,7 +76,7 @@ no entry defers its link to a placeholder.
 ### Fixed
 
 - **The drawer's body belongs to the caller, and the two lo-fi leaves that printed a word of their
-  own read their props instead.** Every `drawer` render carried a specimen body (Technical name
+  own read their props instead** ([#702](https://github.com/volivarii/actian-ds-knowledge/pull/702)). Every `drawer` render carried a specimen body (Technical name
   able_agency, a Finance / 24/7 / Powerbi line, Dec 15 2025, 10 Fields, a 50% completion bar and three
   sections) under whatever `Name` the caller passed; a generated flow showed "Customer 360" over
   able_agency's data. The leaf reads `Technical name`, `Catalog`, `Category`, `Connection`,
