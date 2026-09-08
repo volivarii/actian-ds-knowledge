@@ -98,6 +98,14 @@ no entry defers its link to a placeholder.
   shorthand contributes one row per side**, so the measure does not depend on whether the author wrote
   `padding` or four longhands.
 
+  Three things review caught, none of which fire on today's corpus, which is why they would have
+  been found later: `height` and `min-height` share a fact kind but do not override each other, so
+  keying them together counted one of them as `overridden` and dropped a declaration that paints; a
+  capture that could not be READ was reported as a capture that does not EXIST (`capture-unreadable`
+  is now its own reason, because a corrupt artifact is not an honest gap in Figma's coverage); and
+  the `row-gap`/`column-gap` axis is taken from the root even for a modifier rule whose variant flips
+  it, which is stated in the code rather than left to be discovered.
+
   And the one that matters most for how the 91 are read: **a mismatch names a disagreement, not a
   verdict**. It can mean the CSS has the shape wrong, that the renderer flattened a structure Figma
   splits across nested frames (`modal`), or that the Figma component itself is off the spacing scale

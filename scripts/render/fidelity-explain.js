@@ -316,7 +316,14 @@ function explain(slug, geo, colour, reach, css, tokenMap) {
           lines.push("      ? the rule says: " + text);
       });
     });
+  // One line per distinct reason. A refusal is raised per FINDING, so four
+  // padding sides in one unreadable shorthand printed the same sentence four
+  // times and read as four separate problems.
+  var seenRefusals = {};
   made.refused.forEach(function (r) {
+    var key = r.selector + "|" + r.reason;
+    if (seenRefusals[key]) return;
+    seenRefusals[key] = true;
     lines.push("    " + r.selector + "   NOT PROPOSED: " + r.reason);
   });
   lines.push("");

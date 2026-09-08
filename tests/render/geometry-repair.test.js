@@ -235,6 +235,28 @@ test("a repair that leaves the comment beside it stating the old number says so"
   assert.equal(R.apply(quiet, made2.proposals).staleNotes.length, 0);
 });
 
+test("one refusal per distinct reason, not one per finding", function () {
+  // A refusal is raised per FINDING, so four padding sides inside one unreadable
+  // shorthand printed the same sentence four times and read as four separate
+  // problems.
+  const css = ".ds-fixture { padding: 0 auto; }";
+  const geo = {
+    bySlug: { fixture: { mismatch: 4, verified: 0, verifiedViaTokenName: 0, unverifiable: 0 } },
+    mismatches: R.SIDES.map((side) => ({
+      slug: "fixture",
+      selector: ".ds-fixture",
+      property: "padding-" + side,
+      painted: 0,
+      fact: 8,
+      factToken: null,
+    })),
+  };
+  const out = E.explain("fixture", geo, { bySlug: {} }, {}, css, TOKENS);
+  const refusals = out.split("\n").filter((l) => l.includes("NOT PROPOSED"));
+  assert.equal(refusals.length, 1, "the same refusal was printed once per side:\n" + out);
+  assert.match(refusals[0], /not four plain lengths/);
+});
+
 test("the worklist ranks by disagreements and carries reach as its own column", function () {
   // Reach is a separate column on purpose. A composite score would bury the
   // caveat that the chrome components appear on every screen regardless of how

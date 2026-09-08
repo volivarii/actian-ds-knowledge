@@ -272,6 +272,38 @@ test("only the rule that actually paints is classified", function () {
   assert.equal(mixed.overridden, 1);
 });
 
+test("height and min-height are two subjects, not one overriding the other", function () {
+  // Both ask the capture the same question, so they share a fact kind. They do
+  // NOT override each other in the stylesheet, and keying them together counted
+  // whichever came first as `overridden` and dropped a declaration that
+  // genuinely paints out of the measurement. No rule in the corpus states both
+  // today, which is why this is a test rather than a discovery later.
+  const r = classify(".ds-fixture { min-height: 32px; height: 32px; }");
+  assert.equal(r.overridden, 0, "one of them was treated as overridden");
+  assert.equal(r.verified, 2, "both paint, so both are measured");
+
+  // Two of the SAME property still override, so this has not simply disabled
+  // cascade resolution.
+  const same = classify(".ds-fixture { height: 99px; height: 32px; }");
+  assert.equal(same.overridden, 1);
+  assert.equal(same.verified, 1);
+  assert.equal(same.mismatch, 0, "the losing 99px is not paint");
+});
+
+test("a capture that cannot be READ is not a capture that does not exist", function () {
+  // Collapsing both into "no-capture" is how a corrupt anatomy file reads as an
+  // honest gap in Figma's coverage.
+  const missing = classify(".ds-fixture { gap: 8px; }", { layout: null });
+  assert.equal(missing.reasons["no-capture"], 1);
+
+  const broken = classify(".ds-fixture { gap: 8px; }", {
+    layout: null,
+    captureError: "capture-unreadable",
+  });
+  assert.equal(broken.reasons["capture-unreadable"], 1);
+  assert.equal(broken.reasons["no-capture"], undefined);
+});
+
 test("a root rule on a capture of a non-default STATE has no comparable subject", function () {
   const hovered = fixtureLayout();
   hovered.rootName = "State=Hovered, Size=Default";

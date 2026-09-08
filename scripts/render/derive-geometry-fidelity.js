@@ -81,10 +81,17 @@ function deriveGeometryReport(ctx) {
     .sort()
     .forEach(function (slug) {
       var layout = null;
+      var captureError = null;
       try {
         layout = G.readLayout(slug, ctx.anatomyDir);
       } catch (e) {
         layout = null;
+        // A capture that is ABSENT and a capture that could not be READ are
+        // different findings. Swallowing both into "no-capture" is how a
+        // corrupt anatomy file reads as an honest gap in Figma's coverage, and
+        // the reasons table is where a reader would look for the difference.
+        captureError =
+          e && e.code === "ENOENT" ? "no-capture" : "capture-unreadable";
       }
 
       var fragmentHtml = "";
@@ -109,6 +116,7 @@ function deriveGeometryReport(ctx) {
         prefixes: prefixes,
         css: filteredCss,
         layout: layout,
+        captureError: captureError,
         tokenMap: ctx.tokenMap,
         sharedPrefixes: shared,
       });
