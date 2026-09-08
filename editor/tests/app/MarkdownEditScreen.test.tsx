@@ -190,12 +190,16 @@ test("MarkdownEditScreen: an opened pull request is a Callout, not text in the b
     },
     { timeout: 5000 },
   );
-  // And it is not sitting inside the row of buttons any more.
-  const row = document.querySelector(".rt-Flex .rt-Button")?.closest(".rt-Flex");
+  // And it is not sitting inside the row of buttons any more. Pinned to the
+  // row by testid: the first version walked up from
+  // `.rt-Flex .rt-Button`, which is a toolbar elsewhere in the document, so
+  // re-injecting the URL into the real submit row left the gate green.
+  const row = document.querySelector('[data-testid="submit-row"]');
+  assert.ok(row, "the submit row must be present to assert about");
   assert.equal(
-    /https:\/\/github\.com\/x\/y\/pull\/42/.test(row?.textContent ?? ""),
+    /https:\/\/github\.com\/x\/y\/pull\/42/.test(row!.textContent ?? ""),
     false,
-    "the outcome must not render inside the button row",
+    `the outcome must not render inside the button row, got: ${row!.textContent}`,
   );
   submissionCartSingleton.clear();
 });

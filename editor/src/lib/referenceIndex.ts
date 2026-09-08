@@ -46,7 +46,15 @@ export function sectionAnchors(text: string): SectionAnchor[] {
     if (heading.level === 1) return { heading, anchor: null };
     const rawLine = lines[heading.line] ?? "";
     const titleRaw = rawLine.replace(LEADING_HASHES_RE, "").trim();
-    return { heading, anchor: extractAnchor(titleRaw) };
+    // `deriveSlug` returns "" for a title with nothing sluggable left after
+    // the numeric-prefix strip ("## 3.", "## ---", an emoji-only heading).
+    // The declared type is `string | null` and every caller guards on null, so
+    // an "" slipped through as a truthy-looking anchor that is falsy in use:
+    // countsBySection latched it as firstH2Anchor and then dropped the file's
+    // outgoing count entirely, and RelationsPanel scoped to it while showing
+    // everything. Normalise here, where the type is promised.
+    const anchor = extractAnchor(titleRaw);
+    return { heading, anchor: anchor ? anchor : null };
   });
 }
 

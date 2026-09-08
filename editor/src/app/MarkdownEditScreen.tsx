@@ -992,7 +992,13 @@ export function MarkdownEditScreen({
           <Callout.Text>{submitError}</Callout.Text>
         </Callout.Root>
       )}
-      <Flex gap="2" justify="end" align="center" wrap="wrap">
+      <Flex
+        gap="2"
+        justify="end"
+        align="center"
+        wrap="wrap"
+        data-testid="submit-row"
+      >
         {inWorkspaceContext ? (
           <>
             <Button

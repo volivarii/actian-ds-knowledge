@@ -8,6 +8,7 @@
 // drift guards are unaffected.
 import type { Octokit } from "@octokit/rest";
 import { loadAnchorIndex, findReferences } from "../lib/anchorIndex";
+import { isGeneratedTarget } from "../lib/pathTiers";
 
 // A fence OPENS on a line of >=3 backticks or tildes (up to 3 leading spaces,
 // optional info string after). It CLOSES on a later line of the SAME character,
@@ -92,13 +93,11 @@ export async function crossFileReferrers(
   currentPath: string,
 ): Promise<string[]> {
   await loadAnchorIndex(octokit);
+  // "Generated" is read from the path-tier classification, not restated as a
+  // prefix list: this filter used to name three dist trees by hand, which
+  // happened to be exactly the three `collectJsonPaths` scans and would have
+  // drifted the moment a fourth was added.
   return findReferences(oldSlug)
-    .filter(
-      (p) =>
-        p !== currentPath &&
-        !p.startsWith("components/dist/") &&
-        !p.startsWith("foundations/dist/") &&
-        !p.startsWith("accessibility/dist/"),
-    )
+    .filter((p) => p !== currentPath && !isGeneratedTarget(p))
     .sort();
 }

@@ -578,9 +578,11 @@ const INCOMING_REAL_SHAPE: IncomingRef[] = [
 
 test("the Referenced by count is distinct files, not reference sites", () => {
   const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
-  // Two editable files behind six sites, three of which share one file.
+  // Two editable files behind six sites, three of which share one file. The
+  // header qualifies itself because this fixture also carries two generated
+  // referrers, which the rail lists nowhere.
   assert.ok(
-    container.textContent!.includes("Referenced by (2)"),
+    container.textContent!.includes("Referenced by (2 editable)"),
     `expected a count of 2 distinct editable files, got: ${container.textContent!.slice(0, 400)}`,
   );
   assert.equal(
@@ -667,5 +669,43 @@ test("with nothing at all, the rail still says nothing links here", () => {
   assert.ok(
     /Nothing links here yet\./.test(container.textContent!),
     "a genuinely unreferenced file keeps its honest empty state",
+  );
+});
+
+test("a single generated referrer takes a singular verb, and the header does not disagree with the note", () => {
+  const { container } = renderPanel({
+    incoming: [
+      {
+        fromPath: "components/dist/guidelines/card.json",
+        slug: "usage",
+        snippet: "",
+      },
+    ],
+  });
+  const txt = container.textContent!;
+  // "1 generated file reference this" — the is/are half was inflected and the
+  // verb was not.
+  assert.equal(
+    /file reference this/.test(txt),
+    false,
+    `singular subject needs a singular verb: ${txt.slice(0, 400)}`,
+  );
+  assert.ok(/1 generated file references this/.test(txt), txt.slice(0, 400));
+});
+
+test("the Referenced by header does not report 0 above a note saying files reference this", () => {
+  const { container } = renderPanel({ incoming: INCOMING_ALL_GENERATED });
+  const txt = container.textContent!;
+  // A bare "(0)" directly above "3 generated files reference this" is the same
+  // contradiction as the empty state, carried by the number instead of a
+  // sentence.
+  assert.equal(
+    /Referenced by \(0\)/.test(txt),
+    false,
+    `the header must qualify what it counted: ${txt.slice(0, 400)}`,
+  );
+  assert.ok(
+    /Referenced by \(0 editable\)/.test(txt),
+    `expected a qualified header, got: ${txt.slice(0, 400)}`,
   );
 });

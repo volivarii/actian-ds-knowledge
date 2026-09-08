@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setCachedIndexForTesting } from "../../src/lib/anchorIndex";
 import {
+  sectionAnchors,
   incomingForFile,
   countsBySection,
   searchReferenceTargets,
@@ -345,6 +346,62 @@ test("the first H2's pill carries the outgoing count too, which the rail shows i
   assert.equal(
     counts.get("motion-basics"),
     second.files.length + second.generatedExcluded,
+  );
+  setCachedIndexForTesting(null);
+});
+
+// ── An anchor that is "" is not an anchor ───────────────────────────────────
+//
+// `extractAnchor` -> `deriveSlug` yields "" for an H2 whose title has no
+// [a-z0-9] left after the numeric-prefix strip: "## 🎯", "## ---", "## 3.".
+// The type says `string | null`, so callers guard on `=== null` and let ""
+// through. Two consequences, both silent:
+//
+//   * countsBySection latches firstH2Anchor = "", and the later
+//     `if (firstH2Anchor && outgoingCount > 0)` is falsy — so the outgoing
+//     count is dropped for the WHOLE FILE rather than moving to the next H2,
+//     and the join formula's third term quietly becomes zero.
+//   * RelationsPanel sets scopedAnchor = "", which is falsy where it filters,
+//     so the row paints as scoped while the rail keeps showing everything and
+//     the "All" button never appears.
+//
+// Zero occurrences in today's corpus, but this is an authoring tool and the
+// headings are typed in it.
+test("sectionAnchors: a heading with no derivable slug reports null, not an empty string", () => {
+  const text = "## 🎯\n\nBody.\n\n## Real Heading\n\nMore.\n";
+  const anchors = sectionAnchors(text);
+  assert.equal(
+    anchors[0]!.anchor,
+    null,
+    `an empty derived slug must be null, got ${JSON.stringify(anchors[0]!.anchor)}`,
+  );
+  assert.equal(anchors[1]!.anchor, "real-heading");
+});
+
+test("countsBySection: an unanchored first H2 does not swallow the file's outgoing count", () => {
+  const path = "foundations/src/tokens.md";
+  // The first H2 derives to "", so before the fix firstH2Anchor latched onto
+  // it and the outgoing term was lost for every section in the file.
+  // NOT "## 3." — that derives to "3", a perfectly good anchor. Verified
+  // against deriveSlug: an emoji-only or punctuation-only title is what
+  // empties out.
+  const text = "## 🎯\n\nBody.\n\n## Tokens {#token-basics}\n\nMore.\n";
+  setCachedIndexForTesting({
+    entries: new Map([
+      [
+        "token-basics",
+        { slug: "token-basics", definedIn: [path], referencedBy: [] },
+      ],
+    ]),
+    scannedAt: 0,
+    scannedPaths: [path],
+    texts: new Map(),
+  });
+  const counts = countsBySection(path, text, 4);
+  assert.equal(
+    counts.get("token-basics"),
+    4,
+    "the outgoing count lands on the first H2 that actually has an anchor",
   );
   setCachedIndexForTesting(null);
 });
