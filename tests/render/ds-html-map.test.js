@@ -2354,3 +2354,343 @@ test("alert-banner: a Type the registry does not publish still clamps to primary
   assert.match(html, /class="ds-alert ds-alert--primary"/);
   assert.doesNotMatch(html, /<script>alert\(1\)<\/script>/);
 });
+
+// ---- The last ten UI leaves ----
+//
+// The generic gates (empty slots, sparse-render ratchet, fidelity, geometry)
+// already cover these ten the way they covered the four form controls before
+// them. What is asserted here is what those cannot see: three translations
+// between vocabularies, each of which fails SILENTLY -- the component still
+// renders, it just renders the wrong thing.
+
+function renderTen(slug, variant, props) {
+  var DS = require(DS_PATH);
+  return DS.renderDSComponent({
+    type: "INSTANCE",
+    library: "ds",
+    dsSlug: slug,
+    variant: variant || "",
+    props: props || {},
+  });
+}
+
+test("checkbox-card: Selection=Selected ticks the checkbox", function () {
+  // The two axes do not share a vocabulary: the card publishes Selection =
+  // Unselected | Selected | Indeterminate, the checkbox publishes Unchecked |
+  // Checked | Indeterminate. Passing the card's value straight through selects
+  // nothing, and the card renders unticked in every state a caller can ask for
+  // -- with no error anywhere.
+  var html = renderTen("checkbox-card", "Selection=Selected");
+  assert.match(html, /class="ds-checkbox-card"/);
+  assert.match(
+    html,
+    /ds-checkbox--checked/,
+    "Selected must reach the checkbox as Checked",
+  );
+});
+
+test("radio-card: Selection=Selected selects the radio", function () {
+  // radio DOES share the card's word, so this is the control that proves the
+  // mapping is a translation and not a blanket rename to "Checked".
+  var html = renderTen("radio-card", "Selection=Selected");
+  assert.match(html, /ds-radio--checked/);
+});
+
+test("checkbox-card: Indeterminate crosses unchanged", function () {
+  assert.match(
+    renderTen("checkbox-card", "Selection=Indeterminate"),
+    /ds-checkbox--indeterminate/,
+  );
+});
+
+test("both cards emit a state modifier only for the states the capture paints", function () {
+  // State publishes five values and the captures record appearance deltas for
+  // three. A --focus class would match no rule in ds-base.css, and this file
+  // does not emit modifier classes that paint nothing.
+  assert.match(
+    renderTen("checkbox-card", "State=Hover"),
+    /ds-checkbox-card--hover/,
+  );
+  assert.match(
+    renderTen("radio-card", "State=Disabled"),
+    /ds-radio-card--disabled/,
+  );
+  assert.doesNotMatch(
+    renderTen("checkbox-card", "State=Focus"),
+    /ds-checkbox-card--focus/,
+    "the capture paints no Focus delta, so no class may claim one",
+  );
+  assert.doesNotMatch(
+    renderTen("radio-card", "State=Focus"),
+    /ds-radio-card--focus/,
+  );
+});
+
+test("checkbox-card: Disabled reaches the control, Hover does not", function () {
+  // Hover and Pressed are captured on the CARD's background, not on the
+  // control, so forwarding them would paint a state the capture puts elsewhere.
+  assert.match(renderTen("checkbox-card", "State=Disabled"), /is-disabled/);
+  assert.doesNotMatch(renderTen("checkbox-card", "State=Hover"), /is-disabled/);
+});
+
+test("message: a Type outside the axis falls back to Warning in all three places", function () {
+  // Icon, modifier and fallback string are read from one normalised Type, so
+  // they cannot disagree -- an earlier version lower-cased the raw value into
+  // the class and would have emitted `.ds-message--nonsense`.
+  var html = renderTen("message", "Type=nonsense");
+  assert.match(html, /class="ds-message ds-message--warning"/);
+  assert.match(html, /Warning message goes here/);
+  assert.doesNotMatch(html, /ds-message--nonsense/);
+});
+
+test("message: Helper text is the structural variant, so it renders without an icon", function () {
+  var html = renderTen("message", "Type=Helper text");
+  assert.match(html, /ds-message--helper-text/);
+  assert.doesNotMatch(
+    html,
+    /ds-message__icon/,
+    "the capture records Helper text as text with no icon child",
+  );
+  // The control: every other Type DOES carry the icon element, so the
+  // assertion above is about this variant and not about an icon map that
+  // happens to be empty in this process.
+  assert.match(renderTen("message", "Type=Error"), /ds-message__icon/);
+});
+
+test("data-viz-legend: Color takes a colour and nothing else", function () {
+  // The one inline style in these ten. esc() neutralises quotes and angle
+  // brackets but not `;`, so an unchecked value could append declarations of
+  // its own to the style attribute.
+  assert.match(
+    renderTen("data-viz-legend", "", { Color: "#ff8800" }),
+    /style="background:#ff8800"/,
+  );
+  assert.match(
+    renderTen("data-viz-legend", "", { Color: "var(--zen-color-error-700)" }),
+    /style="background:var\(--zen-color-error-700\)"/,
+  );
+  var hostile = renderTen("data-viz-legend", "", {
+    Color: "red;position:fixed;inset:0",
+  });
+  assert.doesNotMatch(hostile, /position:fixed/);
+  assert.doesNotMatch(hostile, /style=/, "a value that is not a colour is dropped whole");
+});
+
+test("data-viz-legend: the series name is not a Label", function () {
+  // variantMatrix sets Label on every identity cell to that cell's own variant
+  // value, so a Label prop here drew five legend entries reading "Default",
+  // "Focused", "Hovered", "Pressed" and "Selected".
+  assert.match(
+    renderTen("data-viz-legend", "Property 1=Selected", {
+      Label: "Selected",
+      Series: "S1 (High)",
+    }),
+    />S1 \(High\)</,
+  );
+});
+
+test("identification-key: the pill reads KEY whatever the gallery supplies", function () {
+  // Same collision, and this one shipped as far as a rendered fragment reading
+  // "identification-key" before anybody looked at it.
+  assert.match(
+    renderTen("identification-key", "", { Label: "identification-key" }),
+    /class="ds-identification-key">KEY</,
+  );
+});
+
+test("pagination: Page and Pages reach the two captured text layers", function () {
+  var html = renderTen("pagination", "", { Page: "3", Pages: "17" });
+  assert.match(html, /ds-pagination__page">3</);
+  assert.match(html, /of 17 pages/);
+});
+
+test("menu-dropdown: Selected picks a row, and an explicit empty selects none", function () {
+  var html = renderTen("menu-dropdown", "", {
+    Items: "Alpha, Beta, Gamma",
+    Selected: "Beta",
+  });
+  assert.match(html, /ds-menu-dropdown__item is-selected">Beta</);
+  assert.doesNotMatch(html, /is-selected">Alpha</);
+  assert.doesNotMatch(
+    renderTen("menu-dropdown", "", { Items: "Alpha, Beta", Selected: "" }),
+    /is-selected/,
+    "an explicit empty Selected must select nothing, not fall back to the first row",
+  );
+});
+
+test("card and both cards omit the slot element when the slot is empty", function () {
+  // An empty flex container draws nothing, so emitting one ships a part with no
+  // content in it (tests/render/empty-slots-gate.test.js).
+  assert.doesNotMatch(renderTen("card"), /ds-card__slot/);
+  assert.match(renderTen("card", "", { Slot: "Body" }), /ds-card__slot">Body</);
+  assert.doesNotMatch(renderTen("radio-card"), /ds-radio-card__slot/);
+});
+
+// ---- The four drawings ----
+//
+// These take their marks from props, so the failures worth a test are the ones
+// where a number goes in and the wrong picture comes out.
+
+test("the charts draw their chrome with no data at all", function () {
+  // A caller who supplies nothing must get an empty chart with its axis, not an
+  // empty box: that is the whole reason these four have leaves.
+  var bar = renderTen("data-quality-checks-graph");
+  assert.match(bar, /Data Quality Status/);
+  assert.match(bar, /ds-quality-graph__rule/);
+  assert.doesNotMatch(bar, /ds-quality-graph__seg/, "no data means no bars");
+  var line = renderTen("line-graph");
+  assert.match(line, /Total incidents over timeframe/);
+  assert.match(line, /ds-line-graph__rule/);
+  assert.doesNotMatch(line, /<polyline/, "no data means no line");
+});
+
+test("line-graph: one point is not a line", function () {
+  // polyline with a single pair draws nothing, and an empty <polyline> in the
+  // markup would claim a series the caller did not give.
+  assert.doesNotMatch(renderTen("line-graph", "", { Series: "40" }), /<polyline/);
+  assert.match(renderTen("line-graph", "", { Series: "40, 60" }), /<polyline/);
+});
+
+test("the charts drop a value that is not a number rather than plotting it", function () {
+  // Number("") is 0 and Number("n/a") is NaN. Plotting either invents a data
+  // point: the first draws a bar at the baseline that says "measured zero", the
+  // second moves every later point one place to the left.
+  var line = renderTen("line-graph", "", { Series: "40, , 60, n/a, 80" });
+  var pts = /points="([^"]*)"/.exec(line);
+  assert.ok(pts, "the series must still draw");
+  assert.equal(
+    pts[1].split(" ").length,
+    3,
+    "three of the five entries are numbers, so three points: " + pts[1],
+  );
+  var bar = renderTen("data-quality-checks-graph", "", { OK: "50, , 20" });
+  // `--seg--`, not `--seg`: the segment carries BOTH the base class and its
+  // series modifier, so the shorter pattern counts every bar twice and the
+  // number it reports is not a bar count at all.
+  assert.equal(
+    (bar.match(/ds-quality-graph__seg--/g) || []).length,
+    2,
+    "the empty entry must not become a zero-height bar",
+  );
+});
+
+test("data-quality-checks-graph: a value over the scale is clamped, not drawn out of the frame", function () {
+  var html = renderTen("data-quality-checks-graph", "", {
+    OK: "500",
+    Max: "100",
+  });
+  assert.match(html, /height:100%/);
+  assert.doesNotMatch(html, /height:500%/);
+});
+
+test("data-quality-checks-graph: the stack puts Error on top and OK on the baseline", function () {
+  // The bar is a column, so DOM order is stack order top-down. The preview
+  // stacks OK at the baseline, and reversing this silently inverts every chart.
+  var html = renderTen("data-quality-checks-graph", "", {
+    Error: "10",
+    Warning: "20",
+    OK: "30",
+  });
+  var order = (html.match(/ds-quality-graph__seg--(error|warning|ok)/g) || []).map(
+    function (m) {
+      return m.split("--")[1];
+    },
+  );
+  assert.deepEqual(order, ["error", "warning", "ok"]);
+});
+
+test("a caller's Max moves the top of the scale and keeps the captured divisions", function () {
+  // The axis shape is captured (0..100 by 20, 0..90 by 15); only its top is a
+  // caller's to set. Recomputing the step count would redraw an axis Figma drew.
+  var html = renderTen("data-quality-checks-graph", "", { Max: "50" });
+  var ticks = (html.match(/ds-quality-graph__tick">([^<]*)</g) || []).map(
+    function (m) {
+      return m.replace(/.*">/, "").replace("<", "");
+    },
+  );
+  assert.deepEqual(ticks, ["50", "40", "30", "20", "10", "0"]);
+  assert.equal(
+    (renderTen("line-graph").match(/ds-line-graph__tick/g) || []).length,
+    7,
+    "the line chart's captured axis is seven ticks, 90 down to 0 by 15",
+  );
+});
+
+test("lineage-connecting-line: direction picks a path, and Show icon drops the node", function () {
+  // Asserted on the PATH, not on a class: direction is drawn entirely in the
+  // `d` attribute, and a `--up` / `--down` modifier would match no rule in
+  // ds-base.css. It was emitted first, and asserting the marker is how a test
+  // passes on a class that paints nothing.
+  function pathOf(variant) {
+    return /__path" d="([^"]*)"/.exec(
+      renderTen("lineage-connecting-line", variant),
+    )[1];
+  }
+  var straight = pathOf("Direction=Straight");
+  assert.notEqual(pathOf("Direction=Down"), straight);
+  assert.notEqual(pathOf("Direction=Up"), straight);
+  assert.notEqual(pathOf("Direction=Up"), pathOf("Direction=Down"));
+  // "up" and "Up" are one value spelled twice in the Figma axis, so both must
+  // draw the same path rather than one of them falling back to straight.
+  assert.equal(pathOf("Direction=up"), pathOf("Direction=Up"));
+  // The arrowhead has to sit at the END of the line it terminates. It was
+  // fixed at the middle of the box while an elbow ends a third of the way up or
+  // down, so on four of the five gallery cells the arrow floated free of the
+  // line. Asserted as the RELATIONSHIP rather than as three literal paths: the
+  // head's tip must be level with the y the path's final horizontal run sits
+  // on, whatever those two happen to be.
+  ["Direction=Straight", "Direction=Up", "Direction=Down"].forEach(
+    function (variant) {
+      var html = renderTen("lineage-connecting-line", variant);
+      var path = /__path" d="([^"]*)"/.exec(html)[1];
+      var head = /__head" d="([^"]*)"/.exec(html)[1];
+      // The LAST horizontal run, not the first: an elbow starts with one too,
+      // and matching that reported the height the line leaves rather than the
+      // height it arrives at.
+      var runs = path.match(/([\d.]+),([\d.]+)\s+H\d/g);
+      var endY = Number(/,([\d.]+)\s+H/.exec(runs[runs.length - 1])[1]);
+      var tipY = Number(/L\d+,([\d.]+)/.exec(head)[1]);
+      assert.equal(
+        tipY,
+        endY,
+        variant + ": the head tip is at " + tipY + " and the line ends at " + endY,
+      );
+    },
+  );
+
+  assert.match(renderTen("lineage-connecting-line"), /__node/);
+  assert.doesNotMatch(
+    renderTen("lineage-connecting-line", "", { "Show icon": false }),
+    /__node/,
+    "the registry publishes Show icon, so false must drop the node",
+  );
+});
+
+test("glossary-item-hierarchy: the branches split evenly and the term is not one of them", function () {
+  var html = renderTen("glossary-item-hierarchy", "", {
+    Main: "Account",
+    Items: "A, B, C, D, E",
+  });
+  assert.equal((html.match(/ds-glossary-hierarchy__item/g) || []).length, 5);
+  assert.match(html, /ds-glossary-hierarchy__main">Account</);
+  assert.equal(
+    (html.match(/ds-glossary-hierarchy__branch--/g) || []).length,
+    2,
+    "one branch each side when there are items for both",
+  );
+});
+
+test("glossary-item-hierarchy: a side with no items is not emitted", function () {
+  // An empty branch drew a connector to nothing: the term's stub reached 24px
+  // into an empty div. Both the branch and its stub have to go, which is why
+  // the CSS hangs each stub off the branch it reaches rather than off the term.
+  var one = renderTen("glossary-item-hierarchy", "", { Items: "Only" });
+  assert.match(one, /branch--left/);
+  assert.doesNotMatch(one, /branch--right/);
+  // The control: with items on both sides both branches are still emitted, so
+  // the assertion above is about emptiness and not about branches in general.
+  assert.match(
+    renderTen("glossary-item-hierarchy", "", { Items: "A, B" }),
+    /branch--right/,
+  );
+});

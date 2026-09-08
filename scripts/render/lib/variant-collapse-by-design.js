@@ -40,5 +40,11 @@ module.exports = {
   // single wnMode."
   "whats-new-dropdown Property 1=Drilldown2":
     "the guideline folds Drilldown1 and Drilldown2 into one Drilldown concept",
+  // ds-html-map.js, case "lineage-connecting-line": the registry axis publishes
+  // Direction = Down | Straight | up | Up, with "up" and "Up" both present.
+  // They are one value spelled twice in the Figma axis, read as authored rather
+  // than corrected, so they render alike on purpose.
+  "lineage-connecting-line Direction=Up":
+    "duplicate of the axis's own lower-case \"up\", one value spelled twice in Figma",
 };
 

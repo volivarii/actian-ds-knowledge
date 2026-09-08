@@ -26,6 +26,66 @@ no entry defers its link to a placeholder.
 
 ### Added
 
+- **The last ten UI leaves the capture fully specifies**
+  ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).
+  74 components carry the registry section "Components". 60 had a leaf in the canonical renderer and
+  14 did not, so every one of those 14 fell through to the captured-geometry path and drew a grey
+  box. Ten are built here: `card`, `checkbox-card`, `radio-card`, `label`, `message`,
+  `textfield-buttons`, `pagination`, `identification-key`, `data-viz-legend` and `menu-dropdown`.
+  Every structural and colour decision is quoted from the component's own
+  `components/dist/anatomy/<slug>.json`, and each note says which values are quotes and which are
+  authored.
+
+  **The geometry oracle is the evidence that this was read rather than eyeballed**: agreements rise
+  99 to 140 and disagreements stay at 91, so the ten added 41 shape declarations the capture confirms
+  and not one it contradicts. Colour mismatches stay at 0.
+
+  Three things the capture settled that reasoning would have got wrong. `message`, `label` and
+  `field` before them **bind a text colour to `--zen-color-text-error` / `-warning` / `-success` and
+  paint error-700, warning-900 and success-700**, three different values; the paint wins and the
+  disagreement is named at each rule. `checkbox-card` and `radio-card` publish
+  `Selection = Unselected | Selected` while the controls they nest publish `Unchecked | Checked` and
+  `Unselected | Selected`, so passing the card's value through renders a card that is never ticked.
+  And **`State=Focus` is painted by neither card's capture**, so neither emits a `--focus` class:
+  this file does not ship modifier classes that match no rule.
+
+- **The four drawings, and the boundary they sit on**
+  ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).
+  `data-quality-checks-graph`, `line-graph`, `glossary-item-hierarchy` and `lineage-connecting-line`
+  are the last four, and they are a different problem: their marks live in `vector` nodes, and **a
+  captured vector carries a name, an id and a fill and no path data at all** (546 of them across the
+  tree). So the capture cannot say what shape to draw, and none is inferred from one.
+
+  What it can say turns out to be most of the component. For both charts it holds the frame, the
+  header type, every axis tick and its gridline colour, every category label, and the **series
+  colours on the vectors it could not give geometry for**. What is missing is the DATA, which was
+  never the design system's to publish. So all four take their numbers as props, draw them into
+  chrome quoted from the capture, and **render the chrome alone when a caller supplies nothing**: an
+  empty chart with its axis drawn, not an empty box.
+
+  The grid metric is the load-bearing quote and everything lines up off it. Both captures describe
+  the same axis, rows 22px tall and 12px apart with the rule centred, so n ticks put the first rule
+  at 11px and the last at `(n-1)*34+11`, and the plot is inset 11px top and bottom to sit between
+  them. The marks land on the labels because both are measured from those two numbers.
+
+  The `line-graph` draws **no legend**, deliberately: the capture's five legend children are
+  instances of an unpublished component that records no dot colour, and `tokens.css` publishes no
+  categorical colour scale to bind them to. The published `data-viz-legend` takes a `Color` for
+  exactly that reason, and it is the one inline style in this work.
+
+### Fixed
+
+- **A rule was charged to every component that nests the one it belongs to**
+  ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).
+  `checkBaseCssRules` resolves a rule's owner from the classes each slug's fragment emits. A
+  component that renders a real `checkbox` rather than restating its markup therefore emits
+  `.ds-checkbox--indeterminate` and was charged for its colour, against a capture that holds the
+  child as a bare `instance` node: an instance records a slug and props and no appearance, so the
+  composer's capture can never be evidence either way. Building `checkbox-card` turned one correct
+  rule into two identical contradictions. The checkbox scan now narrows to the slugs that OWN the
+  prefix; the tag-family scan keeps its full union, because there the second claimant writes
+  `class="ds-tag ds-tag--catalog"` in its own markup and its capture holds that paint.
+
 - **`npm run fidelity`: the per-component fidelity view, and the repair it implies**
   ([#694](https://github.com/volivarii/actian-ds-knowledge/pull/694)).
   The reports answer "how much of what we draw does the capture agree with", which is the right
