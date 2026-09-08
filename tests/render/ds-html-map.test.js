@@ -2525,3 +2525,130 @@ test("card and both cards omit the slot element when the slot is empty", functio
   assert.match(renderTen("card", "", { Slot: "Body" }), /ds-card__slot">Body</);
   assert.doesNotMatch(renderTen("radio-card"), /ds-radio-card__slot/);
 });
+
+// ---- The four drawings ----
+//
+// These take their marks from props, so the failures worth a test are the ones
+// where a number goes in and the wrong picture comes out.
+
+test("the charts draw their chrome with no data at all", function () {
+  // A caller who supplies nothing must get an empty chart with its axis, not an
+  // empty box: that is the whole reason these four have leaves.
+  var bar = renderTen("data-quality-checks-graph");
+  assert.match(bar, /Data Quality Status/);
+  assert.match(bar, /ds-quality-graph__rule/);
+  assert.doesNotMatch(bar, /ds-quality-graph__seg/, "no data means no bars");
+  var line = renderTen("line-graph");
+  assert.match(line, /Total incidents over timeframe/);
+  assert.match(line, /ds-line-graph__rule/);
+  assert.doesNotMatch(line, /<polyline/, "no data means no line");
+});
+
+test("line-graph: one point is not a line", function () {
+  // polyline with a single pair draws nothing, and an empty <polyline> in the
+  // markup would claim a series the caller did not give.
+  assert.doesNotMatch(renderTen("line-graph", "", { Series: "40" }), /<polyline/);
+  assert.match(renderTen("line-graph", "", { Series: "40, 60" }), /<polyline/);
+});
+
+test("the charts drop a value that is not a number rather than plotting it", function () {
+  // Number("") is 0 and Number("n/a") is NaN. Plotting either invents a data
+  // point: the first draws a bar at the baseline that says "measured zero", the
+  // second moves every later point one place to the left.
+  var line = renderTen("line-graph", "", { Series: "40, , 60, n/a, 80" });
+  var pts = /points="([^"]*)"/.exec(line);
+  assert.ok(pts, "the series must still draw");
+  assert.equal(
+    pts[1].split(" ").length,
+    3,
+    "three of the five entries are numbers, so three points: " + pts[1],
+  );
+  var bar = renderTen("data-quality-checks-graph", "", { OK: "50, , 20" });
+  // `--seg--`, not `--seg`: the segment carries BOTH the base class and its
+  // series modifier, so the shorter pattern counts every bar twice and the
+  // number it reports is not a bar count at all.
+  assert.equal(
+    (bar.match(/ds-quality-graph__seg--/g) || []).length,
+    2,
+    "the empty entry must not become a zero-height bar",
+  );
+});
+
+test("data-quality-checks-graph: a value over the scale is clamped, not drawn out of the frame", function () {
+  var html = renderTen("data-quality-checks-graph", "", {
+    OK: "500",
+    Max: "100",
+  });
+  assert.match(html, /height:100%/);
+  assert.doesNotMatch(html, /height:500%/);
+});
+
+test("data-quality-checks-graph: the stack puts Error on top and OK on the baseline", function () {
+  // The bar is a column, so DOM order is stack order top-down. The preview
+  // stacks OK at the baseline, and reversing this silently inverts every chart.
+  var html = renderTen("data-quality-checks-graph", "", {
+    Error: "10",
+    Warning: "20",
+    OK: "30",
+  });
+  var order = (html.match(/ds-quality-graph__seg--(error|warning|ok)/g) || []).map(
+    function (m) {
+      return m.split("--")[1];
+    },
+  );
+  assert.deepEqual(order, ["error", "warning", "ok"]);
+});
+
+test("a caller's Max moves the top of the scale and keeps the captured divisions", function () {
+  // The axis shape is captured (0..100 by 20, 0..90 by 15); only its top is a
+  // caller's to set. Recomputing the step count would redraw an axis Figma drew.
+  var html = renderTen("data-quality-checks-graph", "", { Max: "50" });
+  var ticks = (html.match(/ds-quality-graph__tick">([^<]*)</g) || []).map(
+    function (m) {
+      return m.replace(/.*">/, "").replace("<", "");
+    },
+  );
+  assert.deepEqual(ticks, ["50", "40", "30", "20", "10", "0"]);
+  assert.equal(
+    (renderTen("line-graph").match(/ds-line-graph__tick/g) || []).length,
+    7,
+    "the line chart's captured axis is seven ticks, 90 down to 0 by 15",
+  );
+});
+
+test("lineage-connecting-line: direction picks a path, and Show icon drops the node", function () {
+  assert.match(
+    renderTen("lineage-connecting-line", "Direction=Down"),
+    /ds-lineage-connecting-line--down/,
+  );
+  // "up" and "Up" are one value spelled twice in the Figma axis, so both must
+  // reach the same modifier rather than one of them matching no rule.
+  assert.match(
+    renderTen("lineage-connecting-line", "Direction=up"),
+    /ds-lineage-connecting-line--up/,
+  );
+  assert.match(
+    renderTen("lineage-connecting-line", "Direction=Up"),
+    /ds-lineage-connecting-line--up/,
+  );
+  assert.match(renderTen("lineage-connecting-line"), /__node/);
+  assert.doesNotMatch(
+    renderTen("lineage-connecting-line", "", { "Show icon": false }),
+    /__node/,
+    "the registry publishes Show icon, so false must drop the node",
+  );
+});
+
+test("glossary-item-hierarchy: the branches split evenly and the term is not one of them", function () {
+  var html = renderTen("glossary-item-hierarchy", "", {
+    Main: "Account",
+    Items: "A, B, C, D, E",
+  });
+  assert.equal((html.match(/ds-glossary-hierarchy__item/g) || []).length, 5);
+  assert.match(html, /ds-glossary-hierarchy__main">Account</);
+  assert.equal(
+    (html.match(/ds-glossary-hierarchy__branch--/g) || []).length,
+    2,
+    "one branch each side, whatever the item count",
+  );
+});

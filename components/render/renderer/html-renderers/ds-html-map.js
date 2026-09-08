@@ -624,6 +624,141 @@
     );
   }
 
+
+  // ---- Chart helpers, shared by the two graph leaves ----
+  //
+  // Both captures describe the SAME axis: a column of rows 22px tall with a 12px
+  // gap, each row a right-aligned number and a 1px rule, the last rule lighter
+  // than the rest. Those two numbers are the whole grid metric, and everything
+  // that has to line up with the labels is measured from them (see the block
+  // comment above the two cases). Written once here because a second copy is how
+  // the two charts would drift apart.
+
+  // Descending tick values, top first, so the rows render in visual order.
+  // `max` and `steps` are the captured axis: 0..100 by 20 for the bar chart,
+  // 0..90 by 15 for the line chart. A caller's Max replaces the top of the
+  // scale, never the number of divisions, so the axis keeps its captured shape.
+  function axisTicks(max, capturedMax, steps) {
+    var top = Number(max);
+    if (!isFinite(top) || top <= 0) top = capturedMax;
+    var out = [];
+    for (var i = steps; i >= 0; i--) out.push((top / steps) * i);
+    return out;
+  }
+
+  function axisRows(prefix, ticks) {
+    return ticks
+      .map(function (t, i) {
+        var last = i === ticks.length - 1;
+        return (
+          '<div class="' +
+          prefix +
+          '__row">' +
+          '<span class="' +
+          prefix +
+          '__tick">' +
+          esc(formatTick(t)) +
+          "</span>" +
+          '<span class="' +
+          prefix +
+          "__rule" +
+          (last ? " is-baseline" : "") +
+          '"></span>' +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  // Whole numbers stay whole; a scale that does not divide evenly gets one
+  // decimal rather than 16.666666666666668 down the side of the chart.
+  function formatTick(n) {
+    return Math.round(n) === n ? String(n) : String(Math.round(n * 10) / 10);
+  }
+
+  // Both charts open with a title, a secondary string and an icon-only menu.
+  // Captured: 16px/600 and 14px/400 on #000000, 8px apart.
+  function chartHeader(prefix, title, secondary) {
+    return (
+      '<div class="' +
+      prefix +
+      '__header">' +
+      '<span class="' +
+      prefix +
+      '__title">' +
+      esc(title) +
+      "</span>" +
+      '<span class="' +
+      prefix +
+      '__secondary">' +
+      esc(secondary) +
+      "</span>" +
+      '<span class="' +
+      prefix +
+      '__menu">' +
+      renderIcon("more") +
+      "</span>" +
+      "</div>"
+    );
+  }
+
+  // Comma-separated numbers. Anything that is not a finite number is DROPPED,
+  // not coerced, and the EMPTY entry is the one that matters: `Number("")` and
+  // `Number(" ")` are both 0, so filtering on isFinite alone lets "40, , 60"
+  // plot a point at zero between the two real ones. A chart that does that has
+  // invented a measurement. `Number("n/a")` is NaN and was always dropped; the
+  // blank was not, and a test written to assert this behaviour is what found it.
+  // A real zero still plots: it is the blank that is absent, not the value.
+  function parseNums(raw) {
+    return String(raw == null ? "" : raw)
+      .split(",")
+      .map(function (s) {
+        return String(s).trim();
+      })
+      .filter(function (s) {
+        return s.length > 0;
+      })
+      .map(Number)
+      .filter(function (n) {
+        return isFinite(n);
+      });
+  }
+
+  // The i-th number of a list prop, or null when the caller gave none for that
+  // category. Used by the bar chart, where three series are three separate
+  // props so a flow author can write them as three readable lists.
+  function numAt(raw, i) {
+    var nums = parseNums(raw);
+    return i < nums.length ? nums[i] : null;
+  }
+
+  // A percentage of the axis, clamped: a value above the scale must not draw a
+  // bar out of its own frame.
+  function pct(value, max) {
+    if (!(max > 0)) return "0%";
+    var p = (Number(value) / max) * 100;
+    if (!isFinite(p) || p < 0) p = 0;
+    if (p > 100) p = 100;
+    return Math.round(p * 100) / 100 + "%";
+  }
+
+  // Evenly spaced points across the viewBox, top-down (SVG y grows downward).
+  // One point cannot make a line, which is why both callers check the length
+  // before asking: `points` with a single pair renders nothing and would leave
+  // an empty <polyline> in the markup claiming a series exists.
+  function polyPoints(values, max, w, h) {
+    var n = values.length;
+    var step = n > 1 ? w / (n - 1) : 0;
+    return values
+      .map(function (v, i) {
+        var y = h - (Math.max(0, Math.min(Number(v), max)) / max) * h;
+        return (
+          Math.round(i * step * 100) / 100 + "," + Math.round(y * 100) / 100
+        );
+      })
+      .join(" ");
+  }
+
   // Resolve the active item for a list prop: the trimmed Active value when it
   // matches an item (case-insensitive), else the first item. Falls back to
   // first on absent OR non-matching Active, so a stale/renamed Active never
@@ -3837,13 +3972,10 @@
         //
         // 74 components carry the registry section "Components"; 60 had a leaf
         // and 14 did not, so every one of those 14 fell to the default case and
-        // drew a grey box from geometry alone. Ten of them are built here. The
-        // remaining four (line-graph, data-quality-checks-graph,
-        // glossary-item-hierarchy, lineage-connecting-line) are drawings: their
-        // shape lives in `vector` nodes, and a vector in the capture carries a
-        // name, an id and a fill and NO path data at all, so nothing in this
-        // repo can derive what they draw. They are not built from the capture
-        // and are not faked from one.
+        // drew a grey box from geometry alone. Ten are built here and the other
+        // four below, under their own banner: those four are DRAWINGS, and a
+        // drawing is a different problem, because its marks live in `vector`
+        // nodes and a captured vector carries a fill and no path data at all.
         //
         // Every declaration in the ds-base.css block that pairs with these ten
         // is quoted from components/dist/anatomy/<slug>.json. Where a captured
@@ -4155,6 +4287,303 @@
           return '<div class="ds-menu-dropdown">' + mdRows + "</div>";
         }
 
+        // ── The four drawings ──────────────────────────────────────────
+        //
+        // These are the last four of the fourteen, and they are a different
+        // problem from the ten above. Their marks live in `vector` nodes, and a
+        // captured vector carries a name, an id and a FILL and no path data at
+        // all: 546 of them across the tree. So the capture cannot say what shape
+        // to draw, and none is inferred from one.
+        //
+        // What it CAN say turns out to be most of the component. For both charts
+        // it holds the frame, the header type, every axis tick and its gridline
+        // colour, every category label, and the SERIES COLOURS on the vectors it
+        // could not give geometry for. What is missing is the DATA, which was
+        // never the design system's to publish: it belongs to whoever puts the
+        // chart on a screen. So these four take their numbers as props, draw
+        // them into chrome quoted from the capture, and render the chrome alone
+        // when a caller supplies nothing. The gallery's numbers live in
+        // matrix.js SPECIMEN_PROPS, marked authored, because inferring them from
+        // the captured bar heights would be reading data out of pixels.
+        //
+        // The grid metric is quoted and the plot area follows from it. Every
+        // axis row is 22px with a 12px gap between rows and its rule centred, so
+        // n ticks put the first rule at 11px and the last at (n-1)*34+11, and
+        // the plot is exactly (n-1)*34px tall inset 11px top and bottom. That is
+        // why the marks line up with the labels: they are measured from the same
+        // two captured numbers rather than positioned to look right.
+
+        case "data-quality-checks-graph": {
+          var dqTicks = axisTicks(props.Max, 100, 5);
+          var dqCats = parseItems(
+            props.Categories,
+            "Freshness, Volume, Anomalies, Target, Other",
+          );
+          // Three series, named for what they mean rather than "Series 1..3":
+          // the capture's vectors are named Series 1/2/3 and painted #eb0909,
+          // #ffaf38 and #029c54, and the component's own legend (its three
+          // .data-viz-legend-item children, and media/preview.webp) reads
+          // Error, Warning, OK in that order.
+          // The colours live in ds-base.css keyed by these three names, not in
+          // a style attribute: the series are fixed by the component, so their
+          // fills are chrome. An inline hex is what a legend of N caller-named
+          // series needs (data-viz-legend's Color prop), and that is a
+          // different problem.
+          //
+          // The three lists are read by NAME, one literal `props.X` each, not
+          // through a computed key. derive-contract.js reads a branch's props by
+          // scanning its source for those reads, so `props[s]` inside a loop
+          // publishes NOTHING: the contract would list the chart's labels and
+          // not the three props a caller has to set to get a single bar.
+          var DQ_SERIES = [
+            { name: "Error", values: props.Error },
+            { name: "Warning", values: props.Warning },
+            { name: "OK", values: props.OK },
+          ];
+          var dqMax = dqTicks[0];
+          // Series order is DOM order, and DOM order is stack order: the bar
+          // is a column, so the first segment sits on top. media/preview.webp
+          // stacks OK at the baseline with Error above it, so the three are
+          // emitted Error, Warning, OK and the list above is in that order.
+          var dqBars = dqCats
+            .map(function (cat, i) {
+              var segments = DQ_SERIES.map(function (s) {
+                var v = numAt(s.values, i);
+                if (!(v > 0)) return "";
+                return (
+                  '<span class="ds-quality-graph__seg ds-quality-graph__seg--' +
+                  s.name.toLowerCase() +
+                  '" style="height:' +
+                  pct(v, dqMax) +
+                  '"></span>'
+                );
+              }).join("");
+              return (
+                '<span class="ds-quality-graph__bar-cell">' +
+                '<span class="ds-quality-graph__bar">' +
+                segments +
+                "</span>" +
+                '<span class="ds-quality-graph__cat">' +
+                esc(cat) +
+                "</span></span>"
+              );
+            })
+            .join("");
+          // The chart's own legend rows, NOT data-viz-legend instances. The
+          // capture's three children are instances of `.data-viz-legend-item`,
+          // whose name starts with a dot: it is unpublished and a different
+          // component from the published `data-viz-legend` slug. They share a
+          // shape and this one has three fixed colours, so it carries them.
+          var dqLegend = DQ_SERIES.map(function (s) {
+            return (
+              '<span class="ds-quality-graph__legend-item">' +
+              '<span class="ds-quality-graph__legend-dot ds-quality-graph__legend-dot--' +
+              s.name.toLowerCase() +
+              '"></span>' +
+              esc(s.name) +
+              "</span>"
+            );
+          }).join("");
+          return (
+            '<div class="ds-quality-graph">' +
+            chartHeader(
+              "ds-quality-graph",
+              props.Title || "Data Quality Status",
+              props["Support text"] || "Support text",
+            ) +
+            '<span class="ds-quality-graph__y-label">' +
+            esc(props["Y label"] || "Number of Data quality checks") +
+            "</span>" +
+            '<div class="ds-quality-graph__grid">' +
+            axisRows("ds-quality-graph", dqTicks) +
+            '<div class="ds-quality-graph__plot">' +
+            dqBars +
+            "</div>" +
+            "</div>" +
+            '<span class="ds-quality-graph__x-label">' +
+            esc(props["X label"] || "Type") +
+            "</span>" +
+            '<div class="ds-quality-graph__legend">' +
+            dqLegend +
+            "</div>" +
+            "</div>"
+          );
+        }
+
+        case "line-graph": {
+          // NO legend, and that is a decision rather than an omission. The
+          // capture's five legend children are instances of
+          // `.data-viz-legend-item`, an unpublished component (its name starts
+          // with a dot) that records only its own selected background, so the
+          // capture holds no colour for a single legend dot. The preview draws
+          // five different ones, and there is no categorical colour scale in
+          // tokens.css to bind them to. Five identical dots would be a worse
+          // answer than none; the published `data-viz-legend` is a component a
+          // caller composes, and it takes a Color for exactly this reason.
+          var lgTicks = axisTicks(props.Max, 90, 6);
+          var lgMax = lgTicks[0];
+          // The captured x axis is a month of days: "May", 7..31, "June", 2..7.
+          // Built rather than typed out, and the capture's duplicated "30" is
+          // NOT reproduced: it is a slip in the Figma frame, and a render that
+          // copies it puts two days 30 on the axis.
+          var lgLabels = parseItems(props.Labels, "");
+          if (!lgLabels.length) {
+            lgLabels = ["May"];
+            for (var lgD = 7; lgD <= 31; lgD++) lgLabels.push(String(lgD));
+            lgLabels.push("June");
+            for (var lgD2 = 2; lgD2 <= 7; lgD2++) lgLabels.push(String(lgD2));
+          }
+          var lgSeries = parseNums(props.Series);
+          var lgCompare = parseNums(props.Comparison);
+          // preserveAspectRatio="none" stretches the box to the plot, which is
+          // what makes the marks land on the captured grid; non-scaling-stroke
+          // keeps the 1px line 1px while it does.
+          var lgW = 1000;
+          var lgH = 300;
+          var lgPlot = "";
+          if (lgSeries.length > 1) {
+            var lgPts = polyPoints(lgSeries, lgMax, lgW, lgH);
+            lgPlot +=
+              '<path class="ds-line-graph__area" d="M0,' +
+              lgH +
+              " L" +
+              lgPts.split(" ").join(" L") +
+              " L" +
+              lgW +
+              "," +
+              lgH +
+              ' Z"/>';
+            lgPlot +=
+              '<polyline class="ds-line-graph__line" points="' + lgPts + '"/>';
+          }
+          if (lgCompare.length > 1) {
+            lgPlot +=
+              '<polyline class="ds-line-graph__compare" points="' +
+              polyPoints(lgCompare, lgMax, lgW, lgH) +
+              '"/>';
+          }
+          return (
+            '<div class="ds-line-graph">' +
+            chartHeader(
+              "ds-line-graph",
+              props.Title || "Total incidents over timeframe",
+              props.Range || "May 07, 2025 to June 07, 2025",
+            ) +
+            '<div class="ds-line-graph__grid">' +
+            axisRows("ds-line-graph", lgTicks) +
+            '<div class="ds-line-graph__plot">' +
+            (lgPlot
+              ? '<svg class="ds-line-graph__svg" viewBox="0 0 ' +
+                lgW +
+                " " +
+                lgH +
+                '" preserveAspectRatio="none" aria-hidden="true">' +
+                lgPlot +
+                "</svg>"
+              : "") +
+            "</div>" +
+            "</div>" +
+            '<div class="ds-line-graph__x">' +
+            lgLabels
+              .map(function (l) {
+                return (
+                  '<span class="ds-line-graph__x-tick">' + esc(l) + "</span>"
+                );
+              })
+              .join("") +
+            "</div>" +
+            "</div>"
+          );
+        }
+
+        case "glossary-item-hierarchy": {
+          // A term and the terms around it. The capture holds ten items -- one
+          // Type=Main item on #a76605, nine Type=Sub items on #fff9e5, all
+          // radius 9999 -- and nine connectors typed Straight, Going up or Going
+          // down. It holds no position for any of them (every child is an
+          // instance of an unpublished `.     Glossary item hierarchy diagram-*`
+          // component) and no text, so the LAYOUT is authored: the main term
+          // sits at the centre and the branches split evenly left and right, the
+          // arrangement media/preview.webp draws. The three captured connector
+          // types are what the curve does: level, up, or down.
+          var ghMain = esc(props.Main || "Account");
+          var ghItems = parseItems(
+            props.Items,
+            "Credit account, Account holder, Balance, Investment account, Investment or deposit account, Funds Processing, ARR, Ledger account, 32K",
+          );
+          var ghLeft = ghItems.slice(0, Math.ceil(ghItems.length / 2));
+          var ghRight = ghItems.slice(Math.ceil(ghItems.length / 2));
+          function ghBranch(side, items) {
+            return (
+              '<div class="ds-glossary-hierarchy__branch ds-glossary-hierarchy__branch--' +
+              side +
+              '">' +
+              items
+                .map(function (t) {
+                  return (
+                    '<span class="ds-glossary-hierarchy__item">' +
+                    esc(t) +
+                    "</span>"
+                  );
+                })
+                .join("") +
+              "</div>"
+            );
+          }
+          return (
+            '<div class="ds-glossary-hierarchy">' +
+            ghBranch("left", ghLeft) +
+            '<span class="ds-glossary-hierarchy__main">' +
+            ghMain +
+            "</span>" +
+            ghBranch("right", ghRight) +
+            "</div>"
+          );
+        }
+
+        case "lineage-connecting-line": {
+          // The connector between two lineage nodes. Registry axes Direction =
+          // Down | Straight | up | Up (the lower-case "up" is a duplicate value
+          // in the Figma axis, read as authored rather than corrected) and
+          // State = Default | Selected | Disabled. The capture is one 2px
+          // #c7c7ce stroke plus an optional icon instance, so the PATH is
+          // authored: straight is a level line, up and down are elbows.
+          var lclDir = String(v.Direction || "Straight").toLowerCase();
+          var lclCls = "ds-lineage-connecting-line";
+          if (lclDir === "up") lclCls += " ds-lineage-connecting-line--up";
+          else if (lclDir === "down")
+            lclCls += " ds-lineage-connecting-line--down";
+          if (v.State === "Selected")
+            lclCls += " ds-lineage-connecting-line--selected";
+          if (v.State === "Disabled")
+            lclCls += " ds-lineage-connecting-line--disabled";
+          // The elbow's corner radius is the capture's own 100px, clamped by
+          // the 40px box: an arc that large on a 120x40 path is a quarter turn.
+          var lclPath =
+            lclDir === "up"
+              ? "M0,32 H44 A12,12 0 0 0 56,20 V20 A12,12 0 0 1 68,8 H108"
+              : lclDir === "down"
+                ? "M0,8 H44 A12,12 0 0 1 56,20 V20 A12,12 0 0 0 68,32 H108"
+                : "M0,20 H108";
+          var lclIcon =
+            props["Show icon"] !== false
+              ? '<span class="ds-lineage-connecting-line__node"></span>'
+              : "";
+          return (
+            '<span class="' +
+            lclCls +
+            '">' +
+            '<svg class="ds-lineage-connecting-line__svg" viewBox="0 0 120 40" aria-hidden="true">' +
+            '<path class="ds-lineage-connecting-line__path" d="' +
+            lclPath +
+            '"/>' +
+            '<path class="ds-lineage-connecting-line__head" d="M108,14 L120,20 L108,26 Z"/>' +
+            "</svg>" +
+            lclIcon +
+            "</span>"
+          );
+        }
+
         default: {
           // Phase 1B: PREFER rendering the component per-instance from its
           // captured appearance doc so the instance's own variant selects the
@@ -4268,10 +4697,9 @@
     "text-area",
     "checkbox-group",
     "radio-group",
-    // The last ten UI leaves the capture fully specifies. The four that remain
-    // unbuilt (line-graph, data-quality-checks-graph, glossary-item-hierarchy,
-    // lineage-connecting-line) are drawings whose shape lives in vector nodes,
-    // and a captured vector carries no path data.
+    // The last ten UI leaves the capture fully specifies, then the four
+    // drawings, which take their marks from props because a captured vector
+    // carries no path data.
     "card",
     "checkbox-card",
     "radio-card",
@@ -4282,6 +4710,13 @@
     "identification-key",
     "data-viz-legend",
     "menu-dropdown",
+    // The four drawings. Their marks are vector nodes with no path data, so the
+    // capture gives the chrome, the type and the series colours, and the DATA
+    // comes from props.
+    "data-quality-checks-graph",
+    "line-graph",
+    "glossary-item-hierarchy",
+    "lineage-connecting-line",
   ];
 
   exports.renderDSComponent = renderDSComponent;

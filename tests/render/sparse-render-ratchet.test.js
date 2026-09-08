@@ -128,6 +128,36 @@ const ACCEPTED_INVENTED = {
   "pagination.Pages": 'the capture\'s trailing text layer reads "of 2 pages"',
   "data-viz-legend.Series":
     "the capture's LABEL text layer reads \"All\"; named Series rather than Label because variantMatrix sets Label on every identity cell to the cell's own variant value",
+  // ---- The four drawings ----
+  //
+  // Same shape as the eight above: the chrome IS the component and the capture
+  // supplies it. What these four do NOT default is their DATA -- the bar
+  // chart's Error/Warning/OK and the line chart's Series/Comparison have no
+  // fallback at all, so a caller who supplies nothing gets a real empty chart
+  // with its axis drawn. The gallery's numbers are in matrix.js
+  // MATRIX_OVERRIDES, and the reason they are not in SPECIMEN_PROPS is in the
+  // comment there.
+  "data-quality-checks-graph.Title":
+    'the capture\'s Title text layer reads "Data Quality Status"',
+  "data-quality-checks-graph.Support text":
+    'the capture\'s second header text layer reads "Support text"',
+  "data-quality-checks-graph.Categories":
+    "the five X-axis sub labels in the capture, in the order it holds them",
+  "data-quality-checks-graph.X label":
+    'the capture\'s X-axis main label reads "Type"',
+  "data-quality-checks-graph.Y label":
+    'the capture\'s Y-axis main label reads "Number of Data quality checks"',
+  "line-graph.Title":
+    'the capture\'s Title text layer reads "Total incidents over timeframe"',
+  "line-graph.Range":
+    'the capture\'s second header text layer reads "May 07, 2025 to June 07, 2025"',
+  "line-graph.Labels":
+    "the capture's X-axis text layers, rebuilt as May 7 to June 7; its duplicated \"30\" is a slip in the Figma frame and is not reproduced",
+  "glossary-item-hierarchy.Main":
+    "media/glossary-item-hierarchy/preview.webp; the capture's ten items are instances of an unpublished component and carry no text",
+  "glossary-item-hierarchy.Items":
+    "media/glossary-item-hierarchy/preview.webp, the nine sub items it draws; the capture carries no text for them",
+
   "menu-dropdown.Items":
     "the four rows media/menu-dropdown/preview.webp draws; unlike checkbox-group.Items, which went to SPECIMEN_PROPS, a menu has nothing BUT its rows, so an empty default is the grey box this leaf removes",
 

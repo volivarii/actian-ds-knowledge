@@ -48,12 +48,28 @@ no entry defers its link to a placeholder.
   And **`State=Focus` is painted by neither card's capture**, so neither emits a `--focus` class:
   this file does not ship modifier classes that match no rule.
 
-  **The four that are NOT built are drawings**, and the boundary is worth stating because it is the
-  same boundary for anything else chart-shaped: `line-graph` (10 vectors), `data-quality-checks-graph`
-  (21), `glossary-item-hierarchy` (19 instances of an unpublished child) and
-  `lineage-connecting-line`. A `vector` node in the capture carries a name, an id and a fill and **no
-  path data at all**, 546 of them across the tree, so nothing in this repo can derive what they draw.
-  They are not built from the capture and are not faked from one.
+- **The four drawings, and the boundary they sit on**.
+  `data-quality-checks-graph`, `line-graph`, `glossary-item-hierarchy` and `lineage-connecting-line`
+  are the last four, and they are a different problem: their marks live in `vector` nodes, and **a
+  captured vector carries a name, an id and a fill and no path data at all** (546 of them across the
+  tree). So the capture cannot say what shape to draw, and none is inferred from one.
+
+  What it can say turns out to be most of the component. For both charts it holds the frame, the
+  header type, every axis tick and its gridline colour, every category label, and the **series
+  colours on the vectors it could not give geometry for**. What is missing is the DATA, which was
+  never the design system's to publish. So all four take their numbers as props, draw them into
+  chrome quoted from the capture, and **render the chrome alone when a caller supplies nothing**: an
+  empty chart with its axis drawn, not an empty box.
+
+  The grid metric is the load-bearing quote and everything lines up off it. Both captures describe
+  the same axis, rows 22px tall and 12px apart with the rule centred, so n ticks put the first rule
+  at 11px and the last at `(n-1)*34+11`, and the plot is inset 11px top and bottom to sit between
+  them. The marks land on the labels because both are measured from those two numbers.
+
+  The `line-graph` draws **no legend**, deliberately: the capture's five legend children are
+  instances of an unpublished component that records no dot colour, and `tokens.css` publishes no
+  categorical colour scale to bind them to. The published `data-viz-legend` takes a `Color` for
+  exactly that reason, and it is the one inline style in this work.
 
 ### Fixed
 
