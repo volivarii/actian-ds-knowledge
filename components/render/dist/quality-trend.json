@@ -3,7 +3,7 @@
     "auto_generated": true,
     "source": "scripts/render/derive-quality-trend.js",
     "do_not_edit": "Regenerate with `npm run derive:render`. Hand edits are overwritten.",
-    "sourcesLastChangedAt": "2026-09-07"
+    "sourcesLastChangedAt": "2026-09-08"
   },
   "measures": {
     "unexplainedCollapses": {
@@ -330,6 +330,13 @@
   },
   "oracleSeries": [
     {
+      "date": "2026-09-08",
+      "version": "0.34.201",
+      "sha": "e1fe7c34",
+      "verified": 97,
+      "examined": 532
+    },
+    {
       "date": "2026-09-07",
       "version": "0.34.189",
       "sha": "5afbb177",
@@ -405,16 +412,15 @@
       "sha": "0026726b",
       "verified": 49,
       "examined": 415
-    },
-    {
-      "date": "2026-07-24",
-      "version": "0.34.118",
-      "sha": "69241f83",
-      "verified": 49,
-      "examined": 417
     }
   ],
   "collapseSeries": [
+    {
+      "date": "2026-09-08",
+      "version": "0.34.201",
+      "sha": "e1fe7c34",
+      "unexplained": 41
+    },
     {
       "date": "2026-09-07",
       "version": "0.34.198",
@@ -479,12 +485,6 @@
       "date": "2026-08-15",
       "version": "0.34.133",
       "sha": "da3f3805",
-      "unexplained": 50
-    },
-    {
-      "date": "2026-08-15",
-      "version": "0.34.132",
-      "sha": "0fce3c94",
       "unexplained": 50
     }
   ]
