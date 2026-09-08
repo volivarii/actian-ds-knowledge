@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Added
 
-- **The last ten UI leaves the capture fully specifies**.
+- **The last ten UI leaves the capture fully specifies**
+  ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).
   74 components carry the registry section "Components". 60 had a leaf in the canonical renderer and
   14 did not, so every one of those 14 fell through to the captured-geometry path and drew a grey
   box. Ten are built here: `card`, `checkbox-card`, `radio-card`, `label`, `message`,
@@ -48,7 +49,8 @@ no entry defers its link to a placeholder.
   And **`State=Focus` is painted by neither card's capture**, so neither emits a `--focus` class:
   this file does not ship modifier classes that match no rule.
 
-- **The four drawings, and the boundary they sit on**.
+- **The four drawings, and the boundary they sit on**
+  ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).
   `data-quality-checks-graph`, `line-graph`, `glossary-item-hierarchy` and `lineage-connecting-line`
   are the last four, and they are a different problem: their marks live in `vector` nodes, and **a
   captured vector carries a name, an id and a fill and no path data at all** (546 of them across the
@@ -73,7 +75,8 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
-- **A rule was charged to every component that nests the one it belongs to**.
+- **A rule was charged to every component that nests the one it belongs to**
+  ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).
   `checkBaseCssRules` resolves a rule's owner from the classes each slug's fragment emits. A
   component that renders a real `checkbox` rather than restating its markup therefore emits
   `.ds-checkbox--indeterminate` and was charged for its colour, against a capture that holds the
