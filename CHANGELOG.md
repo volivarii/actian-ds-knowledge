@@ -75,6 +75,29 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **The required check went red on every pull request, whatever it touched.**
+  `Validate manifest schema + coverage` regenerates `components/render/dist` and requires the result
+  to match byte for byte. Ten of the eleven artifacts there are a function of the tree and do match.
+  `quality-trend.*` is not one of them, and its drift is permanent rather than stale: each measure's
+  `direction`/`previous` is read at `merge-base HEAD origin/main`, which after the writing PR merges
+  is the file's own commit, and each series point records the SHA of the commit that produced it plus
+  `package.json` at that SHA, which squash merge deletes outright. The file released as v0.34.202
+  names `e1fe7c34`, a commit that is not an ancestor of `main`. So a clean checkout of `main` drifted
+  against itself, and every branch cut from it inherited the failure.
+
+  The guard now exempts those two files and says why at the step, because the fix its error message
+  named was the wrong one: running the derive and committing would have replaced four true
+  measurements with four false ones, turning `oracleVerified better (was 87)` into
+  `unchanged (was 97)` and `geometryVerified better (was 99)` into `unchanged (was 150)`. Reporting a
+  real improvement as flat is the one thing this artifact must never do.
+
+  Exempting a file from a directory-wide guard would have dropped the numbers guard in silence, since
+  the #571 probe found `quality-trend.json` stays green under mutation of the whole render suite. A
+  second step now compares the half that *is* a function of the tree, every measure's `value` and the
+  `detail` census they are counted from, over the union of keys so a renamed or dropped measure is
+  reported rather than skipped. Everything else in the directory keeps the subject it was built with,
+  so a new artifact is still covered the day it is written.
+
 - **A rule was charged to every component that nests the one it belongs to**
   ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).
   `checkBaseCssRules` resolves a rule's owner from the classes each slug's fragment emits. A
