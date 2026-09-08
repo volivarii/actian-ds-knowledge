@@ -34,23 +34,23 @@
     },
     "oracleVerified": {
       "value": 97,
-      "direction": "better",
-      "previous": 87
+      "direction": "unchanged",
+      "previous": 97
     },
     "oracleExamined": {
       "value": 532,
-      "direction": "changed",
-      "previous": 447
+      "direction": "unchanged",
+      "previous": 532
     },
     "geometryVerified": {
       "value": 150,
-      "direction": "better",
-      "previous": 99
+      "direction": "unchanged",
+      "previous": 150
     },
     "geometryExamined": {
       "value": 703,
-      "direction": "changed",
-      "previous": 591
+      "direction": "unchanged",
+      "previous": 703
     },
     "geometryMismatch": {
       "value": 91,
@@ -331,8 +331,8 @@
   "oracleSeries": [
     {
       "date": "2026-09-08",
-      "version": "0.34.201",
-      "sha": "e1fe7c34",
+      "version": "0.34.202",
+      "sha": "8b53446f",
       "verified": 97,
       "examined": 532
     },
@@ -417,8 +417,8 @@
   "collapseSeries": [
     {
       "date": "2026-09-08",
-      "version": "0.34.201",
-      "sha": "e1fe7c34",
+      "version": "0.34.202",
+      "sha": "8b53446f",
       "unexplained": 41
     },
     {
