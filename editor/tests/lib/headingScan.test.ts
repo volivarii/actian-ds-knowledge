@@ -127,3 +127,32 @@ test("headingScan: a heading inside a ~~~ fence is not a section, as inside ```"
     "a ~~~ fence must hide its headings too",
   );
 });
+
+test("headingScan: an inner ``` does not close an outer ~~~, so its heading stays hidden", () => {
+  // The regression a plain `/^(?:```|~~~)/` toggle introduces: the inner
+  // backticks close the outer tildes and every heading after becomes live —
+  // including, measured, the one the file's outgoing count lands on.
+  const out = scanHeadings(
+    "~~~\n```\n## Hidden {#hidden}\n```\n~~~\n\n## Real {#real}\n\nBody.\n",
+  );
+  assert.deepEqual(
+    out.map((h) => h.text),
+    ["Real"],
+  );
+});
+
+test("headingScan: an inline fence marker in prose opens nothing", () => {
+  const out = scanHeadings(
+    "Write ``` to open a fence.\n\n## Real {#real}\n\nAnd ``` closes it.\n",
+  );
+  assert.deepEqual(
+    out.map((h) => h.text),
+    ["Real"],
+  );
+});
+
+test("headingScan: a fenced block does not shift the line number of a heading below it", () => {
+  const out = scanHeadings("a\n```\ncode\n```\n## Real\n");
+  assert.equal(out.length, 1);
+  assert.equal(out[0]!.line, 4, "the heading is on line 4 of the original text");
+});

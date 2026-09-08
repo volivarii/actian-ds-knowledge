@@ -1,3 +1,4 @@
+import { fencedLineMask } from "../lib/fencedCode";
 // SectionFocusTracker — given a markdown source and a cursor line,
 // returns the section the cursor is currently inside (H2 or H3) with
 // its anchor slug. UI subscribes to this to drive the right pane.
@@ -11,8 +12,6 @@
 const HEADING_RE = /^(#{2,3})\s+(.+?)\s*$/;
 const TRAILING_ANCHOR_RE = /\s*\{#([a-z][a-z0-9-]*)\}\s*$/;
 const NUM_PREFIX_RE = /^\s*\d+(?:\.\d+)*\.?\s+/;
-// ``` or ~~~, matching headingScan and `searchBodyText.stripFencedCode`.
-const FENCE_RE = /^(?:```|~~~)/;
 const FRONTMATTER_FENCE_RE = /^---\s*$/;
 
 export interface FocusedSection {
@@ -48,7 +47,11 @@ interface HeadingEntry {
 function scanHeadings(text: string): HeadingEntry[] {
   const lines = text.split("\n");
   const out: HeadingEntry[] = [];
-  let inFence = false;
+  // Fenced code is read from the shared rule in `lib/fencedCode`, not decided
+  // here. A local toggle got nesting wrong (an inner ``` closed an outer ~~~) and
+  // each module spelled the rule differently; the mask is line-indexed, so the
+  // heading line numbers this scanner reports are unaffected.
+  const fenced = fencedLineMask(text);
   // Skip the YAML frontmatter envelope (line 0 `---` opens it). Mirrors
   // headingScan.ts so both outline + focus tracker agree on where the
   // authored content starts.
@@ -60,11 +63,7 @@ function scanHeadings(text: string): HeadingEntry[] {
   }
   for (; i < lines.length; i++) {
     const line = lines[i] ?? "";
-    if (FENCE_RE.test(line)) {
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) continue;
+    if (fenced[i]) continue;
     const m = line.match(HEADING_RE);
     if (!m) continue;
     const hashes = m[1] ?? "";

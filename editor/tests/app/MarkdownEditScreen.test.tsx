@@ -314,6 +314,17 @@ test("countsBySection and firstH2Anchor agree on which heading owns file scope",
     ["digit-leading anchor after a title", "## Tokens {#2fa}\n\nA.\n\n## Motion\n\nB.\n"],
     ["first H2 inside a ~~~ fence", "~~~\n## Fenced\n~~~\n\n## Tokens\n\nA.\n"],
     ["first H2 inside a ``` fence", "```\n## Fenced\n```\n\n## Tokens\n\nA.\n"],
+    // Door five: an inner ``` must not close an outer ~~~. Both scanners read
+    // the shared mask now, so this agrees for the right reason rather than by
+    // being identically wrong.
+    [
+      "H2 inside a ``` nested in a ~~~",
+      "~~~\n```\n## Hidden\n```\n~~~\n\n## Tokens\n\nA.\n",
+    ],
+    [
+      "inline fence marker in prose above the first H2",
+      "Write ``` to open one.\n\n## Tokens\n\nA.\n\nAnd ``` closes it.\n",
+    ],
   ];
 
   for (const [label, text] of shapes) {

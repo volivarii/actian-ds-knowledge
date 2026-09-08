@@ -1,3 +1,4 @@
+import { fencedLineMask } from "./fencedCode";
 // Extract H1-H3 headings from markdown text for the Outline panel.
 //
 // Returns one entry per heading with its level, display text, and
@@ -31,17 +32,16 @@ const HEADING_RE = /^(#{1,3})\s+(.+?)\s*$/;
 // SectionFocusTracker kept it and derived "2fa" — a section that owned file
 // scope with no outline row to show for it.
 const TRAILING_ANCHOR_RE = /\s*\{#[a-z][a-z0-9-]*\}\s*$/;
-// ``` or ~~~, the same pair `searchBodyText.stripFencedCode` honours. Toggling
-// on backticks alone gave a heading inside a ~~~ block an outline row while the
-// reference index ignored the whole block, so the outline claimed a section no
-// reference to it could ever resolve against.
-const FENCE_RE = /^(?:```|~~~)/;
 const FRONTMATTER_FENCE_RE = /^---\s*$/;
 
 export function scanHeadings(text: string): Heading[] {
   const lines = text.split("\n");
   const out: Heading[] = [];
-  let inFence = false;
+  // Fenced code is read from the shared rule in `lib/fencedCode`, not decided
+  // here. A local toggle got nesting wrong (an inner ``` closed an outer ~~~) and
+  // each module spelled the rule differently; the mask is line-indexed, so the
+  // heading line numbers this scanner reports are unaffected.
+  const fenced = fencedLineMask(text);
   // Detect the YAML frontmatter envelope and skip past its closing `---`.
   // Only a `---` on line 0 opens frontmatter; mid-document `---` is a
   // markdown thematic break and stays scanned as content.
@@ -53,11 +53,7 @@ export function scanHeadings(text: string): Heading[] {
   }
   for (; i < lines.length; i++) {
     const line = lines[i]!;
-    if (FENCE_RE.test(line)) {
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) continue;
+    if (fenced[i]) continue;
     const match = HEADING_RE.exec(line);
     if (!match) continue;
     const level = match[1]!.length as 1 | 2 | 3;
