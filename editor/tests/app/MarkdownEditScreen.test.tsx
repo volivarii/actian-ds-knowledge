@@ -14,6 +14,16 @@ import React from "react";
 import { MarkdownEditScreen } from "../../src/app/MarkdownEditScreen";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
 import { setWysiwygFlag } from "../helpers/editorSurface";
+import {
+  getAnnouncement,
+  announce as announceForTest,
+} from "../../src/lib/announcer";
+
+/** The announcer is a module-level store, so a prior test's message survives
+ *  into this one. Reset by announcing a sentinel nobody asserts on. */
+function resetAnnouncementsForTest() {
+  announceForTest("");
+}
 
 // File-level, not inline per test: an inline cleanup() after the last
 // assertion is skipped the moment that assertion throws, leaking a mounted
@@ -111,6 +121,94 @@ test("MarkdownEditScreen: non-workspace render has no direct 'Submit as PR' butt
     calls["pulls.create"]!.length,
     0,
     "Add to batch must stage only — it must never open a PR directly",
+  );
+  submissionCartSingleton.clear();
+});
+
+// ── #682: the outcome the editor exists to produce ──────────────────────────
+//
+// A load failure escalates to an alert Callout. The pull request — the one
+// irreversible, outward-facing act — rendered as plain <Text> inside the button
+// row, and reached the live region not at all. An author who sees no change
+// clicks again, which is how #270/#271 became byte-identical PRs seven seconds
+// apart. Its siblings already do this right: MetaEditScreen renders a green
+// Callout, SubmissionStaging both renders one and announces.
+
+async function submitOnlyThisFile() {
+  setWysiwygFlag("source");
+  submissionCartSingleton.clear();
+  // A staged sibling puts the screen in workspace context, which is the only
+  // render that offers the direct submit at all.
+  submissionCartSingleton.add({
+    path: "components/src/button/usage.md",
+    content: "sibling",
+    basedOnSha: "SHA_SIBLING",
+    addedAt: Date.now(),
+  });
+  const { gh, calls } = makeFakeOctokit("## Hello {#hello}\n");
+  render(
+    wrap(<MarkdownEditScreen path="components/src/button/content.md" octokit={gh} />),
+  );
+  const submit = await waitFor(
+    () => screen.getByRole("button", { name: /submit only this file/i }),
+    { timeout: 5000 },
+  );
+  await act(async () => {
+    fireEvent.click(submit);
+  });
+  const confirm = await waitFor(
+    () => screen.getByRole("button", { name: /yes, submit only this file/i }),
+    { timeout: 5000 },
+  );
+  await act(async () => {
+    fireEvent.click(confirm);
+  });
+  await waitFor(() => {
+    assert.equal(calls["pulls.create"]!.length, 1);
+  }, { timeout: 5000 });
+  return { calls };
+}
+
+test("MarkdownEditScreen: an opened pull request is raised to a status Callout, not inline body text", async () => {
+  await submitOnlyThisFile();
+  // This screen renders more than one role="status" (the anchor-rename
+  // notice is another), so pin the assertion to the one carrying the PR url
+  // rather than to whichever comes first in the document.
+  await waitFor(
+    () => {
+      const withUrl = Array.from(
+        document.querySelectorAll('[role="status"]'),
+      ).filter((el) =>
+        /https:\/\/github\.com\/x\/y\/pull\/42/.test(el.textContent ?? ""),
+      );
+      assert.equal(
+        withUrl.length,
+        1,
+        `exactly one role=status must carry the PR url; found ${withUrl.length}. ` +
+          `All status regions: ${JSON.stringify(
+            Array.from(document.querySelectorAll('[role="status"]')).map(
+              (e) => e.textContent,
+            ),
+          )}`,
+      );
+    },
+    { timeout: 5000 },
+  );
+  submissionCartSingleton.clear();
+});
+
+test("MarkdownEditScreen: an opened pull request is announced in the live region", async () => {
+  resetAnnouncementsForTest();
+  await submitOnlyThisFile();
+  await waitFor(
+    () => {
+      assert.equal(
+        getAnnouncement().text,
+        "Pull request opened",
+        `the live region said: ${JSON.stringify(getAnnouncement().text)}`,
+      );
+    },
+    { timeout: 5000 },
   );
   submissionCartSingleton.clear();
 });

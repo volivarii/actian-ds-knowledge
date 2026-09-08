@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Flex, Heading, Popover, Text } from "@radix-ui/themes";
 import { findReferences, findDefinitions } from "../lib/anchorIndex";
+import { isGeneratedTarget } from "../lib/incomingFiles";
 
 export interface AnchorReferencesPopoverProps {
   slug: string;
@@ -20,7 +21,10 @@ export function AnchorReferencesPopover({
   onNavigate,
   triggerEl,
 }: AnchorReferencesPopoverProps) {
-  const refs = findReferences(slug);
+  // Every row here navigates, so a generated target is a dead end: the click
+  // lands on the RefusalBanner having lost the author's place (#684). The count
+  // is taken after the filter, so it never advertises a row it will not render.
+  const refs = findReferences(slug).filter((p) => !isGeneratedTarget(p));
   const defs = findDefinitions(slug);
   const rect = triggerEl?.getBoundingClientRect();
   return (

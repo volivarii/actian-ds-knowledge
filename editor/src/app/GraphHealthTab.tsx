@@ -74,6 +74,18 @@ export interface GraphHealthTabProps {
   onOpenFile: (path: string) => void;
 }
 
+/** The orphan table shows at most this many rows. A cap is fine; a cap that
+ *  says nothing is not — 31 orphans would render 30 and report no shortfall,
+ *  which is absence failing to state its cause. */
+const ORPHAN_CAP = 30;
+
+/** Pure (exported for tests): what the table says about what it withheld.
+ *  `null` when nothing was withheld, so the screen stays silent rather than
+ *  printing "showing all of them" on every render. */
+export function orphanCapNote(total: number, cap: number): string | null {
+  return total > cap ? `Showing the first ${cap} of ${total}.` : null;
+}
+
 export function GraphHealthTab({ octokit, onOpenFile }: GraphHealthTabProps) {
   const subset = useMemo(() => eligibleSubset(), []);
   const index = useMemo(() => eligibleGraphIndex(), []);
@@ -232,7 +244,7 @@ export function GraphHealthTab({ octokit, onOpenFile }: GraphHealthTabProps) {
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {orphans.slice(0, 30).map((o) => {
+                {orphans.slice(0, ORPHAN_CAP).map((o) => {
                   const orphanTarget = navTargetForNodeId(o.id);
                   return (
                     <Table.Row key={o.id}>
@@ -252,13 +264,28 @@ export function GraphHealthTab({ octokit, onOpenFile }: GraphHealthTabProps) {
                           >
                             Open in editor
                           </Button>
-                        ) : null}
+                        ) : (
+                          // An empty cell reads as "nothing to do here". These
+                          // rows have plenty to do; the editor has no surface
+                          // for their kind yet (terms live in the single
+                          // app-context/src/terminology.yml, which matches no
+                          // frontmatterForms entry). Say that, rather than
+                          // inventing a destination that would refuse (#697).
+                          <Text size="1" color="gray">
+                            No editor surface
+                          </Text>
+                        )}
                       </Table.Cell>
                     </Table.Row>
                   );
                 })}
               </Table.Body>
             </Table.Root>
+          )}
+          {orphanCapNote(orphans.length, ORPHAN_CAP) && (
+            <Text size="1" color="gray" as="p" mt="1">
+              {orphanCapNote(orphans.length, ORPHAN_CAP)}
+            </Text>
           )}
         </Box>
 

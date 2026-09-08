@@ -22,6 +22,7 @@ import { createOctokit, MissingPATError } from "../core/octokit";
 import { decodeBase64Utf8 } from "./githubApi";
 import { DEFAULT_COORDS } from "../config/coords";
 import { submitDraft } from "../core/submitDraft";
+import { announce } from "../lib/announcer";
 import { AnchorPreservationError } from "../core/anchorPreservation";
 import {
   FileChange,
@@ -611,6 +612,9 @@ export function MarkdownEditScreen({
           },
         );
         setPrUrl(result.prUrl);
+        // The outcome that matters reaches the reader who is not watching the
+        // screen, the same way SubmissionStaging already announces it (#682).
+        announce("Pull request opened");
         void loadAnchorIndex(gh, { force: true }).catch(() => {});
         clearDraft();
       } catch (err) {
@@ -965,16 +969,25 @@ export function MarkdownEditScreen({
             />
           );
         })()}
-      <Flex gap="2" justify="end" align="center" wrap="wrap">
-        {prUrl && (
-          <Text>
+      {/* The pull request and its failure are outcomes, not row furniture: they
+          leave the button Flex and take the same Callout treatment this screen
+          already gives a load failure, matching MetaEditScreen (#682). */}
+      {prUrl && (
+        <Callout.Root color="grass" role="status" mt="2">
+          <Callout.Text>
             PR opened:{" "}
             <Link href={prUrl} target="_blank" rel="noopener">
               {prUrl}
             </Link>
-          </Text>
-        )}
-        {submitError && <Text color="red">{submitError}</Text>}
+          </Callout.Text>
+        </Callout.Root>
+      )}
+      {submitError && (
+        <Callout.Root color="ruby" role="alert" mt="2">
+          <Callout.Text>{submitError}</Callout.Text>
+        </Callout.Root>
+      )}
+      <Flex gap="2" justify="end" align="center" wrap="wrap">
         {inWorkspaceContext ? (
           <>
             <Button

@@ -22,6 +22,7 @@ import {
 } from "@radix-ui/themes";
 import { createOctokit, MissingPATError } from "../core/octokit";
 import { submitDraft } from "../core/submitDraft";
+import { announce } from "../lib/announcer";
 import { getTextFile, getTextFileWithSha } from "./githubApi";
 import { DEFAULT_COORDS } from "../config/coords";
 import { RJSFForm } from "../form-engine/RJSFForm";
@@ -229,6 +230,11 @@ export function MetaEditScreen({
         },
       );
       setPrUrl(result.prUrl);
+      // The green Callout below says so on screen; this says it to a reader
+      // who is not watching it. "Draft saved" already announces the local
+      // write, so the outward-facing act was the one arriving in silence
+      // (#682). Same sentence as SubmissionStaging: one outcome, one wording.
+      announce("Pull request opened");
       // If a cart entry was staged for this path, clear it — the PR
       // is open, so the staged stub is now redundant.
       if (inCart) submissionCartSingleton.remove(metaPath);

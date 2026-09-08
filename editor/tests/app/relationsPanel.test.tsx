@@ -561,3 +561,74 @@ test("renders a compact neighborhood map with data-ref nodes when a layout is pr
   const noMap = renderPanel();
   assert.equal(noMap.container.querySelector("svg"), null);
 });
+
+// ── #684: the rail counts files, and never lists a target that refuses to open ──
+//
+// Shape taken from the real corpus on the deployed page: foundations/src/tokens.md
+// reported "Referenced by (37)" for ten distinct files, three of them generated.
+
+const INCOMING_REAL_SHAPE: IncomingRef[] = [
+  { fromPath: "components/src/categories/overlays.md", slug: "usage", snippet: "first overlays site" },
+  { fromPath: "components/src/categories/overlays.md", slug: "usage", snippet: "second overlays site" },
+  { fromPath: "components/src/categories/overlays.md", slug: "usage", snippet: "third overlays site" },
+  { fromPath: "components/src/categories/form.md", slug: "usage", snippet: "form site" },
+  { fromPath: "foundations/dist/foundations.bundle.json", slug: "usage", snippet: "bundle site" },
+  { fromPath: "components/dist/guidelines/badge.json", slug: "usage", snippet: "badge dist site" },
+];
+
+test("the Referenced by count is distinct files, not reference sites", () => {
+  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
+  // Two editable files behind six sites, three of which share one file.
+  assert.ok(
+    container.textContent!.includes("Referenced by (2)"),
+    `expected a count of 2 distinct editable files, got: ${container.textContent!.slice(0, 400)}`,
+  );
+  assert.equal(
+    container.querySelectorAll("[data-testid='incoming-row']").length,
+    2,
+    "one row per distinct file",
+  );
+});
+
+test("a file referenced from several sites says so on its single row", () => {
+  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
+  const rows = Array.from(
+    container.querySelectorAll("[data-testid='incoming-row']"),
+  );
+  const overlays = rows.find((r) =>
+    r.textContent!.includes("components/src/categories/overlays.md"),
+  )!;
+  assert.ok(overlays, "the overlays row is present");
+  assert.ok(
+    /3 references/.test(overlays.textContent!),
+    `expected the site count on the row, got: ${overlays.textContent}`,
+  );
+});
+
+test("generated targets are not listed as rows, because following one refuses to open", () => {
+  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
+  assert.ok(
+    !container.textContent!.includes("foundations.bundle.json"),
+    "a dist bundle must not be offered as a destination",
+  );
+  assert.ok(
+    !container.textContent!.includes("guidelines/badge.json"),
+    "a dist guideline must not be offered as a destination",
+  );
+});
+
+test("the excluded generated files are stated, so the shorter list does not read as a loss", () => {
+  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
+  assert.ok(
+    /2 generated files also reference this/.test(container.textContent!),
+    `expected the exclusion to be stated, got: ${container.textContent!.slice(0, 500)}`,
+  );
+});
+
+test("with nothing generated to exclude, the rail says nothing about exclusions", () => {
+  const { container } = renderPanel({ incoming: INCOMING });
+  assert.ok(
+    !/generated files? also reference/.test(container.textContent!),
+    "no exclusion line when nothing was excluded",
+  );
+});

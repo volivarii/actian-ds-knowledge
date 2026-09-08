@@ -249,7 +249,7 @@ export function CoverageDashboard({
             onClick={() => onOpenFile(pass.target)}
             title={`Opens ${pass.component}, the first of ${pass.open} with no ${DOMAIN_LABEL[pass.domain]} guidance`}
           >
-            Start the {DOMAIN_LABEL[pass.domain]} pass
+            Start with {pass.component}
           </Button>
         )}
         <Button

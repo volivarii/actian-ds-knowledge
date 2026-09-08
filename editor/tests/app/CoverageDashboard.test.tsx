@@ -258,7 +258,16 @@ test("CoverageDashboard: offers the verb for the finding it states", async () =>
     /Tokens is the backlog: 2 of the 2 have none\./,
   );
 
-  const button = screen.getByRole("button", { name: /Start the Tokens pass/ });
+  // The control opens ONE file. It said "Start the Tokens pass", which promises
+  // the fixed list, stage-and-next flow that was designed and never built — so
+  // the label named a feature the click does not deliver. It names the file it
+  // opens instead; the tooltip still carries the count and the domain.
+  const button = screen.getByRole("button", { name: /^Start with (Button|Tabs)$/ });
+  assert.equal(
+    /pass/i.test(button.textContent ?? ""),
+    false,
+    `a control that opens one file must not call itself a pass: ${button.textContent}`,
+  );
   fireEvent.click(button);
   assert.equal(calls.length, 1);
   // Whichever component is first, it must be one that actually lacks tokens.
