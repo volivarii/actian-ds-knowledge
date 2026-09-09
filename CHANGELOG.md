@@ -75,6 +75,33 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **Four parsers, four disagreements about what a heading is, and one shared fenced-code rule**
+  ([#703](https://github.com/volivarii/actian-ds-knowledge/pull/703)).
+  Three modules in the editor parse headings and a fourth decides what text can define or reference
+  an anchor. Each disagreement produced the same sentence: the outline claims a section that no
+  reference to it can ever resolve against. `headingScan` allowed an explicit anchor to start with a
+  digit where `anchorIndex` and `SectionFocusTracker` require a letter, so `## {#2fa}` gave one
+  module an empty heading it dropped and the other a section that owned file scope with no outline
+  row and no anchor the index could define.
+
+  Both heading scanners toggled fences on backticks alone while the reference index honours `~~~`
+  too. Widening the toggle broke nesting, because an inner ``` then closed an outer `~~~` and put
+  the file's outgoing count on a heading inside a code block. Making it a whole-document mask fixed
+  nesting and blanked entire files, because a YAML block scalar in the frontmatter envelope can
+  carry a line of three backticks that the envelope's `---` cannot close.
+
+  The rule now has one home. `lib/fencedCode.fencedLineMask` is `anchorRename.mapLiveSegments`'
+  logic extracted, the only one of the four that was right: line-anchored, tracking the delimiter
+  character and run length, and taking a `startLine` so the scan begins below the frontmatter. The
+  mask is line-indexed, so reported heading line numbers are unchanged. `searchBodyText` keeps its
+  own regex on purpose, since the search corpus and the anchor index both derive from it: that is
+  [#698](https://github.com/volivarii/actian-ds-knowledge/issues/698), filed rather than folded in.
+
+  Twice a shape-agreement property test stayed green on a real regression, both times because its
+  table named no such shape. **A property test only covers the shapes its table names**, and three
+  modules can agree on being wrong together. The table covers sixteen shapes now, including
+  frontmatter, and a single-scanner mutation on either module fails it.
+
 - **The drawer's body belongs to the caller, and the two lo-fi leaves that printed a word of their
   own read their props instead** ([#702](https://github.com/volivarii/actian-ds-knowledge/pull/702)). Every `drawer` render carried a specimen body (Technical name
   able_agency, a Finance / 24/7 / Powerbi line, Dec 15 2025, 10 Fields, a 50% completion bar and three
