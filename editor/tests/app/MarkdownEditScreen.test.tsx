@@ -306,6 +306,41 @@ test("countsBySection and firstH2Anchor agree on which heading owns file scope",
     ["every H2 derives empty", "## ---\n\nA.\n\n## ***\n\nB.\n"],
     ["explicit anchor on an unslugabble title", "## 🎯 {#real}\n\nA.\n\n## Tokens\n\nB.\n"],
     ["no H2 at all", "### Only\n\nA.\n"],
+    // Doors 3 and 4, from the round-5 review: the two scanners disagreed on
+    // what an explicit anchor is (digit-leading allowed in one, not the
+    // other) and on what a fence is (~~~ honoured by the reference index and
+    // by neither scanner).
+    ["whole title is a digit-leading anchor", "## {#2fa}\n\nA.\n\n## Tokens\n\nB.\n"],
+    ["digit-leading anchor after a title", "## Tokens {#2fa}\n\nA.\n\n## Motion\n\nB.\n"],
+    ["first H2 inside a ~~~ fence", "~~~\n## Fenced\n~~~\n\n## Tokens\n\nA.\n"],
+    ["first H2 inside a ``` fence", "```\n## Fenced\n```\n\n## Tokens\n\nA.\n"],
+    // Door five: an inner ``` must not close an outer ~~~. Both scanners read
+    // the shared mask now, so this agrees for the right reason rather than by
+    // being identically wrong.
+    [
+      "H2 inside a ``` nested in a ~~~",
+      "~~~\n```\n## Hidden\n```\n~~~\n\n## Tokens\n\nA.\n",
+    ],
+    [
+      "inline fence marker in prose above the first H2",
+      "Write ``` to open one.\n\n## Tokens\n\nA.\n\nAnd ``` closes it.\n",
+    ],
+    // Door six. The table had no frontmatter shape at all, so a mutation
+    // making one scanner mask from line 0 instead of the body left this
+    // property green — the same blind spot as the nested fence: a property
+    // only covers the shapes its table names.
+    [
+      "odd fence opener inside the frontmatter envelope",
+      "---\ndescription: |\n  ```\n  code\n---\n\n## Tokens\n\nA.\n",
+    ],
+    [
+      "balanced fence inside the frontmatter envelope",
+      "---\ndescription: |\n  ```\n  code\n  ```\n---\n\n## Tokens\n\nA.\n",
+    ],
+    [
+      "plain frontmatter, no fence",
+      "---\ntitle: Tokens\n---\n\n## Tokens\n\nA.\n",
+    ],
   ];
 
   for (const [label, text] of shapes) {

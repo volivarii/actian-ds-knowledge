@@ -8,10 +8,11 @@
 //   3. Trim leading/trailing dashes
 // Explicit `{#anchor}` markers override derived slugs.
 
+import { fencedLineMask } from "../lib/fencedCode";
+
 const HEADING_RE = /^(#{2,3})\s+(.+?)\s*$/;
 const TRAILING_ANCHOR_RE = /\s*\{#([a-z][a-z0-9-]*)\}\s*$/;
 const NUM_PREFIX_RE = /^\s*\d+(?:\.\d+)*\.?\s+/;
-const FENCE_RE = /^```/;
 const FRONTMATTER_FENCE_RE = /^---\s*$/;
 
 export interface FocusedSection {
@@ -47,7 +48,6 @@ interface HeadingEntry {
 function scanHeadings(text: string): HeadingEntry[] {
   const lines = text.split("\n");
   const out: HeadingEntry[] = [];
-  let inFence = false;
   // Skip the YAML frontmatter envelope (line 0 `---` opens it). Mirrors
   // headingScan.ts so both outline + focus tracker agree on where the
   // authored content starts.
@@ -57,13 +57,18 @@ function scanHeadings(text: string): HeadingEntry[] {
     while (j < lines.length && !FRONTMATTER_FENCE_RE.test(lines[j]!)) j++;
     if (j < lines.length) i = j + 1;
   }
+  // Fenced code is read from the shared rule in `lib/fencedCode`, not decided
+  // here: a local toggle got nesting wrong (an inner ``` closed an outer ~~~)
+  // and each module spelled the rule differently. Masked FROM THE BODY, never
+  // from line 0 — a YAML block scalar in the envelope can carry a line of
+  // three backticks, and a whole-document mask read that as a fence the
+  // envelope's `---` could not close, so every heading in the file vanished.
+  // The mask is line-indexed, so the line numbers this scanner reports are
+  // unaffected.
+  const fenced = fencedLineMask(text, i);
   for (; i < lines.length; i++) {
     const line = lines[i] ?? "";
-    if (FENCE_RE.test(line)) {
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) continue;
+    if (fenced[i]) continue;
     const m = line.match(HEADING_RE);
     if (!m) continue;
     const hashes = m[1] ?? "";
