@@ -3,7 +3,7 @@
     "auto_generated": true,
     "source": "scripts/render/derive-quality-trend.js",
     "do_not_edit": "Regenerate with `npm run derive:render`. Hand edits are overwritten.",
-    "sourcesLastChangedAt": "2026-09-08"
+    "sourcesLastChangedAt": "2026-09-09"
   },
   "measures": {
     "unexplainedCollapses": {
@@ -38,8 +38,8 @@
       "previous": 97
     },
     "oracleExamined": {
-      "value": 532,
-      "direction": "unchanged",
+      "value": 534,
+      "direction": "changed",
       "previous": 532
     },
     "geometryVerified": {
@@ -48,8 +48,8 @@
       "previous": 150
     },
     "geometryExamined": {
-      "value": 703,
-      "direction": "unchanged",
+      "value": 704,
+      "direction": "changed",
       "previous": 703
     },
     "geometryMismatch": {
@@ -330,6 +330,13 @@
   },
   "oracleSeries": [
     {
+      "date": "2026-09-09",
+      "version": "0.34.206",
+      "sha": "271f8fa9",
+      "verified": 97,
+      "examined": 534
+    },
+    {
       "date": "2026-09-08",
       "version": "0.34.202",
       "sha": "8b53446f",
@@ -405,20 +412,13 @@
       "sha": "137cefe2",
       "verified": 78,
       "examined": 438
-    },
-    {
-      "date": "2026-07-24",
-      "version": "0.34.118",
-      "sha": "0026726b",
-      "verified": 49,
-      "examined": 415
     }
   ],
   "collapseSeries": [
     {
-      "date": "2026-09-08",
-      "version": "0.34.204",
-      "sha": "16dddade",
+      "date": "2026-09-09",
+      "version": "0.34.205",
+      "sha": "f8a5731e",
       "unexplained": 41
     },
     {
