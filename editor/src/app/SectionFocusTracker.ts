@@ -1,4 +1,3 @@
-import { fencedLineMask } from "../lib/fencedCode";
 // SectionFocusTracker — given a markdown source and a cursor line,
 // returns the section the cursor is currently inside (H2 or H3) with
 // its anchor slug. UI subscribes to this to drive the right pane.
@@ -8,6 +7,8 @@ import { fencedLineMask } from "../lib/fencedCode";
 //   2. Lowercase + replace non-alphanumeric runs with "-"
 //   3. Trim leading/trailing dashes
 // Explicit `{#anchor}` markers override derived slugs.
+
+import { fencedLineMask } from "../lib/fencedCode";
 
 const HEADING_RE = /^(#{2,3})\s+(.+?)\s*$/;
 const TRAILING_ANCHOR_RE = /\s*\{#([a-z][a-z0-9-]*)\}\s*$/;

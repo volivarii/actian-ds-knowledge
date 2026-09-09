@@ -1,4 +1,3 @@
-import { fencedLineMask } from "./fencedCode";
 // Extract H1-H3 headings from markdown text for the Outline panel.
 //
 // Returns one entry per heading with its level, display text, and
@@ -18,6 +17,8 @@ import { fencedLineMask } from "./fencedCode";
 //      these for cross-consumer anchor contracts; the slug isn't part of
 //      the visible heading prose).
 //   6. Skip blank/whitespace-only headings.
+
+import { fencedLineMask } from "./fencedCode";
 
 export interface Heading {
   level: 1 | 2 | 3;
