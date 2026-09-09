@@ -3820,6 +3820,24 @@
   line-height: var(--zen-font-lineheight-md); /* 20, captured */
   letter-spacing: var(--zen-font-letterspacing-wide-2); /* 0.2, captured */
 }
+/* Meta label and value pairs, the technical name under the title, and the
+   facts row. Authored, not captured: the label and technical name take the
+   secondary text role at the small size, the value the default role, the
+   facts row lays out like the meta row. Replace with captured values when
+   the drawer is next re-read. */
+.ds-drawer__meta-label,
+.ds-drawer__technical-name {
+  color: var(--zen-color-text-secondary);
+  font-size: var(--zen-font-size-sm);
+}
+.ds-drawer__meta-value {
+  color: var(--zen-color-text-default);
+}
+.ds-drawer__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zen-spacing-xs);
+}
 .ds-drawer__tabs {
   display: flex;
   gap: var(
