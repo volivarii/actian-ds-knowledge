@@ -25,6 +25,7 @@ Geometry coverage is **150 of 704** gap, padding and fixed-height declarations, 
 
 | Date | Version | Verified | Examined |
 | --- | --- | --- | --- |
+| 2026-09-09 | v0.34.206 | 97 | 534 |
 | 2026-09-08 | v0.34.202 | 97 | 532 |
 | 2026-09-07 | v0.34.189 | 87 | 447 |
 | 2026-09-03 | v0.34.180 | 85 | 418 |
@@ -36,7 +37,6 @@ Geometry coverage is **150 of 704** gap, padding and fixed-height declarations, 
 | 2026-08-26 | v0.34.154 | 78 | 408 |
 | 2026-08-24 | v0.34.147 | 78 | 432 |
 | 2026-08-12 | v0.34.123 | 78 | 438 |
-| 2026-07-24 | v0.34.118 | 49 | 415 |
 
 ## Unexplained collapses over time
 

@@ -330,6 +330,13 @@
   },
   "oracleSeries": [
     {
+      "date": "2026-09-09",
+      "version": "0.34.206",
+      "sha": "271f8fa9",
+      "verified": 97,
+      "examined": 534
+    },
+    {
       "date": "2026-09-08",
       "version": "0.34.202",
       "sha": "8b53446f",
@@ -405,13 +412,6 @@
       "sha": "137cefe2",
       "verified": 78,
       "examined": 438
-    },
-    {
-      "date": "2026-07-24",
-      "version": "0.34.118",
-      "sha": "0026726b",
-      "verified": 49,
-      "examined": 415
     }
   ],
   "collapseSeries": [
