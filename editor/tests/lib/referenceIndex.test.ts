@@ -2,10 +2,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setCachedIndexForTesting } from "../../src/lib/anchorIndex";
 import {
+  sectionAnchors,
   incomingForFile,
   countsBySection,
   searchReferenceTargets,
 } from "../../src/lib/referenceIndex";
+import { incomingFiles } from "../../src/lib/incomingFiles";
 
 const THIS_PATH = "foundations/src/tokens.md";
 const THIS_TEXT = "## Tokens {#token-basics}\n\nBody.\n";
@@ -216,4 +218,242 @@ test("searchReferenceTargets: a section prefix match and a component substring m
     "expected real competition, not a single-result set",
   );
   assert.equal(out[0]!.kind, "section");
+});
+
+// ── #684 consistency: the pill and the rail reconcile, they do not match ────
+//
+// Written first as "the pill equals the rail's rows", which was wrong twice:
+// it made the pill drop to zero for the nine anchors in
+// `accessibility/src/components.md` whose only indexed referrers are generated
+// (the index scans .md and dist JSON, never `_meta.yml`), and it could not
+// fail on the first H2, where the pill deliberately carries the file's
+// outgoing count too.
+//
+// The true relation, and the one worth guarding:
+//
+//   pill(anchor) = rail rows + generated excluded + (outgoing, first H2 only)
+//
+// Each term is visible on screen: the rows, the "N generated files also
+// reference this" note, and the "References (N)" section. So a reader can
+// reconcile the two numbers even though they differ.
+
+const JOIN_PATH = "foundations/src/tokens.md";
+const JOIN_TEXT =
+  "## Tokens {#token-basics}\n\nBody.\n\n## Motion {#motion-basics}\n\nMore.\n";
+
+function seedJoinIndex() {
+  setCachedIndexForTesting({
+    entries: new Map([
+      [
+        "token-basics",
+        {
+          slug: "token-basics",
+          definedIn: [JOIN_PATH],
+          referencedBy: [
+            // overlays.md mentions this anchor in TWO paragraphs below, and
+            // incomingForFile pushes one row per snippet, so this file yields
+            // two rail rows for one anchor. Without that, a fixture of
+            // distinct paths makes "group by file" and "do not group" agree
+            // and the grouping half of the join cannot fail.
+            "components/src/categories/overlays.md",
+            "components/src/categories/form.md",
+            "foundations/dist/foundations.bundle.json",
+            JOIN_PATH,
+          ],
+        },
+      ],
+      [
+        "motion-basics",
+        {
+          slug: "motion-basics",
+          definedIn: [JOIN_PATH],
+          referencedBy: ["components/src/categories/action.md"],
+        },
+      ],
+    ]),
+    scannedAt: 0,
+    scannedPaths: [JOIN_PATH],
+    texts: new Map([
+      [
+        "components/src/categories/overlays.md",
+        "First para links [tokens](../foundations/tokens#token-basics) here.\n\n" +
+          "Second para links [tokens again](../foundations/tokens#token-basics) too.\n",
+      ],
+      [
+        "components/src/categories/form.md",
+        "Only para links [tokens](../foundations/tokens#token-basics) once.\n",
+      ],
+      [
+        "components/src/categories/action.md",
+        "A para links [motion](../foundations/tokens#motion-basics) once.\n",
+      ],
+      ["foundations/dist/foundations.bundle.json", "{}"],
+    ]),
+  });
+}
+
+test("countsBySection: a generated referrer still counts, because something does depend on the section", () => {
+  seedJoinIndex();
+  const counts = countsBySection(JOIN_PATH, JOIN_TEXT, 0);
+  // overlays + form + the dist bundle. Self-reference excluded, as before.
+  assert.equal(counts.get("token-basics"), 3);
+  setCachedIndexForTesting(null);
+});
+
+test("the pill reconciles with the rail: rows + generated excluded, on a non-first anchor", () => {
+  seedJoinIndex();
+  const counts = countsBySection(JOIN_PATH, JOIN_TEXT, 0);
+  const all = incomingForFile(JOIN_PATH, JOIN_TEXT);
+
+  for (const anchor of ["token-basics", "motion-basics"]) {
+    const { files, generatedExcluded } = incomingFiles(
+      all.filter((r) => r.slug === anchor),
+    );
+    assert.equal(
+      counts.get(anchor) ?? 0,
+      files.length + generatedExcluded,
+      `#${anchor}: pill ${counts.get(anchor) ?? 0} != rows ${files.length} + excluded ${generatedExcluded}`,
+    );
+  }
+  // Not two zeroes agreeing: the token-basics side is 2 rows over 4 refs plus
+  // 1 excluded, so both the grouping and the exclusion term are load-bearing.
+  const scoped = incomingFiles(
+    all.filter((r) => r.slug === "token-basics"),
+  );
+  assert.equal(scoped.files.length, 2);
+  assert.equal(scoped.generatedExcluded, 1);
+  setCachedIndexForTesting(null);
+});
+
+test("the first H2's pill carries the outgoing count too, which the rail shows in its own section", () => {
+  // The case the previous version of this gate could not reach: it passed
+  // outgoingCount 0 for every anchor, so the one place the naive "pill equals
+  // rows" invariant is KNOWN to break was the one place it never looked.
+  seedJoinIndex();
+  const outgoing = 4;
+  const counts = countsBySection(JOIN_PATH, JOIN_TEXT, outgoing);
+  const all = incomingForFile(JOIN_PATH, JOIN_TEXT);
+
+  const first = incomingFiles(all.filter((r) => r.slug === "token-basics"));
+  assert.equal(
+    counts.get("token-basics"),
+    first.files.length + first.generatedExcluded + outgoing,
+    "the first H2 pill is incoming files + generated excluded + outgoing",
+  );
+
+  // And only the first H2 takes the outgoing term.
+  const second = incomingFiles(all.filter((r) => r.slug === "motion-basics"));
+  assert.equal(
+    counts.get("motion-basics"),
+    second.files.length + second.generatedExcluded,
+  );
+  setCachedIndexForTesting(null);
+});
+
+// ── An anchor that is "" is not an anchor ───────────────────────────────────
+//
+// `extractAnchor` -> `deriveSlug` yields "" for an H2 whose title has nothing
+// sluggable left: "## 🎯", "## ---", "## ***". Not "## 3.", which gives "3".
+// The type says `string | null`, so callers guard on `=== null` and let ""
+// through. Two consequences, both silent:
+//
+//   * countsBySection latches firstH2Anchor = "", and the later
+//     `if (firstH2Anchor && outgoingCount > 0)` is falsy — so the outgoing
+//     count is dropped for the WHOLE FILE rather than moving to the next H2,
+//     and the join formula's third term quietly becomes zero.
+//   * RelationsPanel sets scopedAnchor = "", which is falsy where it filters,
+//     so the row paints as scoped while the rail keeps showing everything and
+//     the "All" button never appears.
+//
+// Zero occurrences in today's corpus, but this is an authoring tool and the
+// headings are typed in it.
+test("sectionAnchors: a heading with no derivable slug reports null, not an empty string", () => {
+  const text = "## 🎯\n\nBody.\n\n## Real Heading\n\nMore.\n";
+  const anchors = sectionAnchors(text);
+  assert.equal(
+    anchors[0]!.anchor,
+    null,
+    `an empty derived slug must be null, got ${JSON.stringify(anchors[0]!.anchor)}`,
+  );
+  assert.equal(anchors[1]!.anchor, "real-heading");
+});
+
+test("countsBySection: an unanchored first H2 does not swallow the file's outgoing count", () => {
+  const path = "foundations/src/tokens.md";
+  // The first H2 derives to "", so before the fix firstH2Anchor latched onto
+  // it and the outgoing term was lost for every section in the file.
+  // NOT "## 3." — that derives to "3", a perfectly good anchor. Verified
+  // against deriveSlug: an emoji-only or punctuation-only title is what
+  // empties out.
+  const text = "## 🎯\n\nBody.\n\n## Tokens {#token-basics}\n\nMore.\n";
+  setCachedIndexForTesting({
+    entries: new Map([
+      [
+        "token-basics",
+        { slug: "token-basics", definedIn: [path], referencedBy: [] },
+      ],
+    ]),
+    scannedAt: 0,
+    scannedPaths: [path],
+    texts: new Map(),
+  });
+  const counts = countsBySection(path, text, 4);
+  assert.equal(
+    counts.get("token-basics"),
+    4,
+    "the outgoing count lands on the first H2 that actually has an anchor",
+  );
+  setCachedIndexForTesting(null);
+});
+
+// ── An H3 that shadows the first H2's slug ──────────────────────────────────
+//
+// `countsBySection` deduped BEFORE latching `firstH2Anchor`, so an H3 deriving
+// the same slug as the first H2 consumed it and the H2 was skipped. Two
+// consequences, both silent, and the second is the worse one:
+//
+//   * with a later H2 present, the outgoing count lands on THAT one while
+//     `firstH2Anchor` still says the shadowed H2 owns file scope — the same
+//     two-modules-disagree defect as the empty anchor, through another door;
+//   * with no later H2, `firstH2Anchor` stays null, the `if (firstH2Anchor &&
+//     outgoingCount > 0)` never fires, and the file's outgoing references
+//     vanish from the outline altogether.
+//
+// Pre-existing, zero occurrences in the authored substrate, and one line of
+// reordering away: latch the level-2 anchor before the dedup consumes it.
+test("countsBySection: an H3 sharing the first H2's slug does not swallow the outgoing count", () => {
+  const path = "foundations/src/tokens.md";
+  setCachedIndexForTesting({
+    entries: new Map(),
+    scannedAt: 0,
+    scannedPaths: [path],
+    texts: new Map(),
+  });
+
+  // No later H2 to fall through to: the count used to disappear entirely.
+  const shadowedOnly = countsBySection(
+    path,
+    "### Tokens\n\nA.\n\n## Tokens\n\nB.\n",
+    5,
+  );
+  assert.equal(
+    shadowedOnly.get("tokens"),
+    5,
+    `the outgoing count must survive, got ${JSON.stringify([...shadowedOnly])}`,
+  );
+
+  // With a later H2, the count must not walk to it: file scope is still the
+  // first H2's slug, which is what firstH2Anchor reports.
+  const withLater = countsBySection(
+    path,
+    "### Tokens\n\nA.\n\n## Tokens\n\nB.\n\n## Motion\n\nC.\n",
+    5,
+  );
+  assert.equal(withLater.get("tokens"), 5);
+  assert.equal(
+    withLater.has("motion"),
+    false,
+    `the count must not land on a later H2, got ${JSON.stringify([...withLater])}`,
+  );
+  setCachedIndexForTesting(null);
 });

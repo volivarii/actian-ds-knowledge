@@ -22,6 +22,7 @@ import { createOctokit, MissingPATError } from "../core/octokit";
 import { decodeBase64Utf8 } from "./githubApi";
 import { DEFAULT_COORDS } from "../config/coords";
 import { submitDraft } from "../core/submitDraft";
+import { announce } from "../lib/announcer";
 import { AnchorPreservationError } from "../core/anchorPreservation";
 import {
   FileChange,
@@ -611,6 +612,9 @@ export function MarkdownEditScreen({
           },
         );
         setPrUrl(result.prUrl);
+        // The outcome that matters reaches the reader who is not watching the
+        // screen, the same way SubmissionStaging already announces it (#682).
+        announce("Pull request opened");
         void loadAnchorIndex(gh, { force: true }).catch(() => {});
         clearDraft();
       } catch (err) {
@@ -965,16 +969,36 @@ export function MarkdownEditScreen({
             />
           );
         })()}
-      <Flex gap="2" justify="end" align="center" wrap="wrap">
-        {prUrl && (
-          <Text>
+      {/* The pull request and its failure are outcomes, not row furniture: they
+          leave the button Flex and take the same Callout treatment this screen
+          already gives a load failure, matching MetaEditScreen (#682).
+          No `role="status"` on the success Callout: that role IS a polite live
+          region, so with `announce()` below it the outcome was spoken twice,
+          once as the sentence and once as the URL read character by character.
+          One channel, the header region, in words. The failure keeps
+          `role="alert"` — nothing announces that. */}
+      {prUrl && (
+        <Callout.Root color="grass" mt="2">
+          <Callout.Text>
             PR opened:{" "}
             <Link href={prUrl} target="_blank" rel="noopener">
               {prUrl}
             </Link>
-          </Text>
-        )}
-        {submitError && <Text color="red">{submitError}</Text>}
+          </Callout.Text>
+        </Callout.Root>
+      )}
+      {submitError && (
+        <Callout.Root color="ruby" role="alert" mt="2">
+          <Callout.Text>{submitError}</Callout.Text>
+        </Callout.Root>
+      )}
+      <Flex
+        gap="2"
+        justify="end"
+        align="center"
+        wrap="wrap"
+        data-testid="submit-row"
+      >
         {inWorkspaceContext ? (
           <>
             <Button
@@ -1131,11 +1155,20 @@ export function MarkdownEditScreen({
 // Resolve the file's top H2 anchor. Used to decide whether the section
 // the author opened is the bucket that owns the file-level outgoing refs
 // (P8 Option A) — sub-sections render as read-only incoming views.
-function firstH2Anchor(source: string): string | null {
+/** The file's first H2 that actually has an anchor. Pure (exported for tests).
+ *
+ *  Skips an H2 whose title derives to no slug ("## ---", "## 🎯"), matching
+ *  `countsBySection`, which reads `sectionAnchors` and now sees `null` for
+ *  those. Without the skip the two modules disagreed about which heading is
+ *  first, and the file-scope outgoing management was hidden on exactly the
+ *  section whose pill carries the outgoing count. `computeFocusedSection`
+ *  returns "" rather than null here, so the emptiness is checked, not the
+ *  nullness. */
+export function firstH2Anchor(source: string): string | null {
   const lines = source.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const s = computeFocusedSection(source, i);
-    if (s && s.level === 2) return s.anchor;
+    if (s && s.level === 2 && s.anchor) return s.anchor;
   }
   return null;
 }
