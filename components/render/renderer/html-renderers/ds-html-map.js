@@ -3238,30 +3238,99 @@
             "</div>";
 
           // Body 1 + Body 2 merged (the anatomy splits identical metadata
-          // across two sibling containers): technical name,
-          // catalog/category/connection, and the Last updated / Fields /
-          // Completion meta row. The registry exposes no content props for
-          // these -- hardcoded faithful default copy from the captured
-          // Studio anatomy, same idiom as modal/card-for-grouped-content's
-          // default text. The progress bar reuses progress-bar-small's
-          // EXISTING .ds-progress/__track/__fill markup verbatim (already
-          // has ds-base.css rules) rather than recursing into
-          // renderDSComponent, same idiom as card-for-perimeter above.
-          var drBody =
-            '<div class="ds-drawer__body">' +
-            "<p>Technical name: able_agency</p>" +
-            "<p>Catalog: Finance / Category: 24/7 / Connection: Powerbi</p>" +
-            '<div class="ds-drawer__meta">' +
-            '<span class="ds-drawer__meta-item">Last updated<br>Dec 15, 2025</span>' +
-            '<span class="ds-drawer__meta-item">Fields<br>10 Fields</span>' +
-            '<span class="ds-drawer__meta-item">Completion' +
-            '<div class="ds-progress">' +
-            '<div class="ds-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">' +
-            '<span class="ds-progress__fill" style="width:50%"></span>' +
-            "</div></div>" +
-            "</span>" +
-            "</div>" +
-            "</div>";
+          // across two sibling containers): technical name, catalog /
+          // category / connection, and the Last updated / Fields / Completion
+          // meta row. The registry exposes no content props for these, so each
+          // is an optional prop of this leaf, rendered in an element of its own
+          // and omitted when absent, with the gallery's values in matrix.js
+          // SPECIMEN_PROPS: the split optional-slot-omission.test.js exists
+          // for. They sat here as literals, so every generated drawer described
+          // able_agency under whatever Name the caller passed (plugin skill
+          // audit, 2026-09-08). Completion lives on the matrix cell rather
+          // than in SPECIMEN_PROPS because it feeds a progressbar's attributes,
+          // never text, so the specimen probes cannot see it. The progress bar
+          // reuses progress-bar-small's EXISTING .ds-progress/__track/__fill
+          // markup verbatim (already has ds-base.css rules) rather than
+          // recursing into renderDSComponent, same idiom as card-for-perimeter
+          // above.
+          var drHas = function (value) {
+            return value !== undefined && value !== null && value !== "";
+          };
+          var drFact = function (cls, label, value) {
+            return drHas(value)
+              ? '<span class="' + cls + '">' + label + esc(value) + "</span>"
+              : "";
+          };
+          var drMetaItem = function (mod, label, valueHtml) {
+            return valueHtml
+              ? '<span class="ds-drawer__meta-item">' +
+                  '<span class="ds-drawer__meta-label">' +
+                  label +
+                  "</span>" +
+                  '<span class="ds-drawer__meta-value ds-drawer__meta-value--' +
+                  mod +
+                  '">' +
+                  valueHtml +
+                  "</span></span>"
+              : "";
+          };
+          var drTechnical = drHas(props["Technical name"])
+            ? '<p class="ds-drawer__technical-name">Technical name: ' +
+              esc(props["Technical name"]) +
+              "</p>"
+            : "";
+          var drFacts = [
+            drFact("ds-drawer__catalog", "Catalog: ", props.Catalog),
+            drFact("ds-drawer__category", "Category: ", props.Category),
+            drFact("ds-drawer__connection", "Connection: ", props.Connection),
+          ]
+            .filter(Boolean)
+            .join(" / ");
+          var drFactsLine = drFacts
+            ? '<p class="ds-drawer__facts">' + drFacts + "</p>"
+            : "";
+          // Completion clamps to 0..100 before it touches an attribute; a
+          // non-numeric value renders an empty bar rather than a broken one.
+          var drPct = drHas(props.Completion)
+            ? Math.max(
+                0,
+                Math.min(100, parseInt(String(props.Completion), 10) || 0),
+              )
+            : null;
+          var drMetaRow =
+            drMetaItem(
+              "updated",
+              "Last updated",
+              drHas(props["Last updated"]) ? esc(props["Last updated"]) : "",
+            ) +
+            drMetaItem(
+              "fields",
+              "Fields",
+              drHas(props.Fields) ? esc(props.Fields) : "",
+            ) +
+            drMetaItem(
+              "completion",
+              "Completion",
+              drPct === null
+                ? ""
+                : '<div class="ds-progress">' +
+                    '<div class="ds-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
+                    drPct +
+                    '">' +
+                    '<span class="ds-progress__fill" style="width:' +
+                    drPct +
+                    '%"></span>' +
+                    "</div></div>",
+            );
+          var drBodyInner =
+            drTechnical +
+            drFactsLine +
+            (drMetaRow
+              ? '<div class="ds-drawer__meta">' + drMetaRow + "</div>"
+              : "");
+          var drBody = drBodyInner
+            ? '<div class="ds-drawer__body">' + drBodyInner + "</div>"
+            : "";
 
           // Static tab strip (do not recurse into the tabs component);
           // registry exposes no tab-label content props, so hardcoded
@@ -3274,24 +3343,34 @@
             "</div>";
 
           // Body 3: three labeled sections captured in the Studio anatomy
-          // (Glossary items, Description, Source description). Registry
-          // exposes no content props -- hardcoded faithful default copy,
-          // same idiom as card-for-grouped-content's Body above. The
-          // glossary multi-select renders as a static, non-interactive
-          // placeholder (do not recurse into dropdown-select-default).
+          // (Glossary items, Description, Source description). Same rule as
+          // the body above: each is an optional prop with its gallery value
+          // in SPECIMEN_PROPS, and its section is omitted when the caller
+          // passes nothing. The glossary multi-select renders as a static,
+          // non-interactive placeholder (do not recurse into
+          // dropdown-select-default).
+          var drSection = function (mod, title, value) {
+            return drHas(value)
+              ? '<div class="ds-drawer__section">' +
+                  '<div class="ds-drawer__section-title">' +
+                  title +
+                  "</div>" +
+                  '<div class="ds-drawer__section-body ds-drawer__section-body--' +
+                  mod +
+                  '">' +
+                  esc(value) +
+                  "</div>" +
+                  "</div>"
+              : "";
+          };
           var drSections =
-            '<div class="ds-drawer__section">' +
-            '<div class="ds-drawer__section-title">Glossary items (2)</div>' +
-            '<div class="ds-drawer__section-body">Search or select glossary items</div>' +
-            "</div>" +
-            '<div class="ds-drawer__section">' +
-            '<div class="ds-drawer__section-title">Description</div>' +
-            '<div class="ds-drawer__section-body">A short description of this dataset, including its purpose and key characteristics.</div>' +
-            "</div>" +
-            '<div class="ds-drawer__section">' +
-            '<div class="ds-drawer__section-title">Source description</div>' +
-            '<div class="ds-drawer__section-body">A short description carried over from the source system.</div>' +
-            "</div>";
+            drSection("glossary", "Glossary items", props["Glossary items"]) +
+            drSection("description", "Description", props.Description) +
+            drSection(
+              "source",
+              "Source description",
+              props["Source description"],
+            );
 
           return (
             '<div class="' +

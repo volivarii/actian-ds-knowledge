@@ -417,6 +417,12 @@
   "collapseSeries": [
     {
       "date": "2026-09-08",
+      "version": "0.34.204",
+      "sha": "16dddade",
+      "unexplained": 41
+    },
+    {
+      "date": "2026-09-08",
       "version": "0.34.202",
       "sha": "8b53446f",
       "unexplained": 41
@@ -480,12 +486,6 @@
       "version": "0.34.146",
       "sha": "b05c40c1",
       "unexplained": 43
-    },
-    {
-      "date": "2026-08-15",
-      "version": "0.34.133",
-      "sha": "da3f3805",
-      "unexplained": 50
     }
   ]
 }

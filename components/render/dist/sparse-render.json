@@ -9,10 +9,10 @@
   "totals": {
     "slugs": 74,
     "slugsWithText": 53,
-    "textBearingElements": 247,
+    "textBearingElements": 236,
     "inventedSlots": 109,
-    "pairsInContract": 231,
-    "pairsProbed": 157,
+    "pairsInContract": 241,
+    "pairsProbed": 166,
     "cellsRendered": 74,
     "matrixCells": 245
   },
@@ -38,7 +38,7 @@
     "data-viz-legend": 1,
     "digram-item-types": 0,
     "digram-topic": 0,
-    "drawer": 17,
+    "drawer": 6,
     "dropdown-select-default": 2,
     "empty-state": 4,
     "error-state": 4,

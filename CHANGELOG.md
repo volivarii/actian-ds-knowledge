@@ -75,6 +75,19 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **The drawer's body belongs to the caller, and the two lo-fi leaves that printed a word of their
+  own read their props instead** ([#702](https://github.com/volivarii/actian-ds-knowledge/pull/702)). Every `drawer` render carried a specimen body (Technical name
+  able_agency, a Finance / 24/7 / Powerbi line, Dec 15 2025, 10 Fields, a 50% completion bar and three
+  sections) under whatever `Name` the caller passed; a generated flow showed "Customer 360" over
+  able_agency's data. The leaf reads `Technical name`, `Catalog`, `Category`, `Connection`,
+  `Last updated`, `Fields`, `Completion`, `Glossary items`, `Description` and `Source description`,
+  each in an element of its own that is omitted when the prop is absent, and the gallery's values move
+  to `SPECIMEN_PROPS` in `matrix.js` (`Completion` sits on the matrix cell, since it feeds a
+  progressbar's attributes rather than text). The lo-fi `fmDialog` printed the word "Dialog" and an
+  empty body, and `fmEmptyState` always printed "No items"; both read their text (`Title` and `Body`;
+  `Headline`, `Body` and `Cta`, the call to action reusing the `fm-button` markup) and render no text
+  they were not given. Found by the plugin's skill audit of 2026-09-08.
+
 - **The required check went red on every pull request, whatever it touched**
   ([#700](https://github.com/volivarii/actian-ds-knowledge/pull/700)).
   `Validate manifest schema + coverage` regenerates `components/render/dist` and requires the result

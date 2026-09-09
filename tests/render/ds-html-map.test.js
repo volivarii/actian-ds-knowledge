@@ -2694,3 +2694,107 @@ test("glossary-item-hierarchy: a side with no items is not emitted", function ()
     /branch--right/,
   );
 });
+
+test("drawer: a Name alone renders the header and tabs and none of the specimen body", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "drawer",
+    variant: "App=Studio",
+    props: { Name: "Customer 360" },
+  });
+  assert.match(html, /Customer 360/, "the caller's Name renders");
+  [
+    "able_agency",
+    "Powerbi",
+    "Dec 15, 2025",
+    "10 Fields",
+    "Glossary items",
+    "Source description",
+  ].forEach(function (s) {
+    assert.doesNotMatch(
+      html,
+      new RegExp(s),
+      "specimen text leaked into a caller's drawer: " + s,
+    );
+  });
+  assert.doesNotMatch(html, /ds-drawer__body/, "no body element without body props");
+  assert.doesNotMatch(html, /ds-drawer__section/, "no section without section props");
+  assert.doesNotMatch(html, /ds-progress/, "no progress bar without Completion");
+  assert.match(html, /ds-drawer__tabs/, "the tab strip is chrome and stays");
+});
+
+test("drawer: body, meta and section props render in their own elements, escaped", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "drawer",
+    variant: "App=Studio",
+    props: {
+      Name: "Customer 360",
+      "Technical name": "<b>cust_360</b>",
+      Catalog: "Sales",
+      Connection: "Snowflake",
+      "Last updated": "Sep 8, 2026",
+      Fields: "42 Fields",
+      Completion: "75%",
+      Description: "Golden customer record.",
+    },
+  });
+  assert.match(
+    html,
+    /<p class="ds-drawer__technical-name">Technical name: &lt;b&gt;cust_360&lt;\/b&gt;<\/p>/,
+    "technical name in its own element, escaped",
+  );
+  assert.match(
+    html,
+    /<p class="ds-drawer__facts"><span class="ds-drawer__catalog">Catalog: Sales<\/span> \/ <span class="ds-drawer__connection">Connection: Snowflake<\/span><\/p>/,
+    "present facts join with a separator and the absent Category leaves no gap",
+  );
+  assert.doesNotMatch(html, /ds-drawer__category/, "absent Category emits no element");
+  assert.match(html, /ds-drawer__meta-value--updated">Sep 8, 2026</, "Last updated in its own element");
+  assert.match(html, /ds-drawer__meta-value--fields">42 Fields</, "Fields in its own element");
+  assert.match(html, /aria-valuenow="75"/, "Completion drives the bar");
+  assert.match(html, /width:75%/, "Completion drives the fill");
+  assert.match(
+    html,
+    /ds-drawer__section-body--description">Golden customer record\.</,
+    "Description in its own section",
+  );
+  assert.doesNotMatch(html, /ds-drawer__section-body--glossary/, "absent Glossary items emits no section");
+  assert.doesNotMatch(html, /ds-drawer__section-body--source/, "absent Source description emits no section");
+});
+
+test("drawer: Completion clamps to the bar's range and a non-numeric value renders 0", function () {
+  var DS = require(DS_PATH);
+  var over = DS.renderDSComponent({
+    dsSlug: "drawer",
+    variant: "App=Studio",
+    props: { Completion: 150 },
+  });
+  assert.match(over, /aria-valuenow="100"/, "150 clamps to 100");
+  var junk = DS.renderDSComponent({
+    dsSlug: "drawer",
+    variant: "App=Studio",
+    props: { Completion: "lots" },
+  });
+  assert.match(junk, /aria-valuenow="0"/, "a non-number renders an empty bar");
+  assert.doesNotMatch(junk, /lots/, "the raw value never reaches the markup");
+});
+
+test("drawer: the gallery cell keeps its specimen body through the matrix", function () {
+  var DS = require(DS_PATH);
+  var M = require("../../components/render/renderer/matrix.js");
+  var cell = M.variantMatrix("drawer")[0];
+  var html = DS.renderDSComponent({
+    dsSlug: "drawer",
+    variant: cell.variant,
+    props: cell.props,
+  });
+  assert.match(html, /Technical name: able_agency/, "specimen technical name via SPECIMEN_PROPS");
+  assert.match(
+    html,
+    /Catalog: Finance<\/span> \/ <span class="ds-drawer__category">Category: 24\/7<\/span> \/ <span class="ds-drawer__connection">Connection: Powerbi</,
+    "the three facts on one line",
+  );
+  assert.match(html, /aria-valuenow="50"/, "Completion from the matrix cell");
+  assert.match(html, /ds-drawer__section-body--source">A short description carried over/, "the sections are there");
+});
