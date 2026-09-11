@@ -46,6 +46,24 @@ function validateAppContext(dist) {
       if (!appKeys.has(app))
         errors.push(`pattern "${slug}".apps → "${app}" is not an app`);
   }
+  // Personas: each listed app must exist, and the label is the join key an
+  // audience resolves through, so two personas cannot share one.
+  const personas = dist.personas || {};
+  const personaSlugsByLabel = new Map();
+  for (const [slug, p] of Object.entries(personas)) {
+    for (const app of p.apps || [])
+      if (!appKeys.has(app))
+        errors.push(`persona "${slug}".apps → "${app}" is not an app`);
+    const slugs = personaSlugsByLabel.get(p.label) || [];
+    slugs.push(slug);
+    personaSlugsByLabel.set(p.label, slugs);
+  }
+  for (const [label, slugs] of personaSlugsByLabel) {
+    if (slugs.length > 1)
+      errors.push(
+        `persona label "${label}" is used by more than one persona (${slugs.join(", ")})`,
+      );
+  }
   for (const [slug, a] of Object.entries(dist.apps || {})) {
     for (const useCase of a.useCases || []) {
       for (const pat of useCase.patterns || []) {
@@ -57,6 +75,23 @@ function validateAppContext(dist) {
         } else if (!(p.apps || []).includes(slug)) {
           errors.push(
             `app "${slug}".useCases → pattern "${pat}" is not scoped to app "${slug}"`,
+          );
+        }
+      }
+      // The persona join. Both halves, for the reason the pattern scope check
+      // above has both: a persona that exists but works elsewhere is a
+      // plausible-looking audience no screen in this app can serve.
+      for (const label of useCase.audience || []) {
+        const owners = personaSlugsByLabel.get(label) || [];
+        if (owners.length === 0) {
+          errors.push(
+            `app "${slug}".useCases → audience "${label}" is not a persona`,
+          );
+        } else if (
+          !owners.some((s) => (personas[s].apps || []).includes(slug))
+        ) {
+          errors.push(
+            `app "${slug}".useCases → audience "${label}" is not scoped to app "${slug}"`,
           );
         }
       }
