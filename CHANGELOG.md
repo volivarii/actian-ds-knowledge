@@ -26,6 +26,16 @@ no entry defers its link to a placeholder.
 
 ### Added
 
+- **Section recipes.** Six captured sub-page compositions under `app-context/src/sections/`
+  (`item-header`, `facet-tabs`, `properties-panel`, `control-bar`, `drawer-header`, `action-footer`),
+  each with `derivedFrom`, a `role`, and a DS-tier `ds` slug beside every FM `ref`. Page recipes
+  reference them with a `SECTION` node; `derive-recipes.js` inlines them, so dist page recipes keep
+  their shape and gain a `sections` list. Published to `app-context/dist/sections/<slug>.json`
+  (manifest collections `appContextSections`, `appContextSectionsSrc`). New schema
+  `schemas/app-context-section.json`. Five sections were extracted from the three Studio captures
+  with the derived skeletons unchanged; `facet-tabs` now names the entity's facets through
+  `{{facets}}` instead of the Dataset page's literal list. (PR link: add in its own commit once open.)
+
 - **The last ten UI leaves the capture fully specifies**
   ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).
   74 components carry the registry section "Components". 60 had a leaf in the canonical renderer and
