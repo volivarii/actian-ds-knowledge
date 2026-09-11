@@ -36,7 +36,13 @@ no entry defers its link to a placeholder.
   derive refuses a file that still has one, and a use case's `audience` must name a persona label
   scoped to that app. Explorer's audience is `[Business user, Analyst]` and Administration's
   `[Administrator]`. The graph gains a `persona` node type (JSON-LD `Persona`) with `in_app` edges,
-  and the editor lists, creates and edits personas like entities and patterns.
+  and the editor lists, creates and edits personas like entities and patterns. What `users` holds
+  changes with it: the labels are sorted instead of kept in authored order, Studio drops Domain
+  expert, Explorer drops Data consumer, and Administration's `[Admin, IT ops]` becomes
+  `[Administrator]`; a product that no persona lists has `users: []`. `_schema_version` stays 2
+  although the root rejects unknown keys, so a validator pinned to the previous
+  `schemas/app-context.json` rejects the `personas` key and the new schema requires it; the schema
+  and the dist ship together in each tag.
 
 - **Section recipes.** ([#711](https://github.com/volivarii/actian-ds-knowledge/pull/711)) Six captured
   sub-page compositions under `app-context/src/sections/`
