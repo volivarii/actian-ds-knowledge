@@ -123,7 +123,7 @@ addition to it as debt you are choosing.
 
 ## Schemas
 
-33 JSON Schemas in `schemas/`, validated in CI by Ajv with inline annotations on
+34 JSON Schemas in `schemas/`, validated in CI by Ajv with inline annotations on
 the pull request's Files Changed view.
 
 Every property carries `description` and `examples`, so an IDE configured for JSON

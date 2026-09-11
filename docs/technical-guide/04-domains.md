@@ -193,7 +193,7 @@ The product side: what the design system is being used to build.
 | Patterns | 31 | Recurring UX patterns tied to real flows |
 | Terminology | 33 | The words the products use |
 | Recipes | 4 | Page recipes captured from the running product |
-| Sections | 6 | Sub-page parts (item header, facet tabs, control bar, properties panel, drawer header, action footer) captured from the product, referenced by page recipes and inlined by the derive |
+| Sections | 6 | Sub-page parts (item header, facet tabs, properties panel, control bar, drawer header, action footer) captured from the product, referenced by page recipes and inlined by the derive |
 
 Recipes are addressed one at a time rather than folded into `app-context.json`,
 because a single recipe can exceed 1400 lines and bundling them would make every

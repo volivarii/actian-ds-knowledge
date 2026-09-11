@@ -97,7 +97,7 @@
                   },
                   {
                     "type": "TEXT",
-                    "content": "{{completion_pct}}",
+                    "content": "{{completion_percent}}",
                     "font": "Inter:Regular",
                     "size": 13,
                     "color": "var(--zen-color-text-default)"

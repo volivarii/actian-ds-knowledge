@@ -88,7 +88,7 @@ generated code:
 | `app-context/` | metadata | authored, derived | 3 apps, 30 entities, 31 UX patterns, 33 terminology entries, 4 page recipes and 6 section recipes captured from the running product |
 | `tokens/` | metadata | derived (one authored input) | 463 token leaves in W3C DTCG format, the CSS variables and a generated reference, all derived from `foundations/src/`. Only `tokens/src/figma-bindings-raw.json` is hand-maintained |
 | `graph/` | contract | derived | The projection: `graph.json`, `graph.jsonld`, a quality report, a collisions report, plus the hand-authored vocabulary and JSON-LD context |
-| `schemas/` | contract | authored | 33 JSON Schemas |
+| `schemas/` | contract | authored | 34 JSON Schemas |
 | `clients/` | contract | authored | `resolve-paths.js` and `vendor-snapshot.js`: the reference resolver and vendoring client, shipped to consumers as source |
 | `paths-manifest.json` | contract | authored, stamped | 124 path entries, 20 collections. The contract |
 | `domains.json` | contract | authored | The per-domain authoring contract: for each domain, its source glob, its generator, its frontmatter schema, how its body is treated, and its dist shape |

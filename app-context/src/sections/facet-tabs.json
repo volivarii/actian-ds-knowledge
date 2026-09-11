@@ -22,7 +22,7 @@
     "productVersion": "next.dev.zeenea.app"
   },
   "slots": {
-    "tabs": "One fmTabs instance listing the object's facets in the product's order, counts in parentheses, the first tab active. {{facets}} is the entity's facets: General first, then one tab per relationship the entity holds (for a Dataset: Fields, Sample Data, Data Quality, Lineage, View 360, Data Model, Activity, Discussions; for a Data Product: Input ports, Output ports, View 360, Activity), never invented names such as Overview or Schema.",
+    "tabs": "One fmTabs instance listing the object's facets in the product's order, counts in parentheses, the first tab active. {{facets}} is the entity's facets: General first, then one tab per relationship the entity holds (for a Dataset: Fields, Sample Data, Data Quality, Lineage, View 360, Data Model, Activity, Discussions; for a Data Product: Input ports, Output ports, View 360, Activity), never invented names such as Overview or Schema. {{first_facet}} is the label of the first tab, which is the active one.",
     "people": "Two short avatar stacks on the right: Curators then Contacts, three `fmUser` each at most."
   },
   "renderNotes": [
