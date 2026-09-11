@@ -142,12 +142,38 @@ function runCli(argv) {
     console.error("app-context integrity errors:\n" + errors.join("\n"));
     return 1;
   }
+  // Sections first: per-slug dist leaves, validated against
+  // schemas/app-context-section.json, cross-checked against the apps/patterns
+  // just derived. Recipes reference them and the derive inlines them below.
+  const {
+    readSections,
+    checkSectionReferences,
+    writeSections,
+  } = require("./derive-sections");
+  const sectionSchema = JSON.parse(
+    fs.readFileSync(
+      path.join(repoRoot, "schemas", "app-context-section.json"),
+      "utf8",
+    ),
+  );
+  const { sections, errors: sectionErrors } = readSections(srcDir, sectionSchema);
+  const sectionRefErrors = checkSectionReferences(sections, dist);
+  const allSectionErrors = sectionErrors.concat(sectionRefErrors);
+  if (allSectionErrors.length) {
+    console.error("app-context section errors:\n" + allSectionErrors.join("\n"));
+    return 1;
+  }
+  const sectionsBySlug = {};
+  for (const s of sections) sectionsBySlug[s.slug] = s;
+
   // Recipes: per-slug dist leaves, validated against schemas/app-context-recipe.json
-  // and cross-checked against the apps/patterns just derived above.
+  // and cross-checked against the apps/patterns just derived above. SECTION
+  // nodes are spliced out here, so dist recipes stay whole skeletons.
   const {
     readRecipes,
     checkReferences,
     writeRecipes,
+    inlineSections,
   } = require("./derive-recipes");
   const recipeSchema = JSON.parse(
     fs.readFileSync(
@@ -156,8 +182,15 @@ function runCli(argv) {
     ),
   );
   const { recipes, errors: recipeErrors } = readRecipes(srcDir, recipeSchema);
-  const refErrors = checkReferences(recipes, dist);
-  const allRecipeErrors = recipeErrors.concat(refErrors);
+  const inlined = [];
+  const inlineErrors = [];
+  for (const r of recipes) {
+    const res = inlineSections(r, sectionsBySlug);
+    inlineErrors.push(...res.errors);
+    inlined.push(res.recipe);
+  }
+  const refErrors = checkReferences(inlined, dist);
+  const allRecipeErrors = recipeErrors.concat(inlineErrors, refErrors);
   if (allRecipeErrors.length) {
     console.error(
       "app-context recipe errors:\n" + allRecipeErrors.join("\n"),
@@ -174,7 +207,9 @@ function runCli(argv) {
       appContext: dist,
     }),
   );
-  const recipeCount = writeRecipes(distDir, recipes, META);
+  const sectionCount = writeSections(distDir, sections, META);
+  console.log("derived app-context sections: " + sectionCount);
+  const recipeCount = writeRecipes(distDir, inlined, META);
   console.log("derived app-context recipes: " + recipeCount);
 
   require("./manifest-update").updatePathsManifest(

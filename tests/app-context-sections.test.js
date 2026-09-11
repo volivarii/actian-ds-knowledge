@@ -272,3 +272,52 @@ test("inlineSections: the returned recipe shares no object reference with the in
   out.derivedFrom.surface = "mutated";
   assert.equal(recipe.derivedFrom.surface, "x");
 });
+
+const SRC_SECTIONS = path.join(ROOT, "app-context", "src", "sections");
+const DIST_SECTIONS = path.join(ROOT, "app-context", "dist", "sections");
+const DIST_RECIPES = path.join(ROOT, "app-context", "dist", "recipes");
+
+function jsonFiles(dir) {
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
+}
+
+test("every authored section has a dist leaf and vice versa", () => {
+  assert.ok(fs.existsSync(SRC_SECTIONS), "app-context/src/sections must exist (it may hold only a README)");
+  assert.deepEqual(
+    jsonFiles(DIST_SECTIONS),
+    jsonFiles(SRC_SECTIONS),
+    "run npm run derive:app-context",
+  );
+});
+
+test("no dist recipe holds a SECTION node, and its sections stamp matches its source", () => {
+  const { readRecipes } = require("../scripts/app-context/derive-recipes");
+  const { recipes, errors } = readRecipes(path.join(ROOT, "app-context", "src"), RECIPE_SCHEMA);
+  assert.deepEqual(errors, []);
+  assert.ok(recipes.length > 0);
+  for (const r of recipes) {
+    const dist = JSON.parse(fs.readFileSync(path.join(DIST_RECIPES, r.slug + ".json"), "utf8"));
+    assert.equal(JSON.stringify(dist.skeleton).includes('"SECTION"'), false, r.slug + ": dist still holds a SECTION node");
+    const referenced = [];
+    (function walk(v) {
+      if (Array.isArray(v)) return v.forEach(walk);
+      if (!v || typeof v !== "object") return;
+      if (v.type === "SECTION") referenced.push(v.section);
+      Object.values(v).forEach(walk);
+    })(r.skeleton);
+    assert.deepEqual(dist.sections, referenced, r.slug + ": sections stamp must list the source's references in order");
+    for (const slug of referenced) {
+      assert.ok(fs.existsSync(path.join(DIST_SECTIONS, slug + ".json")), r.slug + " references " + slug + " which has no dist leaf");
+    }
+  }
+});
+
+test("paths-manifest declares the two section collections in the metadata zone", () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "paths-manifest.json"), "utf8"));
+  assert.equal(manifest.collections.appContextSections.dir, "app-context/dist/sections");
+  assert.equal(manifest.collections.appContextSections.pattern, "{slug}.json");
+  assert.equal(manifest.collections.appContextSectionsSrc.dir, "app-context/src/sections");
+  assert.ok(manifest._zones.metadata.includes("appContextSections"));
+  assert.ok(manifest._zones.metadata.includes("appContextSectionsSrc"));
+});
