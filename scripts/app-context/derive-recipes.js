@@ -162,6 +162,18 @@ function inlineSections(recipe, sectionsBySlug) {
             );
             continue;
           }
+          const extraKeys = Object.keys(v).filter(
+            (k) => k !== "type" && k !== "section",
+          );
+          if (extraKeys.length > 0) {
+            errors.push(
+              where + ": SECTION node at " + label + "/" + i +
+                " carries keys other than type and section (" +
+                extraKeys.join(", ") +
+                "); per-use overrides are not a thing, edit the section",
+            );
+            continue;
+          }
           const section = sectionsBySlug[v.section];
           if (!section) {
             errors.push(where + ": unknown section '" + v.section + "'");
@@ -198,7 +210,12 @@ function inlineSections(recipe, sectionsBySlug) {
   // this call must not see a write made through the returned recipe.
   const out = JSON.parse(JSON.stringify(recipe));
   out.skeleton = skeleton;
-  out.sections = used;
+  // A section referenced twice is spliced at every occurrence (`used` above
+  // records one entry per splice), but the stamp names each slug once, in
+  // first-occurrence order: `sections` answers "which sections did this page
+  // draw from", not "how many times". `Set` preserves insertion order, so
+  // deduping this way keeps the first occurrence's position.
+  out.sections = [...new Set(used)];
   return { recipe: out, errors };
 }
 

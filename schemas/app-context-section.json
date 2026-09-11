@@ -111,7 +111,8 @@
       "properties": {
         "content": {
           "type": "array",
-          "description": "Sibling nodes spliced in document order.",
+          "minItems": 1,
+          "description": "Sibling nodes spliced in document order. A section holds at least one root node: an empty section splices nothing and is not a capture of anything.",
           "examples": [[{ "type": "FRAME", "name": "Results header", "children": [] }]]
         }
       }

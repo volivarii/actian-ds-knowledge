@@ -45,6 +45,11 @@ test("section schema accepts a valid record and rejects malformed ones", () => {
   });
   assert.equal(v(chrome), false, "a section has no chrome");
 
+  const emptyContent = Object.assign({}, VALID_SECTION, {
+    skeleton: { content: [] },
+  });
+  assert.equal(v(emptyContent), false, "skeleton.content must hold at least one node");
+
   const extra = Object.assign({}, VALID_SECTION, { pageRecipe: "x" });
   assert.equal(v(extra), false, "root is strict");
 });
@@ -231,6 +236,26 @@ test("inlineSections splices a section's content in place and records the order"
   assert.equal(SECTIONS["item-header"].skeleton.content[0].name, "Item header");
 });
 
+test("inlineSections: a section referenced twice is spliced at both occurrences but stamped once, first-occurrence order", () => {
+  const recipe = {
+    slug: "r",
+    skeleton: {
+      content: [
+        { type: "SECTION", section: "item-header" },
+        { type: "DIVIDER" },
+        { type: "SECTION", section: "item-header" },
+      ],
+    },
+  };
+  const { recipe: out, errors } = inlineSections(recipe, SECTIONS);
+  assert.deepEqual(errors, []);
+  assert.deepEqual(out.sections, ["item-header"]);
+  assert.deepEqual(
+    out.skeleton.content.map((c) => c.name || c.type),
+    ["Item header", "DIVIDER", "Item header"],
+  );
+});
+
 test("inlineSections: a recipe with no SECTION node gets sections: []", () => {
   const { recipe: out, errors } = inlineSections(
     { slug: "r", skeleton: { content: [{ type: "TEXT", content: "x" }] } },
@@ -247,6 +272,22 @@ test("inlineSections: unknown slug is an error and the node is dropped", () => {
   );
   assert.equal(errors.length, 1);
   assert.match(errors[0], /recipes\/r\.json: unknown section 'ghost'/);
+  assert.deepEqual(out.skeleton.content, []);
+});
+
+test("inlineSections: a SECTION node carrying keys other than type and section is an error, and the node is dropped", () => {
+  const { recipe: out, errors } = inlineSections(
+    {
+      slug: "r",
+      skeleton: { content: [{ type: "SECTION", section: "item-header", variant: "compact" }] },
+    },
+    SECTIONS,
+  );
+  assert.equal(errors.length, 1);
+  assert.match(
+    errors[0],
+    /recipes\/r\.json: SECTION node at skeleton\/content\/0 carries keys other than type and section \(variant\); per-use overrides are not a thing, edit the section/,
+  );
   assert.deepEqual(out.skeleton.content, []);
 });
 
