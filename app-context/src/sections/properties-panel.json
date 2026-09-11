@@ -84,6 +84,7 @@
                       {
                         "type": "INSTANCE",
                         "ref": "fmProgressBar",
+                        "ds": "progress-bar-small",
                         "variant": "Completion=20%",
                         "props": {}
                       }
@@ -103,6 +104,7 @@
           {
             "type": "INSTANCE",
             "ref": "fmTabs",
+            "ds": "tabs",
             "props": {
               "Tabs": "Properties, People, Suggestions (3)",
               "Active": "Properties"
@@ -141,6 +143,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmDropdown",
+                    "ds": "dropdown-select-default",
                     "variant": "Type=Filled",
                     "props": {
                       "Dropdown Text": "ArthurWasHere",
@@ -167,6 +170,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmDropdown",
+                    "ds": "dropdown-select-default",
                     "variant": "Type=Filled",
                     "props": {
                       "Dropdown Text": "9321_A",
@@ -193,6 +197,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmDropdown",
+                    "ds": "dropdown-select-default",
                     "variant": "Type=Placeholder",
                     "props": {
                       "Dropdown Text": "",
@@ -243,6 +248,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmDateInput",
+                    "ds": "calendar",
                     "variant": "State=Default",
                     "props": {
                       "Input Text": ""
@@ -275,6 +281,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmDropdown",
+                    "ds": "dropdown-select-default",
                     "variant": "Type=Placeholder",
                     "props": {
                       "Dropdown Text": "Add Domain",

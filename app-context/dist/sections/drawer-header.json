@@ -81,6 +81,7 @@
                       {
                         "type": "INSTANCE",
                         "ref": "fmTag",
+                        "ds": "read-only-tag",
                         "variant": "Style=Light",
                         "props": {
                           "Tag Text": "{{item_type}}"
@@ -89,6 +90,7 @@
                       {
                         "type": "INSTANCE",
                         "ref": "fmTag",
+                        "ds": "read-only-tag",
                         "variant": "Style=Filled",
                         "props": {
                           "Tag Text": "Shared"
@@ -99,6 +101,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmTextInput",
+                    "ds": "text-input",
                     "variant": "Type=Default",
                     "props": {
                       "Input Text": "{{item_name}}"
@@ -117,12 +120,14 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmIconButtons",
+                    "ds": "button",
                     "variant": "Type=Secondary",
                     "props": {}
                   },
                   {
                     "type": "INSTANCE",
                     "ref": "fmIconButtons",
+                    "ds": "button",
                     "variant": "Type=Secondary",
                     "props": {}
                   }
@@ -230,6 +235,7 @@
                           {
                             "type": "INSTANCE",
                             "ref": "fmProgressBar",
+                            "ds": "progress-bar-small",
                             "variant": "Completion={{completion_percent}}",
                             "props": {}
                           }

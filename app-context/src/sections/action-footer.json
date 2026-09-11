@@ -5,9 +5,17 @@
   "label": "Action footer",
   "description": "The bottom-anchored bar of a Studio creation page: one primary Confirm button, right-aligned, disabled until the form above it is valid. The product shows no Back and no Cancel here; leaving the page is the escape.",
   "role": "footer",
-  "apps": ["studio"],
-  "patterns": ["import-wizard"],
-  "tags": ["footer", "confirm", "create"],
+  "apps": [
+    "studio"
+  ],
+  "patterns": [
+    "import-wizard"
+  ],
+  "tags": [
+    "footer",
+    "confirm",
+    "create"
+  ],
   "derivedFrom": {
     "surface": "Studio > New Item",
     "capturedOn": "2026-09-11",
@@ -31,13 +39,21 @@
           "primaryAxisAlignItems": "MAX",
           "counterAxisAlignItems": "CENTER"
         },
-        "padding": [12, 24, 12, 24],
+        "padding": [
+          12,
+          24,
+          12,
+          24
+        ],
         "children": [
           {
             "type": "INSTANCE",
             "ref": "fmButton",
+            "ds": "button",
             "variant": "Type=Primary, Size=md, Shape=Pill, State=Disabled",
-            "props": { "Label": "Confirm" }
+            "props": {
+              "Label": "Confirm"
+            }
           }
         ]
       }

@@ -321,3 +321,27 @@ test("paths-manifest declares the two section collections in the metadata zone",
   assert.ok(manifest._zones.metadata.includes("appContextSections"));
   assert.ok(manifest._zones.metadata.includes("appContextSectionsSrc"));
 });
+
+test("every INSTANCE in a section carries a ds slug, or the section's renderNotes say why not", () => {
+  const { sections, errors } = readSections(path.join(ROOT, "app-context", "src"), SECTION_SCHEMA);
+  assert.deepEqual(errors, []);
+  assert.ok(sections.length >= 6, "expected the six sections");
+  let instances = 0;
+  for (const s of sections) {
+    (function walk(v) {
+      if (Array.isArray(v)) return v.forEach(walk);
+      if (!v || typeof v !== "object") return;
+      if (v.type === "INSTANCE") {
+        instances++;
+        if (!v.ds) {
+          const excused = (s.renderNotes || []).some((n) => n.includes("`" + v.ref + "`") && /no DS/i.test(n));
+          assert.ok(excused, s.slug + ": INSTANCE " + v.ref + " has no ds slug and no renderNote saying there is no DS leaf for it");
+        } else {
+          assert.match(v.ds, /^[a-z][a-z0-9-]*$/, s.slug + ": ds must be a slug");
+        }
+      }
+      Object.values(v).forEach(walk);
+    })(s.skeleton.content);
+  }
+  assert.ok(instances > 20, "walked only " + instances + " instances; the check is not reaching the sections");
+});

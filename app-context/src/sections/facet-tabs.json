@@ -44,6 +44,7 @@
           {
             "type": "INSTANCE",
             "ref": "fmTabs",
+            "ds": "tabs",
             "props": {
               "Tabs": "General, Fields (2), Sample Data, Data Quality, Lineage, View 360, Data Model, Activity, Discussions (0)",
               "Active": "General"
@@ -70,6 +71,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmUser",
+                    "ds": "avatar",
                     "props": {
                       "Name": "Thomas Desvenain"
                     }
@@ -77,6 +79,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmUser",
+                    "ds": "avatar",
                     "props": {
                       "Name": "Florent Aubertin"
                     }
@@ -84,6 +87,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmUser",
+                    "ds": "avatar",
                     "props": {
                       "Name": "Faten Habachi"
                     }
@@ -102,6 +106,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmUser",
+                    "ds": "avatar",
                     "props": {
                       "Name": "Alexis Thomas"
                     }
@@ -109,6 +114,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmUser",
+                    "ds": "avatar",
                     "props": {
                       "Name": "Alexis Resp"
                     }
@@ -116,6 +122,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmUser",
+                    "ds": "avatar",
                     "props": {
                       "Name": "Florian Thierry"
                     }

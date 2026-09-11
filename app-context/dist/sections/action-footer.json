@@ -54,6 +54,7 @@
           {
             "type": "INSTANCE",
             "ref": "fmButton",
+            "ds": "button",
             "variant": "Type=Primary, Size=md, Shape=Pill, State=Disabled",
             "props": {
               "Label": "Confirm"

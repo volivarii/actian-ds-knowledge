@@ -67,6 +67,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmTag",
+                    "ds": "read-only-tag",
                     "variant": "Style=Light",
                     "props": {
                       "Tag Text": "Dataset"
@@ -75,6 +76,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmTag",
+                    "ds": "read-only-tag",
                     "variant": "Style=Filled",
                     "props": {
                       "Tag Text": "Shared"
@@ -101,6 +103,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmTag",
+                    "ds": "read-only-tag",
                     "variant": "Style=Outline",
                     "props": {
                       "Tag Text": "{{status}}"
@@ -109,6 +112,7 @@
                   {
                     "type": "INSTANCE",
                     "ref": "fmButton",
+                    "ds": "button",
                     "variant": "Type=Outline, Size=sm, Shape=Pill, State=Default",
                     "props": {
                       "Label": "Actions"
