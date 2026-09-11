@@ -1369,5 +1369,7 @@
       }
     ]
   },
-  "sections": []
+  "sections": [
+    "control-bar"
+  ]
 }

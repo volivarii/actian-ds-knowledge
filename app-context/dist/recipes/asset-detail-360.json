@@ -990,5 +990,9 @@
       }
     ]
   },
-  "sections": []
+  "sections": [
+    "item-header",
+    "facet-tabs",
+    "properties-panel"
+  ]
 }

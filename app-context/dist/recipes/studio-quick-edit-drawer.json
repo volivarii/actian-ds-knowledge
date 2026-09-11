@@ -359,5 +359,7 @@
       }
     ]
   },
-  "sections": []
+  "sections": [
+    "drawer-header"
+  ]
 }
