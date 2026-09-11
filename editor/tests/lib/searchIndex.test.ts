@@ -83,3 +83,14 @@ test("buildSearchIndex: a11y results are scoped to file-backed sections only", (
     "known-dead a11y slug is excluded",
   );
 });
+
+// A persona is an app-context record like a product, entity or pattern, so a
+// title search finds it and says what it is.
+test("buildSearchIndex: a persona is indexed as an app-context record", () => {
+  const persona = buildSearchIndex(AUTHORABLE, CONTENT).find(
+    (i) => i.path === "app-context/src/personas/data-steward.md",
+  );
+  assert.ok(persona, "the data steward persona is not in the search index");
+  assert.equal(persona.kind, "app-context");
+  assert.equal(persona.sub, "Persona");
+});
