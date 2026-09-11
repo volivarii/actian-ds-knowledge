@@ -173,3 +173,88 @@ test("writeSections: stamps, writes one leaf per slug, prunes stale leaves", () 
     fs.rmSync(dist, { recursive: true, force: true });
   }
 });
+
+const { inlineSections } = require("../scripts/app-context/derive-recipes");
+
+const SECTIONS = {
+  "control-bar": {
+    slug: "control-bar",
+    skeleton: {
+      content: [
+        { type: "FRAME", name: "Results header", children: [] },
+        { type: "FRAME", name: "Bulk action bar", children: [] },
+      ],
+    },
+  },
+  "item-header": {
+    slug: "item-header",
+    skeleton: { content: [{ type: "FRAME", name: "Item header", children: [] }] },
+  },
+};
+
+test("inlineSections splices a section's content in place and records the order", () => {
+  const recipe = {
+    slug: "r",
+    skeleton: {
+      chrome: "standard",
+      content: [
+        {
+          type: "FRAME",
+          name: "Layout",
+          children: [
+            { type: "SECTION", section: "item-header" },
+            { type: "DIVIDER" },
+            {
+              type: "FRAME",
+              name: "Results pane",
+              children: [{ type: "SECTION", section: "control-bar" }, { type: "TEXT", content: "x" }],
+            },
+          ],
+        },
+      ],
+    },
+  };
+  const { recipe: out, errors } = inlineSections(recipe, SECTIONS);
+  assert.deepEqual(errors, []);
+  assert.deepEqual(out.sections, ["item-header", "control-bar"]);
+  const layout = out.skeleton.content[0];
+  assert.deepEqual(layout.children.map((c) => c.name || c.type), ["Item header", "DIVIDER", "Results pane"]);
+  assert.deepEqual(
+    layout.children[2].children.map((c) => c.name || c.type),
+    ["Results header", "Bulk action bar", "TEXT"],
+  );
+  // No SECTION node survives, and the input is untouched.
+  assert.equal(JSON.stringify(out).includes('"SECTION"'), false);
+  assert.equal(recipe.skeleton.content[0].children[0].type, "SECTION");
+  // Deep clone: mutating the output does not reach the section.
+  layout.children[0].name = "mutated";
+  assert.equal(SECTIONS["item-header"].skeleton.content[0].name, "Item header");
+});
+
+test("inlineSections: a recipe with no SECTION node gets sections: []", () => {
+  const { recipe: out, errors } = inlineSections(
+    { slug: "r", skeleton: { content: [{ type: "TEXT", content: "x" }] } },
+    SECTIONS,
+  );
+  assert.deepEqual(errors, []);
+  assert.deepEqual(out.sections, []);
+});
+
+test("inlineSections: unknown slug is an error and the node is dropped", () => {
+  const { recipe: out, errors } = inlineSections(
+    { slug: "r", skeleton: { content: [{ type: "SECTION", section: "ghost" }] } },
+    SECTIONS,
+  );
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /recipes\/r\.json: unknown section 'ghost'/);
+  assert.deepEqual(out.skeleton.content, []);
+});
+
+test("inlineSections: a SECTION object outside a content/children array is an error", () => {
+  const { errors } = inlineSections(
+    { slug: "r", skeleton: { content: [], appHeader: { type: "SECTION", section: "item-header" } } },
+    SECTIONS,
+  );
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /recipes\/r\.json: SECTION node at skeleton\/appHeader is not an element of content\[\] or children\[\]/);
+});

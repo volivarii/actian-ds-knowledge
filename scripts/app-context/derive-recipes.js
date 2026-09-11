@@ -137,4 +137,64 @@ function writeRecipes(distDir, recipes, meta) {
   return written.size;
 }
 
-module.exports = { readRecipes, checkReferences, writeRecipes };
+// Replaces every { type: "SECTION", section } element of a content[] or
+// children[] array with deep clones of that section's skeleton.content[], so
+// the dist recipe keeps the whole-skeleton shape every consumer reads today.
+// Records the slugs inlined, in document order, as `sections` on the result.
+// The input recipe is not mutated. A SECTION object anywhere other than as an
+// array element under content/children is an error: the splice has no
+// meaning there.
+function inlineSections(recipe, sectionsBySlug) {
+  const errors = [];
+  const used = [];
+  const where = "recipes/" + recipe.slug + ".json";
+
+  function walk(value, label, spliceable) {
+    if (Array.isArray(value)) {
+      const out = [];
+      for (let i = 0; i < value.length; i++) {
+        const v = value[i];
+        if (v && typeof v === "object" && !Array.isArray(v) && v.type === "SECTION") {
+          if (!spliceable) {
+            errors.push(
+              where + ": SECTION node at " + label + "/" + i +
+                " is not an element of content[] or children[]",
+            );
+            continue;
+          }
+          const section = sectionsBySlug[v.section];
+          if (!section) {
+            errors.push(where + ": unknown section '" + v.section + "'");
+            continue;
+          }
+          used.push(v.section);
+          for (const node of section.skeleton.content) {
+            out.push(JSON.parse(JSON.stringify(node)));
+          }
+          continue;
+        }
+        out.push(walk(v, label + "/" + i, false));
+      }
+      return out;
+    }
+    if (!value || typeof value !== "object") return value;
+    if (value.type === "SECTION") {
+      errors.push(
+        where + ": SECTION node at " + label +
+          " is not an element of content[] or children[]",
+      );
+      return value;
+    }
+    const copy = {};
+    for (const [k, v] of Object.entries(value)) {
+      copy[k] = walk(v, label + "/" + k, k === "content" || k === "children");
+    }
+    return copy;
+  }
+
+  const skeleton = walk(recipe.skeleton, "skeleton", false);
+  const out = Object.assign({}, recipe, { skeleton, sections: used });
+  return { recipe: out, errors };
+}
+
+module.exports = { readRecipes, checkReferences, writeRecipes, inlineSections };
