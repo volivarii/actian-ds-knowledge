@@ -13,6 +13,7 @@ import React from "react";
 import { Sidebar } from "../../src/app/Sidebar";
 import { submissionCartSingleton } from "../../src/drafts/store-instance";
 import { setCachedIndexForTesting } from "../../src/lib/anchorIndex";
+import { listContextRecords } from "../../src/lib/contextRecords";
 
 // Split out of Sidebar.test.tsx on purpose: every case here mounts the whole
 // Sidebar, which now also builds the graph-derived product, record, and
@@ -114,6 +115,10 @@ test("Sidebar: Products carries a New product affordance", async () => {
 // dialog offers only what a product is built from. The baked graph carries
 // personas, and the entity rows prove the list rendered at all.
 test("Sidebar: the New product dialog does not offer personas to join", async () => {
+  assert.ok(
+    listContextRecords().some((r) => r.kind === "persona"),
+    "the baked graph carries no persona, so this proves nothing",
+  );
   render(
     wrap(
       <Sidebar

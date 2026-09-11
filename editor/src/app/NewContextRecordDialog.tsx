@@ -133,9 +133,9 @@ export function NewContextRecordDialog({
     setSlug(slugFromLabel(label));
   }, [label]);
 
-  // Matched across BOTH kinds on purpose. The namespace this dialog protects is
-  // one flat list, so an entity called Dataset and a pattern called Dataset are
-  // the collision, not two unrelated records. Same kind can be joined; a
+  // Matched across EVERY kind on purpose. The namespace this dialog protects is
+  // one flat list, so an entity called Dataset and a pattern or persona called
+  // Dataset are the collision, not unrelated records. Same kind can be joined; a
   // different kind cannot (an entity does not become a pattern), so that one is
   // refused rather than offered.
   const clash = useMemo(() => records.find((r) => r.slug === slug), [
