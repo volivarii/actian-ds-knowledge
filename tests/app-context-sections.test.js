@@ -291,6 +291,70 @@ test("every authored section has a dist leaf and vice versa", () => {
   );
 });
 
+// Modelled on app-context-recipes.test.js's "every dist recipe is
+// schema-valid, stamped, and named by its slug": the recipe test walks
+// app-context/dist/recipes, this one walks app-context/dist/sections. Without
+// it a dist section leaf could drift from the schema (a hand edit, a stale
+// derive) with nothing catching it, the way the recipe leaves already are.
+test("every dist section is schema-valid, stamped, and named by its slug", () => {
+  const ajv = new Ajv({ strict: false, allowUnionTypes: true });
+  const v = ajv.compile(SECTION_SCHEMA);
+  const files = jsonFiles(DIST_SECTIONS);
+  assert.ok(files.length > 0, "no dist sections to check");
+
+  for (const f of files) {
+    const doc = JSON.parse(fs.readFileSync(path.join(DIST_SECTIONS, f), "utf8"));
+    assert.equal(doc.slug + ".json", f, f + ": slug must equal filename");
+    assert.ok(doc._meta, f + ": missing _meta stamp");
+    // _meta is added by the derive and is not part of the authored schema
+    const authored = Object.assign({}, doc);
+    delete authored._meta;
+    assert.ok(v(authored), f + ": " + JSON.stringify(v.errors));
+  }
+});
+
+// A section's `ds` slug is a Figma-side claim only: this checks it against
+// the DS kit registry, which is a record of what exists in the Figma
+// library, not against a built renderer leaf. Passing here proves the
+// component exists in Figma, not that any consumer (plugin, editor) has
+// shipped code for it. Test-side on purpose (not a derive error): a Figma
+// rename must not redden an unrelated PR by failing the derive.
+test("every `ds` slug in a section INSTANCE resolves in the DS kit registry", () => {
+  const dskit = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "components", "dist", "registries", "dskit.json"),
+      "utf8",
+    ),
+  );
+  const known = new Set(Object.keys(dskit.components || {}));
+  assert.ok(
+    known.size > 100,
+    "read only " + known.size + " DS kit components; this check would be near-vacuous",
+  );
+
+  const { sections, errors } = readSections(path.join(ROOT, "app-context", "src"), SECTION_SCHEMA);
+  assert.deepEqual(errors, []);
+  assert.ok(sections.length > 0, "no sections read; this check would be vacuous");
+
+  const bad = [];
+  for (const s of sections) {
+    (function walk(v) {
+      if (Array.isArray(v)) return v.forEach(walk);
+      if (!v || typeof v !== "object") return;
+      if (v.type === "INSTANCE" && v.ds && !known.has(v.ds)) {
+        bad.push(s.slug + ": ds '" + v.ds + "' (ref " + v.ref + ")");
+      }
+      Object.values(v).forEach(walk);
+    })(s.skeleton.content);
+  }
+  assert.deepEqual(
+    bad,
+    [],
+    "these ds slugs have no entry in components/dist/registries/dskit.json, so the Figma " +
+      "component this proves exists does not: " + bad.join("; "),
+  );
+});
+
 test("no dist recipe holds a SECTION node, and its sections stamp matches its source", () => {
   const { readRecipes } = require("../scripts/app-context/derive-recipes");
   const { recipes, errors } = readRecipes(path.join(ROOT, "app-context", "src"), RECIPE_SCHEMA);
