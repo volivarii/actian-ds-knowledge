@@ -69,3 +69,91 @@ test("recipe schema accepts the derive's `sections` stamp", () => {
     "sections must be strings",
   );
 });
+
+const os = require("node:os");
+const {
+  readSections,
+  checkSectionReferences,
+  writeSections,
+} = require("../scripts/app-context/derive-sections");
+
+function tmpSrc(files) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sections-"));
+  fs.mkdirSync(path.join(dir, "sections"), { recursive: true });
+  for (const [name, body] of Object.entries(files)) {
+    fs.writeFileSync(
+      path.join(dir, "sections", name),
+      typeof body === "string" ? body : JSON.stringify(body),
+    );
+  }
+  return dir;
+}
+
+test("readSections: absent directory is an error, not zero sections", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nosections-"));
+  const { sections, errors } = readSections(dir, SECTION_SCHEMA);
+  assert.deepEqual(sections, []);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /does not exist/);
+});
+
+test("readSections: slug must equal filename, JSON must be an object, schema must pass", () => {
+  const dir = tmpSrc({
+    "item-header.json": VALID_SECTION,
+    "wrong-name.json": Object.assign({}, VALID_SECTION, { slug: "item-header" }),
+    "scalar.json": "42",
+    "broken.json": "{",
+    "norole.json": (() => {
+      const d = Object.assign({}, VALID_SECTION, { slug: "norole" });
+      delete d.role;
+      return d;
+    })(),
+  });
+  const { sections, errors } = readSections(dir, SECTION_SCHEMA);
+  assert.deepEqual(sections.map((s) => s.slug), ["item-header"]);
+  assert.equal(errors.length, 4, errors.join("\n"));
+  assert.ok(errors.some((e) => /wrong-name\.json.*slug/.test(e)));
+  assert.ok(errors.some((e) => /scalar\.json.*not a JSON object/.test(e)));
+  assert.ok(errors.some((e) => /broken\.json.*invalid JSON/.test(e)));
+  assert.ok(errors.some((e) => /norole\.json.*schema errors/.test(e)));
+});
+
+test("readSections: a section referencing a section is an error (sections are flat)", () => {
+  const nested = Object.assign({}, VALID_SECTION, {
+    slug: "nested",
+    skeleton: {
+      content: [
+        { type: "FRAME", name: "Wrap", children: [{ type: "SECTION", section: "item-header" }] },
+      ],
+    },
+  });
+  const dir = tmpSrc({ "nested.json": nested });
+  const { sections, errors } = readSections(dir, SECTION_SCHEMA);
+  assert.deepEqual(sections, []);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /nested\.json.*SECTION node.*flat/);
+});
+
+test("checkSectionReferences: unknown app or pattern is an error", () => {
+  const ctx = { apps: { studio: {} }, patterns: { "asset-detail-360": {} } };
+  assert.deepEqual(checkSectionReferences([VALID_SECTION], ctx), []);
+  const bad = Object.assign({}, VALID_SECTION, { apps: ["nope"], patterns: ["nada"] });
+  const errors = checkSectionReferences([bad], ctx);
+  assert.equal(errors.length, 2);
+  assert.match(errors[0], /unknown app 'nope'/);
+  assert.match(errors[1], /unknown pattern 'nada'/);
+});
+
+test("writeSections: stamps, writes one leaf per slug, prunes stale leaves", () => {
+  const dist = fs.mkdtempSync(path.join(os.tmpdir(), "sections-dist-"));
+  fs.mkdirSync(path.join(dist, "sections"));
+  fs.writeFileSync(path.join(dist, "sections", "stale.json"), "{}");
+  const n = writeSections(dist, [VALID_SECTION], { auto_generated: true });
+  assert.equal(n, 1);
+  const files = fs.readdirSync(path.join(dist, "sections")).sort();
+  assert.deepEqual(files, ["item-header.json"]);
+  const leaf = JSON.parse(fs.readFileSync(path.join(dist, "sections", "item-header.json"), "utf8"));
+  assert.equal(leaf._schema_version, 1);
+  assert.deepEqual(leaf._meta, { auto_generated: true });
+  assert.equal(leaf.kind, "section");
+});
