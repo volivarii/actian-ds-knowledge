@@ -130,6 +130,10 @@ test("NewContextRecordDialog: only patterns offer the components picker", () => 
   assert.equal(entity.queryByLabelText("Filter components"), null);
   cleanup();
 
+  const persona = renderDialog({ kind: "persona" });
+  assert.equal(persona.queryByLabelText("Filter components"), null);
+  cleanup();
+
   const pattern = renderDialog({ kind: "pattern" });
   assert.ok(pattern.getByLabelText("Filter components"));
   assert.ok(pattern.getByRole("checkbox", { name: "Button" }));
@@ -171,6 +175,33 @@ test("NewContextRecordDialog: a name taken by the other kind is refused, not joi
     true,
     "a cross-kind clash must not be submittable",
   );
+});
+
+test("NewContextRecordDialog: a persona is created under personas/ with no components", () => {
+  let got: NewContextRecordValue | null = null;
+  const r = renderDialog({ kind: "persona", onConfirm: (v) => (got = v) });
+  typeName(r, "Data steward");
+  assert.equal(
+    r.getByTestId("new-record-path").textContent,
+    "app-context/src/personas/data-steward.md",
+  );
+  fireEvent.click(r.getByRole("checkbox", { name: "Studio" }));
+  fireEvent.click(r.getByRole("button", { name: "New persona" }));
+
+  assert.ok(got);
+  const v: NewContextRecordValue = got;
+  assert.equal(v.kind, "persona");
+  assert.equal(v.mode, "create");
+  assert.equal(v.slug, "data-steward");
+  assert.equal(v.components, undefined);
+});
+
+test("NewContextRecordDialog: a persona named like an existing entity is refused", () => {
+  const r = renderDialog({ kind: "persona" });
+  typeName(r, "Dataset");
+  const note = r.getByTestId("cross-kind").textContent ?? "";
+  assert.match(note, /entity is\s+already called/);
+  assert.match(note, /personas share one set of names/);
 });
 
 test("NewContextRecordDialog: a record staged in this batch is reported honestly", () => {

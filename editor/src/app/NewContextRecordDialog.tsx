@@ -1,7 +1,7 @@
-// Create an entity or a pattern in the application-context layer.
+// Create an entity, a pattern or a persona in the application-context layer.
 //
 // The collision case is the point of this dialog, not an error branch it
-// tolerates. Entity and pattern names are one flat namespace shared by every
+// tolerates. Entity, pattern and persona names are one flat namespace shared by every
 // product, so a team naming their "Dataset" will usually find one already
 // there, belonging to somebody else's product. Creating a second file would
 // split the vocabulary, which is exactly the fragmentation this layer exists to
@@ -22,7 +22,10 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import type { ContextRecord, GraphPick } from "../lib/contextRecords";
-import type { ContextRecordKind } from "../lib/createContextRecord";
+import {
+  pathForContextRecord,
+  type ContextRecordKind,
+} from "../lib/createContextRecord";
 import {
   SLUG_MAX_LENGTH,
   isValidSlug,
@@ -67,6 +70,18 @@ const KIND_COPY: Record<
       "A pattern is a recurring arrangement of components in your product: an import wizard, a lineage graph, a detail page. Name it, say which products use it, and tick the design-system components it is built from.",
     namePlaceholder: "Import wizard",
   },
+  persona: {
+    title: "New persona",
+    blurb:
+      "A persona is a role that uses your product: a data steward, a business user, an administrator. Name it the way your use cases name it, say which products it works in, and describe the role in the page that opens.",
+    namePlaceholder: "Data steward",
+  },
+};
+
+const KIND_NOUN: Record<ContextRecordKind, string> = {
+  entity: "An entity",
+  pattern: "A pattern",
+  persona: "A persona",
 };
 
 export function NewContextRecordDialog({
@@ -164,7 +179,7 @@ export function NewContextRecordDialog({
           </label>
           <Box>
             <Text size="1" color="gray" data-testid="new-record-path">
-              {`app-context/src/${kind === "entity" ? "entities" : "patterns"}/${slug || "<slug>"}.md`}
+              {pathForContextRecord(kind, slug || "<slug>")}
             </Text>
             {trimmedLabel.length > 0 && !validShape && (
               <Text as="p" size="1" color="red" mt="1">
@@ -178,9 +193,9 @@ export function NewContextRecordDialog({
           {crossKind && (
             <Callout.Root color="red" size="1" role="alert" data-testid="cross-kind">
               <Callout.Text>
-                {crossKind.kind === "entity" ? "An entity" : "A pattern"} is
-                already called <strong>{crossKind.label}</strong>. Entities and
-                patterns share one set of names, so pick a different one.
+                {KIND_NOUN[crossKind.kind]} is already called{" "}
+                <strong>{crossKind.label}</strong>. Entities, patterns and
+                personas share one set of names, so pick a different one.
               </Callout.Text>
             </Callout.Root>
           )}

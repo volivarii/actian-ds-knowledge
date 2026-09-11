@@ -64,6 +64,7 @@ const APP_CONTEXT_LISTINGS = {
   ],
   "app-context/src/entities": [{ name: "dataset.md", type: "file" as const }],
   "app-context/src/patterns": [],
+  "app-context/src/personas": [],
 };
 
 /** Directory listings plus one real file blob, for the claim round-trip. */
@@ -107,6 +108,34 @@ test("Sidebar: Products carries a New product affordance", async () => {
   );
   await waitFor(() => screen.getByText("Products"));
   assert.ok(screen.getByRole("button", { name: "New product" }));
+});
+
+// Which products a persona works in is set on the persona, so the New product
+// dialog offers only what a product is built from. The baked graph carries
+// personas, and the entity rows prove the list rendered at all.
+test("Sidebar: the New product dialog does not offer personas to join", async () => {
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithFiles(APP_CONTEXT_LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={() => {}}
+      />,
+    ),
+  );
+  await waitFor(() => screen.getByText("Products"));
+  fireEvent.click(screen.getByRole("button", { name: "New product" }));
+  const entities = await screen.findAllByRole("checkbox", {
+    name: /\(Entity\)$/,
+  });
+  assert.ok(entities.length > 0, "no records listed, so this proves nothing");
+  assert.deepEqual(
+    screen
+      .queryAllByRole("checkbox", { name: /\(Persona\)$/ })
+      .map((c) => c.getAttribute("aria-label")),
+    [],
+  );
 });
 
 // The affordance has to survive the empty state, or the one team that most
@@ -226,7 +255,7 @@ test("Sidebar: a record that cannot be joined is reported, product still staged"
   }
 });
 
-// Entities and Patterns carry their own create affordance, and like Products
+// Entities, Patterns and Personas carry their own create affordance, and like Products
 // they must be reachable when the layer is still empty.
 test("Sidebar: every application-context section offers a way to create one", async () => {
   render(
@@ -237,6 +266,7 @@ test("Sidebar: every application-context section offers a way to create one", as
           "app-context/src/apps": [],
           "app-context/src/entities": [],
           "app-context/src/patterns": [],
+          "app-context/src/personas": [],
         })}
         pendingPaths={new Set()}
         activePath={null}
@@ -252,6 +282,10 @@ test("Sidebar: every application-context section offers a way to create one", as
   assert.ok(screen.getByRole("button", { name: "New product" }));
   assert.ok(screen.getByRole("button", { name: "New entity" }));
   assert.ok(screen.getByRole("button", { name: "New pattern" }));
+  assert.ok(
+    document.getElementById("sidebar-section-appContextPersonas-header"),
+  );
+  assert.ok(screen.getByRole("button", { name: "New persona" }));
 });
 
 test("Sidebar: creating an entity stages it against the chosen product", async () => {
@@ -281,6 +315,44 @@ test("Sidebar: creating an entity stages it against the chosen product", async (
   const staged = submissionCartSingleton.list().find((e) => e.path === path);
   assert.ok(staged);
   assert.match(staged.content, /^label: Fixture Thing$/m);
+  assert.match(staged.content, /^apps:\n {2}- studio$/m);
+  assert.equal(staged.basedOnSha, "");
+  assert.ok(selected.includes(path));
+  submissionCartSingleton.clear();
+});
+
+test("Sidebar: creating a persona stages it against the chosen product", async () => {
+  submissionCartSingleton.clear();
+  const selected: (string | null)[] = [];
+  render(
+    wrap(
+      <Sidebar
+        octokit={fakeGhWithFiles(APP_CONTEXT_LISTINGS)}
+        pendingPaths={new Set()}
+        activePath={null}
+        onSelect={(p) => selected.push(p)}
+      />,
+    ),
+  );
+  await waitFor(() =>
+    assert.ok(
+      document.getElementById("sidebar-section-appContextPersonas-header"),
+    ),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "New persona" }));
+
+  fireEvent.change(await screen.findByLabelText("Name"), {
+    target: { value: "Fixture Role" },
+  });
+  fireEvent.click(screen.getByRole("checkbox", { name: "Studio" }));
+  fireEvent.click(screen.getByRole("button", { name: "New persona" }));
+
+  const path = "app-context/src/personas/fixture-role.md";
+  await waitFor(() => assert.ok(submissionCartSingleton.has(path)));
+  const staged = submissionCartSingleton.list().find((e) => e.path === path);
+  assert.ok(staged);
+  assert.match(staged.content, /schemas\/app-context-persona\.json/);
+  assert.match(staged.content, /^label: Fixture Role$/m);
   assert.match(staged.content, /^apps:\n {2}- studio$/m);
   assert.equal(staged.basedOnSha, "");
   assert.ok(selected.includes(path));
