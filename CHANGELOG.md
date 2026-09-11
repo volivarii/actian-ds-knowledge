@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Added
 
-- **Section recipes.** Six captured sub-page compositions under `app-context/src/sections/`
+- **Section recipes.** ([#711](https://github.com/volivarii/actian-ds-knowledge/pull/711)) Six captured
+  sub-page compositions under `app-context/src/sections/`
   (`item-header`, `facet-tabs`, `properties-panel`, `control-bar`, `drawer-header`, `action-footer`),
   each with `derivedFrom`, a `role`, and a DS-tier `ds` slug beside every FM `ref`. Page recipes
   reference them with a `SECTION` node; `derive-recipes.js` inlines them, so dist page recipes keep
