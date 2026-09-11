@@ -110,4 +110,12 @@ test("purpose, users and signals are declared on the shape that carries them", (
     false,
     "the frontmatter schema still promises signals it does not declare",
   );
+
+  // Users stopped being a body section when the personas took over the join,
+  // and the derive refuses an app file that still has one.
+  assert.equal(
+    /## Users/.test(frontmatter.description ?? ""),
+    false,
+    "the frontmatter schema still tells authors to write a ## Users section",
+  );
 });
