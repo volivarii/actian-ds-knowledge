@@ -49,6 +49,11 @@ const KINDS = [
     dir: path.join(ROOT, "app-context", "src", "patterns"),
     schema: loadSchema("app-context-pattern.json"),
   },
+  {
+    name: "personas",
+    dir: path.join(ROOT, "app-context", "src", "personas"),
+    schema: loadSchema("app-context-persona.json"),
+  },
 ];
 
 for (const kind of KINDS) {
