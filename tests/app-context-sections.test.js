@@ -258,3 +258,17 @@ test("inlineSections: a SECTION object outside a content/children array is an er
   assert.equal(errors.length, 1);
   assert.match(errors[0], /recipes\/r\.json: SECTION node at skeleton\/appHeader is not an element of content\[\] or children\[\]/);
 });
+
+test("inlineSections: the returned recipe shares no object reference with the input", () => {
+  const recipe = {
+    slug: "r",
+    derivedFrom: { surface: "x", capturedOn: "2026-08-18" },
+    slots: { a: "b" },
+    skeleton: { content: [{ type: "SECTION", section: "item-header" }] },
+  };
+  const { recipe: out } = inlineSections(recipe, SECTIONS);
+  assert.notEqual(out.derivedFrom, recipe.derivedFrom);
+  assert.notEqual(out.slots, recipe.slots);
+  out.derivedFrom.surface = "mutated";
+  assert.equal(recipe.derivedFrom.surface, "x");
+});

@@ -183,7 +183,7 @@ function inlineSections(recipe, sectionsBySlug) {
         where + ": SECTION node at " + label +
           " is not an element of content[] or children[]",
       );
-      return value;
+      return JSON.parse(JSON.stringify(value));
     }
     const copy = {};
     for (const [k, v] of Object.entries(value)) {
@@ -193,7 +193,12 @@ function inlineSections(recipe, sectionsBySlug) {
   }
 
   const skeleton = walk(recipe.skeleton, "skeleton", false);
-  const out = Object.assign({}, recipe, { skeleton, sections: used });
+  // Every field, not only skeleton, must share nothing with the input: a
+  // caller reading recipe.derivedFrom or recipe.slots off the input after
+  // this call must not see a write made through the returned recipe.
+  const out = JSON.parse(JSON.stringify(recipe));
+  out.skeleton = skeleton;
+  out.sections = used;
   return { recipe: out, errors };
 }
 
