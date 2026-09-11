@@ -22,7 +22,7 @@ there disappears. The folder name is the only signal you need.
 | **Category defaults**: shared by every component in a category | `components/src/categories/<slug>.md` |
 | **Content**: voice, tone, words to avoid, UX-pattern topics | `content/src/{writing,patterns,product}/<slug>.md` |
 | **Accessibility** | `accessibility/src/<slug>.md`, with stable `{#slug}` anchors |
-| **App context**: products, entities, features, terminology | `app-context/src/{apps,entities,patterns}/<slug>.md` and `terminology.yml` |
+| **App context**: products, entities, patterns, personas, terminology | `app-context/src/{apps,entities,patterns,personas}/<slug>.md` and `terminology.yml` |
 | **Tokens** | `foundations/src/color-primitives.md` for a palette base or the shade formula, `foundations/src/tokens.md` for a semantic mapping. Everything in `tokens/` is generated from these |
 
 **Not authored here:** component registry data (keys, variants, properties) and

@@ -59,7 +59,7 @@
       "type": "json",
       "origin": "ci",
       "generator": "scripts/app-context/derive-app-context.js",
-      "description": "Per-app patterns + persona + terminology (consolidated dist — do not edit)"
+      "description": "Apps, entities, patterns, personas and terminology (consolidated dist, do not edit)"
     },
     "appContextBundle": {
       "path": "app-context/dist/app-context.bundle.json",
@@ -951,7 +951,7 @@
       "type": "markdown",
       "origin": "human",
       "recursive": true,
-      "description": "Authoring surface for app context. Per-kind subdirs: apps, entities, patterns. Terminology lives in terminology.yml (not covered by this collection)."
+      "description": "Authoring surface for app context. Per-kind subdirs: apps, entities, patterns, personas. Terminology lives in terminology.yml (not covered by this collection)."
     },
     "components.anatomy.byKey": {
       "dir": "components/dist/anatomy",

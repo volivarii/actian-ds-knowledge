@@ -26,6 +26,18 @@ no entry defers its link to a placeholder.
 
 ### Added
 
+- **Personas.** Six personas under `app-context/src/personas/` (Data steward, Data engineer and Data
+  architect in Studio; Business user and Analyst in Explorer; Administrator in Administration), one
+  vocabulary for who uses the products. Each carries `apps`, an optional `permissionGroup`, `literacy`,
+  `frequency` and `sources`, and a description written from general role definitions, which its
+  `sources` states. New schema `schemas/app-context-persona.json`; `app-context.json` gains a top-level
+  `personas` map whose records carry `useCases` joined from the apps. **Contract change:** an app's
+  `users` is derived from the personas that list it, the apps' `## Users` section is retired and the
+  derive refuses a file that still has one, and a use case's `audience` must name a persona label
+  scoped to that app. Explorer's audience is `[Business user, Analyst]` and Administration's
+  `[Administrator]`. The graph gains a `persona` node type (JSON-LD `Persona`) with `in_app` edges,
+  and the editor lists, creates and edits personas like entities and patterns.
+
 - **Section recipes.** ([#711](https://github.com/volivarii/actian-ds-knowledge/pull/711)) Six captured
   sub-page compositions under `app-context/src/sections/`
   (`item-header`, `facet-tabs`, `properties-panel`, `control-bar`, `drawer-header`, `action-footer`),

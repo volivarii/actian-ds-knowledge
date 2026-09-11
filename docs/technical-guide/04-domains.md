@@ -42,6 +42,7 @@ check instead.
 | `app-context/apps` | `app-context/src/apps/*.md` | `derive-app-context.js` | parsed into H2 and H3 sections | single object |
 | `app-context/entities` | `app-context/src/entities/*.md` | `derive-app-context.js` | absorbed into `description` | single object |
 | `app-context/patterns` | `app-context/src/patterns/*.md` | `derive-app-context.js` | absorbed into `description` | single object |
+| `app-context/personas` | `app-context/src/personas/*.md` | `derive-app-context.js` | absorbed into `description` | single object |
 | `content/global` | `content/src/{writing,product}/*.md` | `derive-content.js` | concatenated verbatim | single object |
 | `content/patterns` | `content/src/patterns/*.md` | `fanout-patterns.js` | parsed into sections, appended into component records | embedded |
 | `graph` | none | `derive-graph.js` | reads no prose | single object |
@@ -191,6 +192,7 @@ The product side: what the design system is being used to build.
 | Apps | 3 | Studio, Explorer, Administration |
 | Entities | 30 | Product concepts such as Dataset or Access Request |
 | Patterns | 31 | Recurring UX patterns tied to real flows |
+| Personas | 6 | The roles that use the products; each app's users and each persona's use cases are joined from them |
 | Terminology | 33 | The words the products use |
 | Recipes | 4 | Page recipes captured from the running product |
 | Sections | 6 | Sub-page parts (item header, facet tabs, properties panel, control bar, drawer header, action footer) captured from the product, referenced by page recipes and inlined by the derive |
@@ -203,8 +205,12 @@ Entities carry `relationships` with named predicates, which is the only place in
 the substrate where a cross-reference has a domain-specific verb rather than a bare
 slug ref.
 
+Personas own the join between an app and the people who use it. A persona's `apps`
+is the only place that fact is authored: the derive builds each app's `users` from
+it, and a use case's `audience` must name a persona label that works in that app.
+
 Schemas: `app-context-app.json`, `app-context-entity.json`, `app-context-pattern.json`,
-`app-context-recipe.json`, `app-context-section.json`, `app-context-term.json`, `app-context.json`.
+`app-context-persona.json`, `app-context-recipe.json`, `app-context-section.json`, `app-context-term.json`, `app-context.json`.
 
 ## Tokens
 
