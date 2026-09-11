@@ -26,7 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Added
 
-- **Personas.** Six personas under `app-context/src/personas/` (Data steward, Data engineer and Data
+- **Personas.** ([#712](https://github.com/volivarii/actian-ds-knowledge/pull/712)) Six personas under
+  `app-context/src/personas/` (Data steward, Data engineer and Data
   architect in Studio; Business user and Analyst in Explorer; Administrator in Administration), one
   vocabulary for who uses the products. Each carries `apps`, an optional `permissionGroup`, `literacy`,
   `frequency` and `sources`, and a description written from general role definitions, which its
