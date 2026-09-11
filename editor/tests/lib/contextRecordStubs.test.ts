@@ -4,6 +4,7 @@ import { parse as parseYaml } from "yaml";
 import {
   buildEntityStub,
   buildPatternStub,
+  buildPersonaStub,
 } from "../../src/lib/appContextCreate";
 
 function frontmatterOf(md: string): Record<string, unknown> {
@@ -51,13 +52,28 @@ test("a pattern with no components omits the key rather than writing an empty li
   assert.equal("components" in fm, false);
 });
 
-// For entities and patterns the WHOLE body is the derived `description`
+test("a persona stub carries only its schema-required fields", () => {
+  const fm = frontmatterOf(
+    buildPersonaStub({ slug: "data-steward", label: "Data steward", apps: ["studio"] }),
+  );
+  // permissionGroup, literacy, frequency and sources stay out: an empty value
+  // is not a fact, and the form shows them as empty fields to fill once sourced.
+  assert.deepEqual(fm, {
+    _schema_version: 1,
+    slug: "data-steward",
+    label: "Data steward",
+    apps: ["studio"],
+  });
+});
+
+// For entities, patterns and personas the WHOLE body is the derived `description`
 // (derive-app-context.js reads it with bodyField: "description"). A placeholder
 // sentence would not sit in a section, it would BE the description, and ship to
 // consumers as the author's own words.
 for (const [kind, md] of [
   ["entity", buildEntityStub({ slug: "x", label: "X", apps: ["studio"] })],
   ["pattern", buildPatternStub({ slug: "x", label: "X", apps: ["studio"] })],
+  ["persona", buildPersonaStub({ slug: "x", label: "X", apps: ["studio"] })],
 ] as const) {
   test(`a ${kind} stub ships an empty description, never a placeholder`, () => {
     assert.equal(bodyOf(md).trim(), "");
@@ -72,7 +88,7 @@ test("names needing YAML quoting survive as strings", () => {
   assert.equal(fm.label, "2026");
 });
 
-test("both stubs point at their schema for editor validation", () => {
+test("every stub points at its schema for editor validation", () => {
   assert.match(
     buildEntityStub({ slug: "x", label: "X", apps: ["a"] }),
     /schemas\/app-context-entity\.json/,
@@ -80,5 +96,9 @@ test("both stubs point at their schema for editor validation", () => {
   assert.match(
     buildPatternStub({ slug: "x", label: "X", apps: ["a"] }),
     /schemas\/app-context-pattern\.json/,
+  );
+  assert.match(
+    buildPersonaStub({ slug: "x", label: "X", apps: ["a"] }),
+    /schemas\/app-context-persona\.json/,
   );
 });

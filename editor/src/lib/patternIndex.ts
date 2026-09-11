@@ -49,7 +49,7 @@ export interface AppRecord {
   purpose?: string;
   sidebar?: SidebarEntry[];
   useCases?: UseCaseRecord[];
-  /** The audiences this product serves, as authored under `## Users`. */
+  /** The personas who use this product, derived from the personas that list it. */
   users?: string[];
   /**
    * Routing keywords, NOT prose: "steward", "govern", "curate", "lineage".

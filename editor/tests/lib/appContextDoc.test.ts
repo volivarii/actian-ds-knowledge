@@ -63,7 +63,8 @@ test("purpose, users and signals are declared on the shape that carries them", (
   // signals, and concluded three published fields had no contract. Measured,
   // the opposite is true, and acting on the issue would have made the schema
   // wrong: those three are not frontmatter at all. They are BODY sections
-  // (## Purpose, ## Users, ## Signals) that derive-app-context.js lifts, and
+  // (## Purpose, ## Signals) plus a join from the personas (users), all built
+  // by derive-app-context.js, and
   // schemas/app-context.json#/$defs/app declares all three with descriptions,
   // examples and required. `signals` is even documented there as what it is,
   // routing keywords, not the "behavioural signals" the frontmatter schema's

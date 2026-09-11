@@ -67,18 +67,20 @@ test("a plain name still emits an unquoted scalar", () => {
   assert.match(out, /^label: Data Connect$/m);
 });
 
-test("the stub carries the three canonical sections", () => {
+test("the stub carries Purpose and Signals, and no Users section", () => {
   const out = buildAppStub({ slug: "x", label: "X" });
   assert.match(out, /^## Purpose$/m);
-  assert.match(out, /^## Users$/m);
   assert.match(out, /^## Signals$/m);
+  // Who uses a product is derived from the personas that list it; the derive
+  // refuses an app file that carries ## Users.
+  assert.doesNotMatch(out, /^## Users$/m);
 });
 
 // The derive reads Purpose with sectionProse (joins EVERY non-blank line in
-// the section) and Users/Signals with sectionBullets. So any placeholder prose
-// or comment left in a section would derive into the product's real purpose /
-// users / signals and travel to consumers. Body lines must be headings or
-// blank, which is exactly "every section derives empty".
+// the section) and Signals with sectionBullets. So any placeholder prose or
+// comment left in a section would derive into the product's real purpose /
+// signals and travel to consumers. Body lines must be headings or blank, which
+// is exactly "every section derives empty".
 test("no placeholder prose can leak into the derived record", () => {
   const out = buildAppStub({ slug: "x", label: "X" });
   const body = out.split(/^---$/m)[2] ?? "";

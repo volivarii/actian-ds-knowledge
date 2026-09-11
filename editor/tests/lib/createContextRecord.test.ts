@@ -77,6 +77,26 @@ test("creating a pattern stages it under patterns/ with its components", () => {
   assert.match(h.staged[0]!.content, /^components:\n {2}- button\n {2}- table$/m);
 });
 
+test("creating a persona stages it under personas/ with only its required fields", () => {
+  const h = harness();
+  const result = createContextRecord(
+    {
+      kind: "persona",
+      slug: "data-steward",
+      label: "Data steward",
+      apps: ["studio"],
+    },
+    h.deps,
+  );
+  assert.equal(result.path, "app-context/src/personas/data-steward.md");
+  assert.match(h.staged[0]!.content, /schemas\/app-context-persona\.json/);
+  assert.match(h.staged[0]!.content, /^apps:\n {2}- studio$/m);
+  assert.doesNotMatch(
+    h.staged[0]!.content,
+    /permissionGroup|literacy|frequency|sources/,
+  );
+});
+
 // ── join an existing record (the collision path) ────────────────────────
 
 test("joining adds every requested product in one staged edit", async () => {

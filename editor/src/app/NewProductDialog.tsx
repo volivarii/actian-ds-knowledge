@@ -47,6 +47,9 @@ export interface NewProductDialogProps {
 const KIND_LABEL: Record<ContextRecord["kind"], string> = {
   entity: "Entity",
   pattern: "Pattern",
+  // Not offered here (the sidebar passes patterns and entities only), but the
+  // type is every kind, so a record that did reach this dialog is still named.
+  persona: "Persona",
 };
 
 /** "Studio", "Studio and Explorer", "Studio, Explorer and Administration". */

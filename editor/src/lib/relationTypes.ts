@@ -8,7 +8,7 @@
 //
 // The keys are the graph's node `type` strings (graph/dist/graph.json):
 // component, category, a11y_criterion, foundation_section, content_topic,
-// motion_pattern, ux_pattern, app, app_entity, terminology_term. `unknown` is
+// motion_pattern, ux_pattern, app, app_entity, terminology_term, persona. `unknown` is
 // the fallback for any future/unmapped type.
 
 import { thingLabel } from "./nomenclature";
@@ -24,6 +24,7 @@ export const NODE_TYPE_COLOR: Record<string, string> = {
   app: "var(--bronze-9)",
   app_entity: "var(--teal-9)",
   terminology_term: "var(--plum-9)",
+  persona: "var(--orange-9)",
   unknown: "var(--gray-8)",
 };
 
