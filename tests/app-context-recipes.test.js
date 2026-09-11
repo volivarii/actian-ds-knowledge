@@ -255,6 +255,24 @@ test("no recipe sets sizing.horizontal FILL inside a VERTICAL frame", () => {
       "sections/" + s.slug + ": these are children of a VERTICAL frame and must omit sizing.horizontal",
     );
   }
+  // The two loops above check recipes rooted at skeleton.content and sections
+  // in isolation, walked with parentMode reset to null: neither ever sees a
+  // section's own root node the way it actually sits once spliced into a
+  // page, as a child of whatever frame the page recipe wraps it in. Only the
+  // DIST recipe, after inlineSections has spliced every section in place,
+  // carries that parent relationship, so this is the one place the check can
+  // catch a section root that sets sizing.horizontal FILL under a VERTICAL
+  // parent.
+  const distRecipeFiles = distFiles();
+  assert.ok(distRecipeFiles.length > 0, "no dist recipes to check");
+  for (const f of distRecipeFiles) {
+    const doc = JSON.parse(fs.readFileSync(path.join(DIST, f), "utf8"));
+    assert.deepEqual(
+      axisBlindFills(doc.skeleton),
+      [],
+      "dist/" + f + ": these are children of a VERTICAL frame and must omit sizing.horizontal (a section root meets its parent only here)",
+    );
+  }
 });
 
 test("positive control: the axis-blind FILL check does catch one", () => {
