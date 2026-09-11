@@ -18,12 +18,12 @@ export function isWysiwygSafePath(path: string): boolean {
   return WYSIWYG_SAFE_PATHS.has(path);
 }
 
-/** True only for the three per-record app-context markdown kinds (apps,
- *  entities, patterns). Excludes the dist JSON, terminology.yml, nested paths,
+/** True only for the four per-record app-context markdown kinds (apps,
+ *  entities, patterns, personas). Excludes the dist JSON, terminology.yml, nested paths,
  *  and other app-context files. Lives here (not in EditorShell) so screens can
  *  reuse it without a circular import. */
 export function isAppContextFile(path: string): boolean {
-  return /^app-context\/src\/(apps|entities|patterns)\/[^/]+\.md$/.test(path);
+  return /^app-context\/src\/(apps|entities|patterns|personas)\/[^/]+\.md$/.test(path);
 }
 
 /** True only for component category records (components/src/categories/<slug>.md).

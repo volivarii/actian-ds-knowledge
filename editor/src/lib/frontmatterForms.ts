@@ -2,6 +2,7 @@ import type { UiSchema } from "@rjsf/utils";
 import { appContextAppUiSchema } from "../uiSchemas/appContextApp";
 import { appContextEntityUiSchema } from "../uiSchemas/appContextEntity";
 import { appContextPatternUiSchema } from "../uiSchemas/appContextPattern";
+import { appContextPersonaUiSchema } from "../uiSchemas/appContextPersona";
 import { categoryDefaultsUiSchema } from "../uiSchemas/categoryDefaults";
 import { contentUiSchema } from "../uiSchemas/content";
 import { foundationsUiSchema } from "../uiSchemas/foundations";
@@ -74,6 +75,15 @@ const REGISTRY: Entry[] = [
     surface: "yaml",
     preserveComments: true,
     dir: "app-context/src/patterns",
+  },
+  {
+    match: (p) => /^app-context\/src\/personas\/[^/]+\.md$/.test(p),
+    schemaKey: "app-context-persona",
+    uiSchema: appContextPersonaUiSchema,
+    bodyless: false,
+    surface: "yaml",
+    preserveComments: true,
+    dir: "app-context/src/personas",
   },
   {
     match: (p) => isCategoryFile(p),

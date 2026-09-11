@@ -40,6 +40,10 @@ test("app-context files resolve to their graph nodes", () => {
     nodeIdForFile("app-context/src/patterns/lineage-graph.md"),
     "pattern:lineage-graph",
   );
+  assert.equal(
+    nodeIdForFile("app-context/src/personas/data-steward.md"),
+    "persona:data-steward",
+  );
 });
 
 test("an app-context file with no matching node degrades to null", () => {
@@ -51,6 +55,11 @@ test("an app-context file with no matching node degrades to null", () => {
     "entity:not-a-record",
   );
   assert.equal(nodeIdForFile("app-context/src/entities/not-a-record.md"), null);
+  assert.equal(
+    candidateNodeIdForFile("app-context/src/personas/not-a-record.md"),
+    "persona:not-a-record",
+  );
+  assert.equal(nodeIdForFile("app-context/src/personas/not-a-record.md"), null);
 
   for (const path of [
     "app-context/src/terminology.yml",

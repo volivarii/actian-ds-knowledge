@@ -129,6 +129,7 @@ const DIRS = [
   ["app", "app-context/src/apps"],
   ["entity", "app-context/src/entities"],
   ["ux-pattern", "app-context/src/patterns"],
+  ["persona", "app-context/src/personas"],
   ["foundations", "foundations/src"],
   ["accessibility", "accessibility/src"],
   ["content", "content/src"],

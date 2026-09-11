@@ -155,7 +155,7 @@ test("value candidates for a scalar sequence redirect through items.enum", () =>
 
 // Pins the module header's documented $ref behavior: no resolution is
 // attempted, so an unresolved $ref degrades to "no candidates" rather than
-// an error. The six real form schemas contain zero $ref/$defs today
+// an error. The seven real form schemas contain zero $ref/$defs today
 // (verified 2026-07-24), so this synthetic schema is the only way to
 // exercise the branch.
 test("an unresolved $ref yields no candidates, not an error", () => {
