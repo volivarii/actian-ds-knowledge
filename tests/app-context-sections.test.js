@@ -91,10 +91,14 @@ function tmpSrc(files) {
 
 test("readSections: absent directory is an error, not zero sections", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nosections-"));
-  const { sections, errors } = readSections(dir, SECTION_SCHEMA);
-  assert.deepEqual(sections, []);
-  assert.equal(errors.length, 1);
-  assert.match(errors[0], /does not exist/);
+  try {
+    const { sections, errors } = readSections(dir, SECTION_SCHEMA);
+    assert.deepEqual(sections, []);
+    assert.equal(errors.length, 1);
+    assert.match(errors[0], /does not exist/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("readSections: slug must equal filename, JSON must be an object, schema must pass", () => {
@@ -109,13 +113,17 @@ test("readSections: slug must equal filename, JSON must be an object, schema mus
       return d;
     })(),
   });
-  const { sections, errors } = readSections(dir, SECTION_SCHEMA);
-  assert.deepEqual(sections.map((s) => s.slug), ["item-header"]);
-  assert.equal(errors.length, 4, errors.join("\n"));
-  assert.ok(errors.some((e) => /wrong-name\.json.*slug/.test(e)));
-  assert.ok(errors.some((e) => /scalar\.json.*not a JSON object/.test(e)));
-  assert.ok(errors.some((e) => /broken\.json.*invalid JSON/.test(e)));
-  assert.ok(errors.some((e) => /norole\.json.*schema errors/.test(e)));
+  try {
+    const { sections, errors } = readSections(dir, SECTION_SCHEMA);
+    assert.deepEqual(sections.map((s) => s.slug), ["item-header"]);
+    assert.equal(errors.length, 4, errors.join("\n"));
+    assert.ok(errors.some((e) => /wrong-name\.json.*slug/.test(e)));
+    assert.ok(errors.some((e) => /scalar\.json.*not a JSON object/.test(e)));
+    assert.ok(errors.some((e) => /broken\.json.*invalid JSON/.test(e)));
+    assert.ok(errors.some((e) => /norole\.json.*schema errors/.test(e)));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("readSections: a section referencing a section is an error (sections are flat)", () => {
@@ -128,10 +136,14 @@ test("readSections: a section referencing a section is an error (sections are fl
     },
   });
   const dir = tmpSrc({ "nested.json": nested });
-  const { sections, errors } = readSections(dir, SECTION_SCHEMA);
-  assert.deepEqual(sections, []);
-  assert.equal(errors.length, 1);
-  assert.match(errors[0], /nested\.json.*SECTION node.*flat/);
+  try {
+    const { sections, errors } = readSections(dir, SECTION_SCHEMA);
+    assert.deepEqual(sections, []);
+    assert.equal(errors.length, 1);
+    assert.match(errors[0], /nested\.json.*SECTION node.*flat/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("checkSectionReferences: unknown app or pattern is an error", () => {
@@ -146,14 +158,18 @@ test("checkSectionReferences: unknown app or pattern is an error", () => {
 
 test("writeSections: stamps, writes one leaf per slug, prunes stale leaves", () => {
   const dist = fs.mkdtempSync(path.join(os.tmpdir(), "sections-dist-"));
-  fs.mkdirSync(path.join(dist, "sections"));
-  fs.writeFileSync(path.join(dist, "sections", "stale.json"), "{}");
-  const n = writeSections(dist, [VALID_SECTION], { auto_generated: true });
-  assert.equal(n, 1);
-  const files = fs.readdirSync(path.join(dist, "sections")).sort();
-  assert.deepEqual(files, ["item-header.json"]);
-  const leaf = JSON.parse(fs.readFileSync(path.join(dist, "sections", "item-header.json"), "utf8"));
-  assert.equal(leaf._schema_version, 1);
-  assert.deepEqual(leaf._meta, { auto_generated: true });
-  assert.equal(leaf.kind, "section");
+  try {
+    fs.mkdirSync(path.join(dist, "sections"));
+    fs.writeFileSync(path.join(dist, "sections", "stale.json"), "{}");
+    const n = writeSections(dist, [VALID_SECTION], { auto_generated: true });
+    assert.equal(n, 1);
+    const files = fs.readdirSync(path.join(dist, "sections")).sort();
+    assert.deepEqual(files, ["item-header.json"]);
+    const leaf = JSON.parse(fs.readFileSync(path.join(dist, "sections", "item-header.json"), "utf8"));
+    assert.equal(leaf._schema_version, 1);
+    assert.deepEqual(leaf._meta, { auto_generated: true });
+    assert.equal(leaf.kind, "section");
+  } finally {
+    fs.rmSync(dist, { recursive: true, force: true });
+  }
 });
