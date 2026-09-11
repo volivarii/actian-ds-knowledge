@@ -137,4 +137,86 @@ function writeRecipes(distDir, recipes, meta) {
   return written.size;
 }
 
-module.exports = { readRecipes, checkReferences, writeRecipes };
+// Replaces every { type: "SECTION", section } element of a content[] or
+// children[] array with deep clones of that section's skeleton.content[], so
+// the dist recipe keeps the whole-skeleton shape every consumer reads today.
+// Records the slugs inlined, in document order, as `sections` on the result.
+// The input recipe is not mutated. A SECTION object anywhere other than as an
+// array element under content/children is an error: the splice has no
+// meaning there.
+function inlineSections(recipe, sectionsBySlug) {
+  const errors = [];
+  const used = [];
+  const where = "recipes/" + recipe.slug + ".json";
+
+  function walk(value, label, spliceable) {
+    if (Array.isArray(value)) {
+      const out = [];
+      for (let i = 0; i < value.length; i++) {
+        const v = value[i];
+        if (v && typeof v === "object" && !Array.isArray(v) && v.type === "SECTION") {
+          if (!spliceable) {
+            errors.push(
+              where + ": SECTION node at " + label + "/" + i +
+                " is not an element of content[] or children[]",
+            );
+            continue;
+          }
+          const extraKeys = Object.keys(v).filter(
+            (k) => k !== "type" && k !== "section",
+          );
+          if (extraKeys.length > 0) {
+            errors.push(
+              where + ": SECTION node at " + label + "/" + i +
+                " carries keys other than type and section (" +
+                extraKeys.join(", ") +
+                "); per-use overrides are not a thing, edit the section",
+            );
+            continue;
+          }
+          const section = sectionsBySlug[v.section];
+          if (!section) {
+            errors.push(where + ": unknown section '" + v.section + "'");
+            continue;
+          }
+          used.push(v.section);
+          for (const node of section.skeleton.content) {
+            out.push(JSON.parse(JSON.stringify(node)));
+          }
+          continue;
+        }
+        out.push(walk(v, label + "/" + i, false));
+      }
+      return out;
+    }
+    if (!value || typeof value !== "object") return value;
+    if (value.type === "SECTION") {
+      errors.push(
+        where + ": SECTION node at " + label +
+          " is not an element of content[] or children[]",
+      );
+      return JSON.parse(JSON.stringify(value));
+    }
+    const copy = {};
+    for (const [k, v] of Object.entries(value)) {
+      copy[k] = walk(v, label + "/" + k, k === "content" || k === "children");
+    }
+    return copy;
+  }
+
+  const skeleton = walk(recipe.skeleton, "skeleton", false);
+  // Every field, not only skeleton, must share nothing with the input: a
+  // caller reading recipe.derivedFrom or recipe.slots off the input after
+  // this call must not see a write made through the returned recipe.
+  const out = JSON.parse(JSON.stringify(recipe));
+  out.skeleton = skeleton;
+  // A section referenced twice is spliced at every occurrence (`used` above
+  // records one entry per splice), but the stamp names each slug once, in
+  // first-occurrence order: `sections` answers "which sections did this page
+  // draw from", not "how many times". `Set` preserves insertion order, so
+  // deduping this way keeps the first occurrence's position.
+  out.sections = [...new Set(used)];
+  return { recipe: out, errors };
+}
+
+module.exports = { readRecipes, checkReferences, writeRecipes, inlineSections };

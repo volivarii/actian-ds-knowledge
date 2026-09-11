@@ -242,6 +242,37 @@ test("no recipe sets sizing.horizontal FILL inside a VERTICAL frame", () => {
         " children of VERTICAL frames; the check is not reaching this recipe",
     );
   }
+  const { readSections } = require("../scripts/app-context/derive-sections");
+  const { sections } = readSections(
+    path.join(ROOT, "app-context", "src"),
+    JSON.parse(fs.readFileSync(path.join(ROOT, "schemas", "app-context-section.json"), "utf8")),
+  );
+  assert.ok(sections.length > 0, "no sections read; this check would be vacuous for them");
+  for (const s of sections) {
+    assert.deepEqual(
+      axisBlindFills(s.skeleton),
+      [],
+      "sections/" + s.slug + ": these are children of a VERTICAL frame and must omit sizing.horizontal",
+    );
+  }
+  // The two loops above check recipes rooted at skeleton.content and sections
+  // in isolation, walked with parentMode reset to null: neither ever sees a
+  // section's own root node the way it actually sits once spliced into a
+  // page, as a child of whatever frame the page recipe wraps it in. Only the
+  // DIST recipe, after inlineSections has spliced every section in place,
+  // carries that parent relationship, so this is the one place the check can
+  // catch a section root that sets sizing.horizontal FILL under a VERTICAL
+  // parent.
+  const distRecipeFiles = distFiles();
+  assert.ok(distRecipeFiles.length > 0, "no dist recipes to check");
+  for (const f of distRecipeFiles) {
+    const doc = JSON.parse(fs.readFileSync(path.join(DIST, f), "utf8"));
+    assert.deepEqual(
+      axisBlindFills(doc.skeleton),
+      [],
+      "dist/" + f + ": these are children of a VERTICAL frame and must omit sizing.horizontal (a section root meets its parent only here)",
+    );
+  }
 });
 
 test("positive control: the axis-blind FILL check does catch one", () => {
@@ -499,6 +530,17 @@ function recipesUnderTest() {
   // catches it because the derive exits 1, but a local `npm test` would not.
   assert.deepEqual(errors, [], "src recipes failed to read; they were not scanned");
   for (const r of recipes) out.push({ label: "src/" + r.slug, skeleton: r.skeleton });
+  const { readSections } = require("../scripts/app-context/derive-sections");
+  const SECTION_SCHEMA = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "schemas", "app-context-section.json"), "utf8"),
+  );
+  const { sections, errors: sectionErrors } = readSections(
+    path.join(ROOT, "app-context", "src"),
+    SECTION_SCHEMA,
+  );
+  assert.deepEqual(sectionErrors, [], "src sections failed to read; they were not scanned");
+  assert.ok(sections.length > 0, "no sections read; the token gate would not reach them");
+  for (const s of sections) out.push({ label: "src/sections/" + s.slug, skeleton: s.skeleton });
   for (const f of distFiles()) {
     const doc = JSON.parse(fs.readFileSync(path.join(DIST, f), "utf8"));
     out.push({ label: "dist/" + f, skeleton: doc.skeleton });

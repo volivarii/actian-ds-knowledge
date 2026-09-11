@@ -193,6 +193,7 @@ The product side: what the design system is being used to build.
 | Patterns | 31 | Recurring UX patterns tied to real flows |
 | Terminology | 33 | The words the products use |
 | Recipes | 4 | Page recipes captured from the running product |
+| Sections | 6 | Sub-page parts (item header, facet tabs, properties panel, control bar, drawer header, action footer) captured from the product, referenced by page recipes and inlined by the derive |
 
 Recipes are addressed one at a time rather than folded into `app-context.json`,
 because a single recipe can exceed 1400 lines and bundling them would make every
@@ -203,7 +204,7 @@ the substrate where a cross-reference has a domain-specific verb rather than a b
 slug ref.
 
 Schemas: `app-context-app.json`, `app-context-entity.json`, `app-context-pattern.json`,
-`app-context-recipe.json`, `app-context-term.json`, `app-context.json`.
+`app-context-recipe.json`, `app-context-section.json`, `app-context-term.json`, `app-context.json`.
 
 ## Tokens
 

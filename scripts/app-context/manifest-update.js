@@ -8,6 +8,7 @@
 //   - dist         : one consolidated file (no per-slug leaves)
 //   - collections  : appContextSrc (human) + appContextRecipesSrc (human)
 //                    + appContextRecipes (ci, per-slug dist leaves)
+//                    + appContextSectionsSrc (human) + appContextSections (ci)
 //   - generator    : "scripts/app-context/derive-app-context.js"
 
 const fs = require("node:fs");
@@ -35,7 +36,7 @@ function updatePathsManifest(manifestPath, opts) {
       delete manifest.paths[k];
     }
   });
-  ["appContext.src", "appContextSrc", "appContextRecipesSrc", "appContextRecipes"].forEach((k) => {
+  ["appContext.src", "appContextSrc", "appContextRecipesSrc", "appContextRecipes", "appContextSectionsSrc", "appContextSections"].forEach((k) => {
     if (Object.prototype.hasOwnProperty.call(manifest.collections, k)) {
       delete manifest.collections[k];
     }
@@ -112,6 +113,29 @@ function updatePathsManifest(manifestPath, opts) {
   };
   added.push("appContextRecipes");
 
+  // Sections: authored JSON + per-slug dist leaves, the sub-page parts page
+  // recipes reference by slug. Same key shape as recipes, same reason.
+  manifest.collections["appContextSectionsSrc"] = {
+    dir: "app-context/src/sections",
+    pattern: "{slug}.json",
+    type: "json",
+    origin: "human",
+    description:
+      "Authoring surface for section recipes: captured sub-page compositions (item header, facet tabs, control bar, properties panel, drawer header, action footer) that page recipes reference with a SECTION node and the derive inlines. Governed by schemas/app-context-section.json. See README.md in that directory.",
+  };
+  added.push("appContextSectionsSrc");
+
+  manifest.collections["appContextSections"] = {
+    dir: "app-context/dist/sections",
+    pattern: "{slug}.json",
+    type: "json",
+    origin: "ci",
+    generator: "scripts/app-context/derive-app-context.js",
+    description:
+      "Per-slug section recipe JSONs (validated + stamped). A page recipe's dist leaf already has these inlined; a consumer composing from a generic archetype reads them here by role.",
+  };
+  added.push("appContextSections");
+
   // 4. Zones — ensure appContextSrc + appContextBundle are classified in _zones.metadata.
   // Each non-namespaced key prefix must appear in _zones so the manifest-zones check passes.
   // "appContext" is already there; "appContextSrc" and "appContextBundle" must be added
@@ -122,6 +146,8 @@ function updatePathsManifest(manifestPath, opts) {
       "appContextBundle",
       "appContextRecipesSrc",
       "appContextRecipes",
+      "appContextSectionsSrc",
+      "appContextSections",
     ]) {
       if (!manifest._zones.metadata.includes(key)) {
         manifest._zones.metadata.push(key);
