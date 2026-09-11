@@ -219,8 +219,14 @@ test("the real derive: users come from personas, and a persona reaches a use cas
   const derived = deriveToObject(srcDir);
   const personas = Object.values(derived.personas);
   assert.ok(personas.length > 0, "no personas derived, so this proves nothing");
+  // A product can have no users yet: New product does not offer personas, so a
+  // product's users arrive when a persona lists it. Every label still needs an
+  // owner, and at least one app must carry users or the loop proves nothing.
+  assert.ok(
+    Object.values(derived.apps).some((app) => app.users.length > 0),
+    "no app has users, so this proves nothing",
+  );
   for (const [slug, app] of Object.entries(derived.apps)) {
-    assert.ok(app.users.length > 0, `${slug} has no users`);
     for (const label of app.users) {
       const owner = personas.find((p) => p.label === label);
       assert.ok(owner && owner.apps.includes(slug), `${slug}.users "${label}"`);
