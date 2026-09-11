@@ -13,9 +13,6 @@
   "apps": [
     "studio"
   ],
-  "patterns": [
-    "import-wizard"
-  ],
   "tags": [
     "footer",
     "confirm",
@@ -31,7 +28,8 @@
   },
   "renderNotes": [
     "`fmButton` reads the `Type=`, `Size=` and `State=` axes of `variant` (State=Disabled draws the disabled style) and the `Label` prop.",
-    "The bar is a HORIZONTAL frame with `primaryAxisAlignItems: MAX`; the page recipe or archetype that places it owns the sticky positioning, which the node tree cannot express."
+    "The bar is a HORIZONTAL frame with `primaryAxisAlignItems: MAX`; the page recipe or archetype that places it owns the sticky positioning, which the node tree cannot express.",
+    "The import wizard's footer is a different part: `import-wizard.md` describes a persistent Back and Next bar, which no capture here holds yet."
   ],
   "skeleton": {
     "content": [
