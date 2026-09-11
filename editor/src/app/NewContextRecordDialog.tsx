@@ -56,25 +56,42 @@ export interface NewContextRecordDialogProps {
 
 const KIND_COPY: Record<
   ContextRecordKind,
-  { title: string; blurb: string; namePlaceholder: string }
+  {
+    title: string;
+    blurb: string;
+    namePlaceholder: string;
+    // A product uses an entity or a pattern, but a persona works in the product.
+    productsHeading: string;
+    usedBy: string;
+    unused: string;
+  }
 > = {
   entity: {
     title: "New entity",
     blurb:
       "An entity is a thing your product works with: a dataset, a contract, a connection. Name it, say which products use it, and describe it in the page that opens.",
     namePlaceholder: "Data Contract",
+    productsHeading: "Products that use it",
+    usedBy: "used by",
+    unused: "not used by any product yet",
   },
   pattern: {
     title: "New pattern",
     blurb:
       "A pattern is a recurring arrangement of components in your product: an import wizard, a lineage graph, a detail page. Name it, say which products use it, and tick the design-system components it is built from.",
     namePlaceholder: "Import wizard",
+    productsHeading: "Products that use it",
+    usedBy: "used by",
+    unused: "not used by any product yet",
   },
   persona: {
     title: "New persona",
     blurb:
       "A persona is a role that uses your product: a data steward, a business user, an administrator. Name it the way your use cases name it, say which products it works in, and describe the role in the page that opens.",
     namePlaceholder: "Data steward",
+    productsHeading: "Products it works in",
+    usedBy: "works in",
+    unused: "not in any product yet",
   },
 };
 
@@ -212,8 +229,8 @@ export function NewContextRecordDialog({
                 {existing.pending
                   ? ", staged earlier in this batch"
                   : existing.usedBy.length > 0
-                    ? `, used by ${existing.usedBy.join(", ")}`
-                    : ", not used by any product yet"}
+                    ? `, ${copy.usedBy} ${existing.usedBy.join(", ")}`
+                    : `, ${copy.unused}`}
                 . Names are shared across every product, so rather than making a
                 second one, add your product to the existing record.
                 {!existing.pending && (
@@ -229,7 +246,7 @@ export function NewContextRecordDialog({
 
           <Box>
             <Text as="div" size="2" weight="bold" mb="1">
-              {existing ? "Add it to" : "Products that use it"}
+              {existing ? "Add it to" : copy.productsHeading}
             </Text>
             <Flex direction="column" gap="1">
               {products.map((p) => (

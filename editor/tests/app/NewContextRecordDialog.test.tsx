@@ -262,3 +262,37 @@ test("NewContextRecordDialog: a name too long for the schema is refused", () => 
     true,
   );
 });
+
+// A product uses an entity or a pattern, but a persona is someone who works in
+// the product, so the product list and the already-exists note say that.
+test("NewContextRecordDialog: a persona's products are the ones it works in", () => {
+  const entity = renderDialog();
+  assert.ok(entity.getByText("Products that use it"));
+  cleanup();
+
+  const analyst: ContextRecord = {
+    kind: "persona",
+    slug: "analyst",
+    label: "Analyst",
+    path: "app-context/src/personas/analyst.md",
+    usedBy: ["Explorer"],
+    usedBySlugs: ["explorer"],
+  };
+  const r = renderDialog({ kind: "persona", records: [analyst] });
+  assert.ok(r.getByText("Products it works in"));
+  assert.equal(r.queryByText("Products that use it"), null);
+  typeName(r, "Analyst");
+  const note = r.getByTestId("already-exists").textContent ?? "";
+  assert.match(note, /works in Explorer/);
+  assert.doesNotMatch(note, /used by/);
+  cleanup();
+
+  const unlisted = renderDialog({
+    kind: "persona",
+    records: [{ ...analyst, usedBy: [], usedBySlugs: [] }],
+  });
+  typeName(unlisted, "Analyst");
+  const empty = unlisted.getByTestId("already-exists").textContent ?? "";
+  assert.match(empty, /not in any product yet/);
+  assert.doesNotMatch(empty, /used by/);
+});
