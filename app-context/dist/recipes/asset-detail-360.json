@@ -225,8 +225,8 @@
                 "ref": "fmTabs",
                 "ds": "tabs",
                 "props": {
-                  "Tabs": "General, Fields (2), Sample Data, Data Quality, Lineage, View 360, Data Model, Activity, Discussions (0)",
-                  "Active": "General"
+                  "Tabs": "{{facets}}",
+                  "Active": "{{first_facet}}"
                 }
               },
               {

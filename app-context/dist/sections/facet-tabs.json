@@ -27,12 +27,13 @@
     "productVersion": "next.dev.zeenea.app"
   },
   "slots": {
-    "tabs": "One `fmTabs` instance listing the object's facets in the product's order, counts in parentheses, the first tab active.",
+    "tabs": "One fmTabs instance listing the object's facets in the product's order, counts in parentheses, the first tab active. {{facets}} is the entity's facets: General first, then one tab per relationship the entity holds (for a Dataset: Fields, Sample Data, Data Quality, Lineage, View 360, Data Model, Activity, Discussions; for a Data Product: Input ports, Output ports, View 360, Activity), never invented names such as Overview or Schema.",
     "people": "Two short avatar stacks on the right: Curators then Contacts, three `fmUser` each at most."
   },
   "renderNotes": [
     "`fmTabs` reads `Tabs` (comma-separated or array) and `Active`; it has no per-tab children and no count badge, so a count is written into the label text.",
-    "`fmUser` always renders initials AND the name, so a stack draws as a row of name chips. Keep stacks to three."
+    "`fmUser` always renders initials AND the name, so a stack draws as a row of name chips. Keep stacks to three.",
+    "Captured value on the Dataset page, 2026-08-18: 'General, Fields (2), Sample Data, Data Quality, Lineage, View 360, Data Model, Activity, Discussions (0)', Active 'General'."
   ],
   "skeleton": {
     "content": [
@@ -51,8 +52,8 @@
             "ref": "fmTabs",
             "ds": "tabs",
             "props": {
-              "Tabs": "General, Fields (2), Sample Data, Data Quality, Lineage, View 360, Data Model, Activity, Discussions (0)",
-              "Active": "General"
+              "Tabs": "{{facets}}",
+              "Active": "{{first_facet}}"
             }
           },
           {
