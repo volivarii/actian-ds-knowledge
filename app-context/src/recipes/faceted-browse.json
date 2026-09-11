@@ -789,8 +789,8 @@
                     "variant": "Type=Outline, Size=sm, Shape=Pill, State=Default",
                     "props": {
                       "Label#1411:32": "Save filters",
-                      "\ud83d\udc41 Leading Icon": false,
-                      "\ud83d\udc41 Trailing Icon": false
+                      "👁 Leading Icon": false,
+                      "👁 Trailing Icon": false
                     }
                   }
                 ]
