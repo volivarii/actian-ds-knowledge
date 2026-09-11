@@ -34,7 +34,7 @@ no entry defers its link to a placeholder.
   (manifest collections `appContextSections`, `appContextSectionsSrc`). New schema
   `schemas/app-context-section.json`. Five sections were extracted from the three Studio captures
   with the derived skeletons unchanged; `facet-tabs` now names the entity's facets through
-  `{{facets}}` instead of the Dataset page's literal list. (PR link: add in its own commit once open.)
+  `{{facets}}` instead of the Dataset page's literal list.
 
 - **The last ten UI leaves the capture fully specifies**
   ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).

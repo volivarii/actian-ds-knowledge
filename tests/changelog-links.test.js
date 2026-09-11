@@ -84,6 +84,10 @@ test("CHANGELOG: no entry defers its PR link to a placeholder", function () {
     /_PR link added at open_/,
     /\(\s*PR pending\s*\)/i,
     /\[#PR\]/,
+    // A fourth spelling ("(PR link: add in its own commit once open.)") walked
+    // past all three shapes above and reached main once, in the section
+    // recipes entry (2026-09-11).
+    /\(\s*PR link[^)]*\)/i,
   ];
   shapes.forEach(function (re) {
     var line = TEXT.split("\n").findIndex(function (l) {
