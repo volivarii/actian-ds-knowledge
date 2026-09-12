@@ -49,7 +49,7 @@ syncs. Everything else in that file comes from Figma.
 | Category defaults, shared by every component in a category | `components/src/categories/<slug>.md` |
 | Global content guidance: voice, tone, words to avoid, UX-pattern topics | `content/src/{writing,patterns,product}/<slug>.md` |
 | Accessibility guidance | `accessibility/src/<slug>.md`, ordered by `_order.json` |
-| App context, personas, terminology | `app-context/src/{apps,entities,patterns}/<slug>.md` and `terminology.yml` |
+| App context, personas, terminology | `app-context/src/{apps,entities,patterns,personas}/<slug>.md` and `terminology.yml` |
 | A token value | `foundations/src/color-primitives.md` (a palette base or the shade formula) or `foundations/src/tokens.md` (a semantic mapping). `tokens/tokens.json` and `tokens.css` are generated from them and edits there are overwritten |
 | Canonical render styling or markup | `components/render/renderer/`: `ds-base.css` for styling, `html-renderers/ds-html-map.js` for markup |
 | Component registry data: keys, variants, properties | **Not here.** Edit in Figma; the nightly sync brings it in |

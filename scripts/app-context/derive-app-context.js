@@ -51,6 +51,7 @@ const KINDS = {
   apps: { dir: "apps", mode: "sections" },
   entities: { dir: "entities", mode: "field", bodyField: "description" },
   patterns: { dir: "patterns", mode: "field", bodyField: "description" },
+  personas: { dir: "personas", mode: "field", bodyField: "description" },
 };
 
 function findSection(sections, title) {
@@ -61,14 +62,15 @@ function findSection(sections, title) {
 // Build the consumer-facing app record in the canonical key order:
 // label, purpose, users, header, sidebar, signals, useCases. (Order is
 // load-bearing — it is the dist's JSON key order; see the byte-compat gate.)
+// `users` holds its slot here and joinPersonas fills it, because a persona's
+// `apps` is the only place that fact is authored.
 function assembleAppRecord(fm, sections) {
   const purpose = findSection(sections, "Purpose");
-  const users = findSection(sections, "Users");
   const signals = findSection(sections, "Signals");
   return {
     label: fm.label,
     purpose: purpose ? unescapeMarkdownText(sectionProse(purpose.lines)) : "",
-    users: users ? sectionBullets(users.lines).map(unescapeMarkdownText) : [],
+    users: [],
     header: fm.header,
     sidebar: fm.sidebar,
     signals: signals
@@ -96,7 +98,17 @@ function readKind(srcDir, kind) {
           `${kind}/${file}: slug "${data.slug}" != filename "${slug}"`,
         );
       }
-      out[slug] = assembleAppRecord(data, parseBodySections(body));
+      const sections = parseBodySections(body);
+      // Refused rather than ignored: an ignored list would sit in the file
+      // looking authoritative while the dist said something else.
+      if (findSection(sections, "Users")) {
+        throw new Error(
+          `${kind}/${file}: "## Users" is no longer authored in an app file. ` +
+            `Who uses an app comes from the personas that list it: add "${slug}" ` +
+            `to the apps of each persona in app-context/src/personas/.`,
+        );
+      }
+      out[slug] = assembleAppRecord(data, sections);
       continue;
     }
     const rec = deriveFieldRecord(text, cfg.bodyField);
@@ -120,14 +132,45 @@ function readTerminology(srcDir) {
   return doc.terms || {};
 }
 
+// Personas own the join between an app and the people who use it. An app's
+// `users` is the sorted labels of the personas whose `apps` include it. A
+// persona's `useCases` is every app use case whose `audience` names its label,
+// with the app it belongs to, in app-slug then authored order. Jobs are read
+// from the app, never restated on the persona. Mutates and returns both maps.
+function joinPersonas(apps, personas) {
+  for (const [appSlug, app] of Object.entries(apps)) {
+    app.users = Object.values(personas)
+      .filter((p) => Array.isArray(p.apps) && p.apps.includes(appSlug))
+      .map((p) => p.label)
+      .sort();
+  }
+  for (const persona of Object.values(personas)) {
+    const useCases = [];
+    for (const appSlug of Object.keys(apps).sort()) {
+      for (const uc of apps[appSlug].useCases || []) {
+        if (!(uc.audience || []).includes(persona.label)) continue;
+        const entry = { app: appSlug, jobs: uc.jobs };
+        if (Array.isArray(uc.patterns)) entry.patterns = uc.patterns;
+        useCases.push(entry);
+      }
+    }
+    persona.useCases = useCases;
+  }
+  return { apps, personas };
+}
+
 function deriveToObject(srcDir) {
+  const apps = readKind(srcDir, "apps");
+  const personas = readKind(srcDir, "personas");
+  joinPersonas(apps, personas);
   return {
     _schema_version: SCHEMA_VERSION,
     _meta: META,
-    apps: readKind(srcDir, "apps"),
+    apps,
     entities: readKind(srcDir, "entities"),
     terminology: readTerminology(srcDir),
     patterns: readKind(srcDir, "patterns"),
+    personas,
   };
 }
 
@@ -223,5 +266,6 @@ module.exports = {
   deriveToObject,
   assembleAppRecord,
   deriveFieldRecord,
+  joinPersonas,
   runCli,
 };

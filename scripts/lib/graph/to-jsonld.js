@@ -18,6 +18,7 @@ var NODE_TYPE = {
   app_entity: "DomainEntity",
   terminology_term: "Term",
   ux_pattern: "UXPattern",
+  persona: "Persona",
 };
 
 function toJsonLd(graph, contextDoc) {

@@ -9,6 +9,7 @@ const records = listContextRecords();
 test("lists both entities and patterns", () => {
   assert.ok(records.some((r) => r.kind === "entity"));
   assert.ok(records.some((r) => r.kind === "pattern"));
+  assert.ok(records.some((r) => r.kind === "persona"));
 });
 
 test("every record carries a label and an authorable source path", () => {
@@ -16,7 +17,7 @@ test("every record carries a label and an authorable source path", () => {
     assert.ok(r.label.trim().length > 0, `${r.slug} has no label`);
     assert.equal(
       r.path,
-      `app-context/src/${r.kind === "entity" ? "entities" : "patterns"}/${r.slug}.md`,
+      `app-context/src/${{ entity: "entities", pattern: "patterns", persona: "personas" }[r.kind]}/${r.slug}.md`,
     );
   }
 });

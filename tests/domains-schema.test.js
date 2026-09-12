@@ -14,7 +14,7 @@ test("domains.json validates against schemas/domains.json", () => {
   assert.ok(ok, "domains.json invalid: " + JSON.stringify(validate.errors, null, 2));
 });
 
-test("registry covers the 12 expected units", () => {
+test("registry covers the 13 expected units", () => {
   const registry = JSON.parse(
     fs.readFileSync(path.join(__dirname, "..", "domains.json"), "utf8"),
   );
@@ -23,6 +23,7 @@ test("registry covers the 12 expected units", () => {
     "app-context/apps",
     "app-context/entities",
     "app-context/patterns",
+    "app-context/personas",
     "canonical-sections",
     "categories",
     "content/global",

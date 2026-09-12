@@ -145,4 +145,5 @@ test("NODE_TYPE maps the app-context node types", function () {
   assert.strictEqual(NODE_TYPE.app_entity, "DomainEntity");
   assert.strictEqual(NODE_TYPE.terminology_term, "Term");
   assert.strictEqual(NODE_TYPE.ux_pattern, "UXPattern");
+  assert.strictEqual(NODE_TYPE.persona, "Persona");
 });

@@ -1,7 +1,7 @@
-// Create an entity or a pattern in the application-context layer.
+// Create an entity, a pattern or a persona in the application-context layer.
 //
 // The collision case is the point of this dialog, not an error branch it
-// tolerates. Entity and pattern names are one flat namespace shared by every
+// tolerates. Entity, pattern and persona names are one flat namespace shared by every
 // product, so a team naming their "Dataset" will usually find one already
 // there, belonging to somebody else's product. Creating a second file would
 // split the vocabulary, which is exactly the fragmentation this layer exists to
@@ -22,7 +22,10 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import type { ContextRecord, GraphPick } from "../lib/contextRecords";
-import type { ContextRecordKind } from "../lib/createContextRecord";
+import {
+  pathForContextRecord,
+  type ContextRecordKind,
+} from "../lib/createContextRecord";
 import {
   SLUG_MAX_LENGTH,
   isValidSlug,
@@ -53,20 +56,49 @@ export interface NewContextRecordDialogProps {
 
 const KIND_COPY: Record<
   ContextRecordKind,
-  { title: string; blurb: string; namePlaceholder: string }
+  {
+    title: string;
+    blurb: string;
+    namePlaceholder: string;
+    // A product uses an entity or a pattern, but a persona works in the product.
+    productsHeading: string;
+    usedBy: string;
+    unused: string;
+  }
 > = {
   entity: {
     title: "New entity",
     blurb:
       "An entity is a thing your product works with: a dataset, a contract, a connection. Name it, say which products use it, and describe it in the page that opens.",
     namePlaceholder: "Data Contract",
+    productsHeading: "Products that use it",
+    usedBy: "used by",
+    unused: "not used by any product yet",
   },
   pattern: {
     title: "New pattern",
     blurb:
       "A pattern is a recurring arrangement of components in your product: an import wizard, a lineage graph, a detail page. Name it, say which products use it, and tick the design-system components it is built from.",
     namePlaceholder: "Import wizard",
+    productsHeading: "Products that use it",
+    usedBy: "used by",
+    unused: "not used by any product yet",
   },
+  persona: {
+    title: "New persona",
+    blurb:
+      "A persona is a role that uses your product: a data steward, a business user, an administrator. Name it the way your use cases name it, say which products it works in, and describe the role in the page that opens.",
+    namePlaceholder: "Data steward",
+    productsHeading: "Products it works in",
+    usedBy: "works in",
+    unused: "not in any product yet",
+  },
+};
+
+const KIND_NOUN: Record<ContextRecordKind, string> = {
+  entity: "An entity",
+  pattern: "A pattern",
+  persona: "A persona",
 };
 
 export function NewContextRecordDialog({
@@ -101,9 +133,9 @@ export function NewContextRecordDialog({
     setSlug(slugFromLabel(label));
   }, [label]);
 
-  // Matched across BOTH kinds on purpose. The namespace this dialog protects is
-  // one flat list, so an entity called Dataset and a pattern called Dataset are
-  // the collision, not two unrelated records. Same kind can be joined; a
+  // Matched across EVERY kind on purpose. The namespace this dialog protects is
+  // one flat list, so an entity called Dataset and a pattern or persona called
+  // Dataset are the collision, not unrelated records. Same kind can be joined; a
   // different kind cannot (an entity does not become a pattern), so that one is
   // refused rather than offered.
   const clash = useMemo(() => records.find((r) => r.slug === slug), [
@@ -164,7 +196,7 @@ export function NewContextRecordDialog({
           </label>
           <Box>
             <Text size="1" color="gray" data-testid="new-record-path">
-              {`app-context/src/${kind === "entity" ? "entities" : "patterns"}/${slug || "<slug>"}.md`}
+              {pathForContextRecord(kind, slug || "<slug>")}
             </Text>
             {trimmedLabel.length > 0 && !validShape && (
               <Text as="p" size="1" color="red" mt="1">
@@ -178,9 +210,9 @@ export function NewContextRecordDialog({
           {crossKind && (
             <Callout.Root color="red" size="1" role="alert" data-testid="cross-kind">
               <Callout.Text>
-                {crossKind.kind === "entity" ? "An entity" : "A pattern"} is
-                already called <strong>{crossKind.label}</strong>. Entities and
-                patterns share one set of names, so pick a different one.
+                {KIND_NOUN[crossKind.kind]} is already called{" "}
+                <strong>{crossKind.label}</strong>. Entities, patterns and
+                personas share one set of names, so pick a different one.
               </Callout.Text>
             </Callout.Root>
           )}
@@ -197,8 +229,8 @@ export function NewContextRecordDialog({
                 {existing.pending
                   ? ", staged earlier in this batch"
                   : existing.usedBy.length > 0
-                    ? `, used by ${existing.usedBy.join(", ")}`
-                    : ", not used by any product yet"}
+                    ? `, ${copy.usedBy} ${existing.usedBy.join(", ")}`
+                    : `, ${copy.unused}`}
                 . Names are shared across every product, so rather than making a
                 second one, add your product to the existing record.
                 {!existing.pending && (
@@ -214,7 +246,7 @@ export function NewContextRecordDialog({
 
           <Box>
             <Text as="div" size="2" weight="bold" mb="1">
-              {existing ? "Add it to" : "Products that use it"}
+              {existing ? "Add it to" : copy.productsHeading}
             </Text>
             <Flex direction="column" gap="1">
               {products.map((p) => (

@@ -39,11 +39,14 @@ function yamlScalar(value: string): string {
 /**
  * The starting file for a new product.
  *
- * The three canonical sections ship EMPTY on purpose. derive-app-context.js
+ * The two canonical sections ship EMPTY on purpose. derive-app-context.js
  * reads Purpose through sectionProse, which joins every non-blank line in the
- * section, and Users/Signals through sectionBullets. A placeholder sentence or
- * comment left here would derive into the product's real purpose/users/signals
- * and travel to consumers as if an author had written it. Headings only.
+ * section, and Signals through sectionBullets. A placeholder sentence or
+ * comment left here would derive into the product's real purpose/signals and
+ * travel to consumers as if an author had written it. Headings only.
+ *
+ * There is no Users section: who uses a product is derived from the personas
+ * that list it, and the derive refuses an app file that carries one.
  */
 export function buildAppStub({
   slug,
@@ -63,8 +66,6 @@ export function buildAppStub({
     "---",
     "",
     "## Purpose",
-    "",
-    "## Users",
     "",
     "## Signals",
     "",
@@ -99,9 +100,9 @@ function blockList(
 }
 
 /**
- * The starting file for a new entity or pattern.
+ * The starting file for a new entity, pattern or persona.
  *
- * The body ships EMPTY, and for these two kinds that matters even more than it
+ * The body ships EMPTY, and for these kinds that matters even more than it
  * does for a product: derive-app-context.js reads the whole body as the record's
  * `description` (bodyField), so a placeholder sentence would not sit unused in a
  * section, it would BE the description every consumer reads.
@@ -139,6 +140,13 @@ export function buildPatternStub(opts: ContextRecordStubOptions): string {
     opts,
     blockList("components", opts.components ?? []),
   );
+}
+
+export function buildPersonaStub(opts: ContextRecordStubOptions): string {
+  // Only the schema-required fields. permissionGroup, literacy, frequency and
+  // sources are left out rather than written empty: an empty value is not a
+  // fact, and the form shows them as empty fields to fill once sourced.
+  return buildRecordStub("app-context-persona.json", opts, []);
 }
 
 const FRONTMATTER_RE = /^(---\r?\n)([\s\S]*?)(\r?\n---)/;

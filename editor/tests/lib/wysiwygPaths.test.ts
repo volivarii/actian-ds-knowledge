@@ -20,6 +20,10 @@ test("isAppContextFile matches only per-record app-context markdown", () => {
     isAppContextFile("app-context/src/patterns/import-wizard.md"),
     true,
   );
+  assert.equal(
+    isAppContextFile("app-context/src/personas/data-steward.md"),
+    true,
+  );
   // Non-records under the app-context prefix — the `startsWith` bug class.
   assert.equal(isAppContextFile("app-context/dist/app-context.json"), false);
   assert.equal(isAppContextFile("app-context/CONSUMING.md"), false);

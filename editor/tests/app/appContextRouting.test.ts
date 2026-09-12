@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { isAppContextFile } from "../../src/app/EditorShell";
 import { matchFrontmatterForm } from "../../src/lib/frontmatterForms";
 
-test("isAppContextFile matches only the three per-record kinds", () => {
+test("isAppContextFile matches only the four per-record kinds", () => {
   assert.equal(isAppContextFile("app-context/src/apps/studio.md"), true);
   assert.equal(
     isAppContextFile("app-context/src/entities/data-product.md"),
@@ -11,6 +11,10 @@ test("isAppContextFile matches only the three per-record kinds", () => {
   );
   assert.equal(
     isAppContextFile("app-context/src/patterns/import-wizard.md"),
+    true,
+  );
+  assert.equal(
+    isAppContextFile("app-context/src/personas/data-steward.md"),
     true,
   );
   assert.equal(isAppContextFile("app-context/src/terminology.yml"), false);
@@ -31,5 +35,8 @@ test("matchFrontmatterForm selects schema/bodyless per app-context kind", () => 
   const pat = matchFrontmatterForm("app-context/src/patterns/x.md");
   assert.equal(pat?.schemaKey, "app-context-pattern");
   assert.equal(pat?.bodyless, false);
+  const per = matchFrontmatterForm("app-context/src/personas/x.md");
+  assert.equal(per?.schemaKey, "app-context-persona");
+  assert.equal(per?.bodyless, false);
   assert.equal(matchFrontmatterForm("app-context/dist/app-context.json"), null);
 });

@@ -37,6 +37,7 @@ const APP_SUB: Record<string, string> = {
   app: "Product",
   entity: "Entity",
   pattern: "Pattern",
+  persona: "Persona",
 };
 
 // a11y-index.json sections carry a `tier`. Only "foundation" and "header"
@@ -88,7 +89,8 @@ export function buildSearchIndex(
     } else if (
       prefix === "app" ||
       prefix === "entity" ||
-      prefix === "pattern"
+      prefix === "pattern" ||
+      prefix === "persona"
     ) {
       const path = navTargetForNodeId(n.id);
       if (path)

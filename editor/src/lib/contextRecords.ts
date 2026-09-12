@@ -1,5 +1,6 @@
-// The application-context records a new product can reuse: the entities and
-// patterns already authored, each with the products that depend on them.
+// The application-context records a new product can reuse: the entities,
+// patterns and personas already authored, each with the products that depend
+// on them.
 //
 // Read from the baked graph, so this is "as of the last merge" like every
 // other graph-derived surface in the editor. A record authored in an open PR
@@ -7,9 +8,13 @@
 
 import { graphNodes } from "../substrate/taxonomyAssets";
 import { bakedGraphIndex } from "../substrate/graphIndex";
+import {
+  pathForContextRecord,
+  type ContextRecordKind,
+} from "./createContextRecord";
 
 export interface ContextRecord {
-  kind: "entity" | "pattern";
+  kind: ContextRecordKind;
   slug: string;
   label: string;
   /** Authorable source file. */
@@ -23,17 +28,13 @@ export interface ContextRecord {
   pending?: boolean;
 }
 
-const KIND_BY_NODE_TYPE: Record<string, "entity" | "pattern"> = {
+const KIND_BY_NODE_TYPE: Record<string, ContextRecordKind> = {
   app_entity: "entity",
   ux_pattern: "pattern",
+  persona: "persona",
 };
 
-const DIR_BY_KIND: Record<"entity" | "pattern", string> = {
-  entity: "entities",
-  pattern: "patterns",
-};
-
-/** Strips the `entity:` / `pattern:` node-id prefix. */
+/** Strips the `entity:` / `pattern:` / `persona:` node-id prefix. */
 function slugOf(nodeId: string): string {
   const colon = nodeId.indexOf(":");
   return colon === -1 ? nodeId : nodeId.slice(colon + 1);
@@ -95,7 +96,7 @@ export function listContextRecords(): ContextRecord[] {
       kind,
       slug,
       label: node.title,
-      path: `app-context/src/${DIR_BY_KIND[kind]}/${slug}.md`,
+      path: pathForContextRecord(kind, slug),
       usedBy: products.map((p) => p.label),
       usedBySlugs: products.map((p) => p.slug),
     });

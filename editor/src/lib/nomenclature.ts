@@ -32,7 +32,8 @@ export type ThingKey =
   | "app"
   | "ux_pattern"
   | "app_entity"
-  | "terminology_term";
+  | "terminology_term"
+  | "persona";
 
 /**
  * Two families, as the sidebar already groups them: Core is what the design
@@ -55,6 +56,7 @@ export const THING_LABEL: Record<ThingKey, string> = {
   ux_pattern: "Pattern",
   app_entity: "Entity",
   terminology_term: "Term",
+  persona: "Persona",
 };
 
 export type StateKey = "empty" | "draft" | "approved" | "inherited";

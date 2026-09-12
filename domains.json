@@ -77,6 +77,14 @@
       "body": { "parse": "none", "mirror": false, "field": "description" },
       "distShape": "single-object"
     },
+    "app-context/personas": {
+      "summary": "App-context personas: body normalized verbatim into a single description field; the derive joins each app's users and each persona's useCases from them.",
+      "src": "app-context/src/personas/*.md",
+      "generator": "scripts/app-context/derive-app-context.js",
+      "frontmatterSchema": "schemas/app-context-persona.json",
+      "body": { "parse": "none", "mirror": false, "field": "description" },
+      "distShape": "single-object"
+    },
     "content/global": {
       "summary": "Global content/writing guidance — bodies concatenated verbatim into one global.md (+ words-to-avoid.json).",
       "src": "content/src/{writing,product}/*.md",

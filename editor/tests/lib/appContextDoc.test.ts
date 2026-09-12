@@ -63,7 +63,8 @@ test("purpose, users and signals are declared on the shape that carries them", (
   // signals, and concluded three published fields had no contract. Measured,
   // the opposite is true, and acting on the issue would have made the schema
   // wrong: those three are not frontmatter at all. They are BODY sections
-  // (## Purpose, ## Users, ## Signals) that derive-app-context.js lifts, and
+  // (## Purpose, ## Signals) plus a join from the personas (users), all built
+  // by derive-app-context.js, and
   // schemas/app-context.json#/$defs/app declares all three with descriptions,
   // examples and required. `signals` is even documented there as what it is,
   // routing keywords, not the "behavioural signals" the frontmatter schema's
@@ -108,5 +109,13 @@ test("purpose, users and signals are declared on the shape that carries them", (
     /behavioural signals/i.test(frontmatter.description ?? ""),
     false,
     "the frontmatter schema still promises signals it does not declare",
+  );
+
+  // Users stopped being a body section when the personas took over the join,
+  // and the derive refuses an app file that still has one.
+  assert.equal(
+    /## Users/.test(frontmatter.description ?? ""),
+    false,
+    "the frontmatter schema still tells authors to write a ## Users section",
   );
 });

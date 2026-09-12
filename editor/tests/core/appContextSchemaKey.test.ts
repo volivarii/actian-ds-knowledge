@@ -6,6 +6,7 @@ test("maps app-context src files to their per-kind schema keys", () => {
   assert.equal(pickSchemaKey("app-context/src/apps/studio.md"), "app-context-app");
   assert.equal(pickSchemaKey("app-context/src/entities/data-product.md"), "app-context-entity");
   assert.equal(pickSchemaKey("app-context/src/patterns/import-wizard.md"), "app-context-pattern");
+  assert.equal(pickSchemaKey("app-context/src/personas/data-steward.md"), "app-context-persona");
 });
 
 test("does not map the dist, terminology, or non-md app-context paths to per-kind keys", () => {

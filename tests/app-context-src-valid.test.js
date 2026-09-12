@@ -49,6 +49,11 @@ const KINDS = [
     dir: path.join(ROOT, "app-context", "src", "patterns"),
     schema: loadSchema("app-context-pattern.json"),
   },
+  {
+    name: "personas",
+    dir: path.join(ROOT, "app-context", "src", "personas"),
+    schema: loadSchema("app-context-persona.json"),
+  },
 ];
 
 for (const kind of KINDS) {
@@ -79,16 +84,20 @@ for (const kind of KINDS) {
   });
 }
 
-test("every app source has Purpose, Users and Signals sections", () => {
+test("every app source has Purpose and Signals sections, and no Users section", () => {
   const appsDir = path.resolve(__dirname, "..", "app-context", "src", "apps");
-  const required = ["purpose", "users", "signals"];
   for (const file of fs.readdirSync(appsDir).filter((f) => f.endsWith(".md"))) {
     const { body } = splitFrontmatter(
       fs.readFileSync(path.join(appsDir, file), "utf8"),
     );
     const titles = parseBodySections(body).map((s) => s.title.toLowerCase());
-    for (const r of required) {
+    for (const r of ["purpose", "signals"]) {
       assert.ok(titles.includes(r), `${file}: missing "## ${r}" section`);
     }
+    // Who uses an app is derived from the personas that list it.
+    assert.ok(
+      !titles.includes("users"),
+      `${file}: "## Users" is derived from app-context/src/personas/ now`,
+    );
   }
 });

@@ -1,7 +1,7 @@
-// Creating an entity or a pattern, and the other half of the same flow: joining
-// one that already exists.
+// Creating an entity, a pattern or a persona, and the other half of the same
+// flow: joining one that already exists.
 //
-// Those two are one flow, not two. Entity and pattern slugs are a single flat
+// Those two are one flow, not two. Entity, pattern and persona slugs are a single flat
 // namespace shared by every product, so a team typing a name that is already
 // taken is not an error case, it is the common case: the record they want
 // usually exists already and belongs to somebody else's product too. Creating a
@@ -13,13 +13,25 @@ import {
   addAppToApps,
   buildEntityStub,
   buildPatternStub,
+  buildPersonaStub,
+  type ContextRecordStubOptions,
 } from "./appContextCreate";
 
-export type ContextRecordKind = "entity" | "pattern";
+export type ContextRecordKind = "entity" | "pattern" | "persona";
 
 const DIR_BY_KIND: Record<ContextRecordKind, string> = {
   entity: "entities",
   pattern: "patterns",
+  persona: "personas",
+};
+
+const STUB_BY_KIND: Record<
+  ContextRecordKind,
+  (opts: ContextRecordStubOptions) => string
+> = {
+  entity: buildEntityStub,
+  pattern: buildPatternStub,
+  persona: buildPersonaStub,
 };
 
 export function pathForContextRecord(
@@ -52,7 +64,7 @@ export interface CreateRecordResult {
 }
 
 /**
- * Stages a brand new entity or pattern.
+ * Stages a brand new entity, pattern or persona.
  *
  * Refuses when the batch already carries a file at that path, and refuses HERE
  * rather than trusting the dialog to have checked. The cart keeps one entry per
@@ -77,8 +89,7 @@ export function createContextRecord(
   };
   deps.stage({
     path,
-    content:
-      value.kind === "entity" ? buildEntityStub(opts) : buildPatternStub(opts),
+    content: STUB_BY_KIND[value.kind](opts),
     basedOnSha: "",
   });
   return { path, created: true };
