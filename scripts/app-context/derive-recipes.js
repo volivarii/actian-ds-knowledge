@@ -154,21 +154,40 @@ function inlineSections(recipe, sectionsBySlug) {
       const out = [];
       for (let i = 0; i < value.length; i++) {
         const v = value[i];
-        if (v && typeof v === "object" && !Array.isArray(v) && v.type === "SECTION") {
+        if (
+          v &&
+          typeof v === "object" &&
+          !Array.isArray(v) &&
+          v.type === "SECTION"
+        ) {
           if (!spliceable) {
             errors.push(
-              where + ": SECTION node at " + label + "/" + i +
+              where +
+                ": SECTION node at " +
+                label +
+                "/" +
+                i +
                 " is not an element of content[] or children[]",
             );
             continue;
           }
+          // `slot` is the one allowed per-use annotation: it says which of the
+          // RECIPE's own slots this splice fulfils, so a consumer reading the
+          // spliced dist (where the SECTION node itself no longer exists) can
+          // still find the region by name. It is not a content override, so it
+          // does not reopen "per-use overrides are not a thing": the section's
+          // own content is still edited only in the section file.
           const extraKeys = Object.keys(v).filter(
-            (k) => k !== "type" && k !== "section",
+            (k) => k !== "type" && k !== "section" && k !== "slot",
           );
           if (extraKeys.length > 0) {
             errors.push(
-              where + ": SECTION node at " + label + "/" + i +
-                " carries keys other than type and section (" +
+              where +
+                ": SECTION node at " +
+                label +
+                "/" +
+                i +
+                " carries keys other than type, section and slot (" +
                 extraKeys.join(", ") +
                 "); per-use overrides are not a thing, edit the section",
             );
@@ -180,8 +199,28 @@ function inlineSections(recipe, sectionsBySlug) {
             continue;
           }
           used.push(v.section);
-          for (const node of section.skeleton.content) {
-            out.push(JSON.parse(JSON.stringify(node)));
+          const spliced = section.skeleton.content.map((node) =>
+            JSON.parse(JSON.stringify(node)),
+          );
+          // Stamp onto the ROOT of the spliced subtree only: the top node(s)
+          // of section.skeleton.content, never a descendant. A section with
+          // several roots (none today) gets the stamp on the first only, in
+          // source order — there is no way to name "which root" from the
+          // reference node, so the first is the documented, deterministic
+          // choice; see the derive-recipes test for the case.
+          //
+          // `slot` may be a single string, or an array of strings when one
+          // spliced root is the sole carrier of more than one of the RECIPE's
+          // slots (e.g. `drawer-header` is one FRAME that is simultaneously
+          // the recipe's `header`, `subtitle` and `metrics` regions — there is
+          // no narrower node to split the tag across without restructuring
+          // the section itself). `walkSlotNodes` in
+          // tests/app-context-recipes.test.js reads either shape.
+          if (v.slot !== undefined && spliced.length > 0) {
+            spliced[0] = Object.assign({}, spliced[0], { slot: v.slot });
+          }
+          for (const node of spliced) {
+            out.push(node);
           }
           continue;
         }
@@ -192,7 +231,9 @@ function inlineSections(recipe, sectionsBySlug) {
     if (!value || typeof value !== "object") return value;
     if (value.type === "SECTION") {
       errors.push(
-        where + ": SECTION node at " + label +
+        where +
+          ": SECTION node at " +
+          label +
           " is not an element of content[] or children[]",
       );
       return JSON.parse(JSON.stringify(value));

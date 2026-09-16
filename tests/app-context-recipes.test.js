@@ -245,14 +245,24 @@ test("no recipe sets sizing.horizontal FILL inside a VERTICAL frame", () => {
   const { readSections } = require("../scripts/app-context/derive-sections");
   const { sections } = readSections(
     path.join(ROOT, "app-context", "src"),
-    JSON.parse(fs.readFileSync(path.join(ROOT, "schemas", "app-context-section.json"), "utf8")),
+    JSON.parse(
+      fs.readFileSync(
+        path.join(ROOT, "schemas", "app-context-section.json"),
+        "utf8",
+      ),
+    ),
   );
-  assert.ok(sections.length > 0, "no sections read; this check would be vacuous for them");
+  assert.ok(
+    sections.length > 0,
+    "no sections read; this check would be vacuous for them",
+  );
   for (const s of sections) {
     assert.deepEqual(
       axisBlindFills(s.skeleton),
       [],
-      "sections/" + s.slug + ": these are children of a VERTICAL frame and must omit sizing.horizontal",
+      "sections/" +
+        s.slug +
+        ": these are children of a VERTICAL frame and must omit sizing.horizontal",
     );
   }
   // The two loops above check recipes rooted at skeleton.content and sections
@@ -270,7 +280,9 @@ test("no recipe sets sizing.horizontal FILL inside a VERTICAL frame", () => {
     assert.deepEqual(
       axisBlindFills(doc.skeleton),
       [],
-      "dist/" + f + ": these are children of a VERTICAL frame and must omit sizing.horizontal (a section root meets its parent only here)",
+      "dist/" +
+        f +
+        ": these are children of a VERTICAL frame and must omit sizing.horizontal (a section root meets its parent only here)",
     );
   }
 });
@@ -528,19 +540,35 @@ function recipesUnderTest() {
   // never token-scanned, while `subjects.length > 0` still passes on the dist
   // entries alone: the false-all-clear shape this gate exists to prevent. CI
   // catches it because the derive exits 1, but a local `npm test` would not.
-  assert.deepEqual(errors, [], "src recipes failed to read; they were not scanned");
-  for (const r of recipes) out.push({ label: "src/" + r.slug, skeleton: r.skeleton });
+  assert.deepEqual(
+    errors,
+    [],
+    "src recipes failed to read; they were not scanned",
+  );
+  for (const r of recipes)
+    out.push({ label: "src/" + r.slug, skeleton: r.skeleton });
   const { readSections } = require("../scripts/app-context/derive-sections");
   const SECTION_SCHEMA = JSON.parse(
-    fs.readFileSync(path.join(ROOT, "schemas", "app-context-section.json"), "utf8"),
+    fs.readFileSync(
+      path.join(ROOT, "schemas", "app-context-section.json"),
+      "utf8",
+    ),
   );
   const { sections, errors: sectionErrors } = readSections(
     path.join(ROOT, "app-context", "src"),
     SECTION_SCHEMA,
   );
-  assert.deepEqual(sectionErrors, [], "src sections failed to read; they were not scanned");
-  assert.ok(sections.length > 0, "no sections read; the token gate would not reach them");
-  for (const s of sections) out.push({ label: "src/sections/" + s.slug, skeleton: s.skeleton });
+  assert.deepEqual(
+    sectionErrors,
+    [],
+    "src sections failed to read; they were not scanned",
+  );
+  assert.ok(
+    sections.length > 0,
+    "no sections read; the token gate would not reach them",
+  );
+  for (const s of sections)
+    out.push({ label: "src/sections/" + s.slug, skeleton: s.skeleton });
   for (const f of distFiles()) {
     const doc = JSON.parse(fs.readFileSync(path.join(DIST, f), "utf8"));
     out.push({ label: "dist/" + f, skeleton: doc.skeleton });
@@ -552,10 +580,15 @@ test("every design token a recipe names exists in tokens/tokens.css", () => {
   const declared = declaredTokenNames();
   assert.ok(
     declared.size > 100,
-    "read only " + declared.size + " tokens from tokens.css; the check would be toothless",
+    "read only " +
+      declared.size +
+      " tokens from tokens.css; the check would be toothless",
   );
   const subjects = recipesUnderTest();
-  assert.ok(subjects.length > 0, "no recipes read; this check would be vacuous");
+  assert.ok(
+    subjects.length > 0,
+    "no recipes read; this check would be vacuous",
+  );
   for (const s of subjects) {
     const { refs, visited } = scanTokens(s.skeleton);
     // Non-vacuity on REACH, not on findings. A recipe composed entirely of
@@ -564,7 +597,10 @@ test("every design token a recipe names exists in tokens/tokens.css", () => {
     // state; "visited zero values" is the one that means the walker missed it.
     assert.ok(
       visited > 5,
-      s.label + ": walker visited only " + visited + " values; it is not reaching this recipe",
+      s.label +
+        ": walker visited only " +
+        visited +
+        " values; it is not reaching this recipe",
     );
     const unknown = [...new Set(refs)].filter((t) => !declared.has(t)).sort();
     assert.deepEqual(
@@ -602,5 +638,124 @@ test("positive control: a non---zen custom property is NOT reported as undeclare
   const { refs } = scanTokens({
     content: [{ type: "TEXT", color: "var(--fm-brand)" }],
   });
-  assert.deepEqual(refs, [], "--fm- properties are the renderer's, not tokens.css's");
+  assert.deepEqual(
+    refs,
+    [],
+    "--fm- properties are the renderer's, not tokens.css's",
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Slot coverage: every declared slot must be either carried by a skeleton
+// node or listed in undrawnSlots, and never both, so a reader (or a
+// generated-screen validator, Move 4 in P) can find a named region without
+// parsing prose against layout by hand, and a genuinely absent region reads
+// as absent rather than as a missed tag.
+//
+// Deviations from the original brief, both necessary and both kept per
+// controller ruling: `readRecipes` is called with `app-context/src` (not the
+// bare repo ROOT the brief's snippet used, which points at a directory that
+// does not exist and would make this test vacuously pass over an empty
+// list); the walker is named `walkSlotNodes`, not `walkNodes`, because the
+// file already declares a top-level `walkNodes(value, parentMode, visit)`
+// above for the axis-blind FILL checks — a second `function walkNodes` here
+// would hoist over the first and silently break every 3-arg caller with a
+// "visit is not a function" throw.
+// ---------------------------------------------------------------------------
+
+function walkSlotNodes(node, visit) {
+  if (!node || typeof node !== "object") return;
+  visit(node);
+  (node.children || []).forEach((c) => walkSlotNodes(c, visit));
+}
+
+// A node's `slot` is a single string, or an array of strings when one node
+// (typically a SECTION splice's root — see inlineSections) is the sole
+// carrier of more than one of the recipe's slots.
+function slotKeysOf(node) {
+  if (!node.slot) return [];
+  return Array.isArray(node.slot) ? node.slot : [node.slot];
+}
+
+test("every declared slot key is carried by a node or listed in undrawnSlots, never both", () => {
+  const { recipes } = readRecipes(
+    path.join(ROOT, "app-context", "src"),
+    SCHEMA,
+  );
+  for (const r of recipes) {
+    const declared = Object.keys(r.slots || {});
+    const undrawn = r.undrawnSlots || [];
+    const carried = new Set();
+    (r.skeleton.content || []).forEach((n) =>
+      walkSlotNodes(n, (x) => {
+        slotKeysOf(x).forEach((k) => carried.add(k));
+      }),
+    );
+    for (const key of undrawn) {
+      assert.ok(
+        declared.includes(key),
+        `${r.slug}: undrawnSlots lists "${key}", which is not a declared slot`,
+      );
+      assert.ok(
+        !carried.has(key),
+        `${r.slug}: "${key}" is in undrawnSlots but is also carried by a skeleton node — it IS drawn, pick one`,
+      );
+    }
+    for (const key of declared) {
+      assert.ok(
+        carried.has(key) || undrawn.includes(key),
+        `${r.slug}: slot "${key}" is declared but neither carried by a skeleton node nor listed in undrawnSlots`,
+      );
+    }
+    for (const key of carried) {
+      assert.ok(
+        declared.includes(key),
+        `${r.slug}: node carries slot:"${key}" that slots does not declare`,
+      );
+    }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// inlineSections: a SECTION splice node may carry `slot`, stamped onto the
+// root of the spliced-in subtree so the region survives past the point
+// where the SECTION node itself disappears (dist never holds a SECTION
+// node). Broader coverage — the still-errors-on-other-extra-keys case, the
+// multi-root-stamps-first-only case, and the array-form case — lives beside
+// inlineSections's other tests in tests/app-context-sections.test.js; this
+// is the one the controller asked to be local to this file too.
+// ---------------------------------------------------------------------------
+
+test("inlineSections stamps a SECTION node's slot onto the spliced root", () => {
+  const { inlineSections } = require("../scripts/app-context/derive-recipes");
+  const sectionsBySlug = {
+    "mock-section": {
+      slug: "mock-section",
+      skeleton: { content: [{ type: "FRAME", name: "Mock root" }] },
+    },
+  };
+  const { recipe: out, errors } = inlineSections(
+    {
+      slug: "mock-recipe",
+      skeleton: {
+        content: [{ type: "SECTION", section: "mock-section", slot: "x" }],
+      },
+    },
+    sectionsBySlug,
+  );
+  assert.deepEqual(errors, []);
+  assert.equal(out.skeleton.content[0].name, "Mock root");
+  assert.equal(out.skeleton.content[0].slot, "x");
+
+  const { errors: badErrors } = inlineSections(
+    {
+      slug: "mock-recipe-bad",
+      skeleton: {
+        content: [{ type: "SECTION", section: "mock-section", bogus: true }],
+      },
+    },
+    sectionsBySlug,
+  );
+  assert.equal(badErrors.length, 1);
+  assert.match(badErrors[0], /carries keys other than type, section and slot/);
 });

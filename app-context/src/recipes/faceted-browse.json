@@ -4,12 +4,8 @@
   "label": "Faceted browse",
   "description": "Three pane faceted browse over a large item set: app sidebar, a fixed-width filter rail of collapsible facet groups, and a result list of composed cards. The defining trait is scale: a live total, per-facet counts, and results that carry their own metadata rather than fitting table columns. Derived from the Studio Catalog page.",
   "when": "Use when the user browses or narrows a large collection by several independent facets at once. Do NOT use table-list: a table cannot hold a filter rail, per-facet counts, or a result unit richer than a row. Do NOT use search-filtered-table, which is explicitly the single-search-no-facets case.",
-  "apps": [
-    "studio"
-  ],
-  "patterns": [
-    "faceted-browse"
-  ],
+  "apps": ["studio"],
+  "patterns": ["faceted-browse"],
   "tags": [
     "search",
     "browse",
@@ -30,11 +26,13 @@
     "bulk-bar": "Select-all plus batch actions, with the sort control opposite",
     "results": "Result cards: type and sharing tags, title, source metadata, summary, domain, pending-suggestion chip, and a right meta column with completion and last-updated"
   },
+  "undrawnSlots": ["results-header", "bulk-bar"],
   "renderNotes": [
     "Children of a VERTICAL frame must omit `sizing`. `sizing.horizontal:\"FILL\"` emits `flex:1`, which in a column container stretches them vertically and distributes the height evenly.",
     "fmSlider and fmProgressBar read the VARIANT (Progress= / Completion=), not props, and collapse to zero width inside a centred row unless hosted in a fixed-width frame.",
     "fmCheckbox and fmToggle render no text; pair them with a sibling TEXT node.",
-    "Use DIVIDER for full-width rules. RECT takes a fixed pixel width and will not span."
+    "Use DIVIDER for full-width rules. RECT takes a fixed pixel width and will not span.",
+    "`results-header` and `bulk-bar` are undrawn until the third capture adds the bulk bar and results header (Task 2.2); `undrawnSlots` is temporary and comes back out of this file when those nodes land."
   ],
   "skeleton": {
     "chrome": "standard",
@@ -51,15 +49,11 @@
           {
             "type": "FRAME",
             "name": "Filter rail",
+            "slot": "rail",
             "layout": {
               "mode": "VERTICAL",
               "spacing": 12,
-              "padding": [
-                0,
-                20,
-                0,
-                0
-              ]
+              "padding": [0, 20, 0, 0]
             },
             "children": [
               {
@@ -75,12 +69,7 @@
                 "layout": {
                   "mode": "VERTICAL",
                   "spacing": 10,
-                  "padding": [
-                    0,
-                    0,
-                    14,
-                    0
-                  ]
+                  "padding": [0, 0, 14, 0]
                 },
                 "children": [
                   {
@@ -158,12 +147,7 @@
                 "layout": {
                   "mode": "VERTICAL",
                   "spacing": 10,
-                  "padding": [
-                    0,
-                    0,
-                    14,
-                    0
-                  ]
+                  "padding": [0, 0, 14, 0]
                 },
                 "children": [
                   {
@@ -539,12 +523,7 @@
                 "layout": {
                   "mode": "VERTICAL",
                   "spacing": 10,
-                  "padding": [
-                    0,
-                    0,
-                    14,
-                    0
-                  ]
+                  "padding": [0, 0, 14, 0]
                 },
                 "children": [
                   {
@@ -608,12 +587,7 @@
                 "layout": {
                   "mode": "VERTICAL",
                   "spacing": 10,
-                  "padding": [
-                    0,
-                    0,
-                    14,
-                    0
-                  ]
+                  "padding": [0, 0, 14, 0]
                 },
                 "children": [
                   {
@@ -658,12 +632,7 @@
                 "layout": {
                   "mode": "VERTICAL",
                   "spacing": 10,
-                  "padding": [
-                    0,
-                    0,
-                    14,
-                    0
-                  ]
+                  "padding": [0, 0, 14, 0]
                 },
                 "children": [
                   {
@@ -708,12 +677,7 @@
                 "layout": {
                   "mode": "VERTICAL",
                   "spacing": 10,
-                  "padding": [
-                    0,
-                    0,
-                    14,
-                    0
-                  ]
+                  "padding": [0, 0, 14, 0]
                 },
                 "children": [
                   {
@@ -761,6 +725,7 @@
           {
             "type": "FRAME",
             "name": "Results pane",
+            "slot": "results",
             "layout": {
               "mode": "VERTICAL",
               "spacing": 8
@@ -779,12 +744,7 @@
                 "layout": {
                   "mode": "HORIZONTAL",
                   "spacing": 12,
-                  "padding": [
-                    12,
-                    0,
-                    12,
-                    0
-                  ],
+                  "padding": [12, 0, 12, 0],
                   "counterAxisAlignItems": "MIN"
                 },
                 "children": [
@@ -952,12 +912,7 @@
                 "layout": {
                   "mode": "HORIZONTAL",
                   "spacing": 12,
-                  "padding": [
-                    12,
-                    0,
-                    12,
-                    0
-                  ],
+                  "padding": [12, 0, 12, 0],
                   "counterAxisAlignItems": "MIN"
                 },
                 "children": [
@@ -1110,12 +1065,7 @@
                 "layout": {
                   "mode": "HORIZONTAL",
                   "spacing": 12,
-                  "padding": [
-                    12,
-                    0,
-                    12,
-                    0
-                  ],
+                  "padding": [12, 0, 12, 0],
                   "counterAxisAlignItems": "MIN"
                 },
                 "children": [
