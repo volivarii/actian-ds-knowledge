@@ -743,9 +743,11 @@ test("direction knows fewer FM collapses and fewer unowned modifiers are progres
 });
 
 test("previousValues carries every baseline from the merge base, not from this run's own write", function () {
+  // `{ limit: 2 }` assumed at most one render-contract commit ahead of the merge base;
+  // this branch has two (e36fa9e1, 8c291f99), which missed it, while buildRollup's default of 12 does not.
   const prev = trend.previousValues(
-    trend.oracleSeries({ limit: 2 }),
-    trend.collapseSeries({ limit: 2 }),
+    trend.oracleSeries(),
+    trend.collapseSeries(),
     trend.dsBaselines(),
   );
   // One definition of previous, inside previousValues, and it now covers the
