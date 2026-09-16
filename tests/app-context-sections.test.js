@@ -398,7 +398,10 @@ test("inlineSections: a reference's `slot` overrides a section-authored `slot` o
 
   // No reference-level stamp: both roots keep the `slot` they authored.
   const { recipe: unstamped, errors: unstampedErrors } = inlineSections(
-    { slug: "r", skeleton: { content: [{ type: "SECTION", section: "self-tagging" }] } },
+    {
+      slug: "r",
+      skeleton: { content: [{ type: "SECTION", section: "self-tagging" }] },
+    },
     SELF_TAGGING,
   );
   assert.deepEqual(unstampedErrors, []);
@@ -546,7 +549,16 @@ test("every dist section is schema-valid, stamped, and named by its slug", () =>
 // component exists in Figma, not that any consumer (plugin, editor) has
 // shipped code for it. Test-side on purpose (not a derive error): a Figma
 // rename must not redden an unrelated PR by failing the derive.
-test("every `ds` slug in a section INSTANCE resolves in the DS kit registry", () => {
+//
+// Task 2.2 introduced a SECOND instance shape a section may carry, alongside
+// the FM-primary `{ ref, ds }` pair this check was written against: a
+// DS-primary `{ library: "ds", dsSlug }` node (control-bar's button, toolbar,
+// checkbox), the same shape a page recipe's own INSTANCE nodes use, and the
+// one `render-node.js` in the plugin actually dispatches on `library:"ds"`
+// for. Both name a DS kit slug; both must resolve the same way, or this test
+// would prove the property for one shape and silently stop covering it for
+// the other the moment a section adopts it.
+test("every DS slug in a section INSTANCE (`ds` or `dsSlug`) resolves in the DS kit registry", () => {
   const dskit = JSON.parse(
     fs.readFileSync(
       path.join(ROOT, "components", "dist", "registries", "dskit.json"),
@@ -578,6 +590,14 @@ test("every `ds` slug in a section INSTANCE resolves in the DS kit registry", ()
       if (!v || typeof v !== "object") return;
       if (v.type === "INSTANCE" && v.ds && !known.has(v.ds)) {
         bad.push(s.slug + ": ds '" + v.ds + "' (ref " + v.ref + ")");
+      }
+      if (
+        v.type === "INSTANCE" &&
+        v.library === "ds" &&
+        v.dsSlug &&
+        !known.has(v.dsSlug)
+      ) {
+        bad.push(s.slug + ": dsSlug '" + v.dsSlug + "' not in dskit registry");
       }
       Object.values(v).forEach(walk);
     })(s.skeleton.content);
@@ -646,6 +666,15 @@ test("paths-manifest declares the two section collections in the metadata zone",
   assert.ok(manifest._zones.metadata.includes("appContextSectionsSrc"));
 });
 
+// Deviation from the original check, kept per the same reasoning as the
+// registry-resolution test above: a `{ library: "ds", dsSlug }` INSTANCE
+// (Task 2.2's control-bar) already names its DS identity directly, the same
+// property `ds` exists to prove for an FM-primary `{ ref, ds }` node. It is
+// checked on its own branch, first, rather than folded into the `!v.ds`
+// branch below, because `v.ds` is genuinely absent on this shape and the
+// excuse path there is written for the opposite case (an FM ref with no DS
+// leaf at all, e.g. fmSlider) — running a dsSlug node through it would ask
+// for a renderNote quoting `v.ref`, which is undefined on this shape.
 test("every INSTANCE in a section carries a ds slug, or the section's renderNotes say why not", () => {
   const { sections, errors } = readSections(
     path.join(ROOT, "app-context", "src"),
@@ -660,7 +689,13 @@ test("every INSTANCE in a section carries a ds slug, or the section's renderNote
       if (!v || typeof v !== "object") return;
       if (v.type === "INSTANCE") {
         instances++;
-        if (!v.ds) {
+        if (v.library === "ds" && v.dsSlug) {
+          assert.match(
+            v.dsSlug,
+            /^[a-z][a-z0-9-]*$/,
+            s.slug + ": dsSlug must be a slug",
+          );
+        } else if (!v.ds) {
           const excused = (s.renderNotes || []).some(
             (n) => n.includes("`" + v.ref + "`") && /no DS/i.test(n),
           );

@@ -3,7 +3,7 @@
   "kind": "section",
   "slug": "control-bar",
   "label": "Control bar",
-  "description": "The two rows above a result list: the results header ('N results' and Save filters) and the bulk action bar (select-all checkbox, Edit, Move to catalog, Delete, Export selection; Sort on the right).",
+  "description": "The two rows above a result list: the results header ('N results' and Save filters) and the bulk action bar (select-all checkbox, a bulk-action toolbar, Sort on the right).",
   "role": "control-bar",
   "apps": [
     "studio"
@@ -22,12 +22,14 @@
     "productVersion": "studio-dev"
   },
   "slots": {
-    "results-header": "'{{result_count}} results' at 22px on the left, an outline pill 'Save filters' on the right.",
-    "bulk-bar": "A checkbox followed by the bulk verbs as plain text, and the sort control as text on the right."
+    "results-header": "'{{result_count}} results' at 24px on the left, a secondary 'Save filters' button on the right.",
+    "bulk-bar": "A select-all checkbox, a bulk-action toolbar (Edit / Move to catalog / Delete / Export selection, approximated by the toolbar leaf's own fixed icon group), and the sort control as text on the right."
   },
   "renderNotes": [
     "Two sibling frames, spliced in this order; the DIVIDER that follows them belongs to the page recipe.",
-    "`fmCheckbox` renders no text: the verbs are TEXT siblings."
+    "checkbox renders no label element when Label is the empty string (Task 1.2); the bulk verbs are carried by the toolbar leaf, not by TEXT siblings, unlike the pre-2.2 fmCheckbox composition this replaces.",
+    "button's variant here (`Type=Secondary, State=Default`) is the renderer's legacy Type axis (ds-html-map.js button case, typeMap fallback), not the Intent/Emphasis/Size/State axis pair the authoring doc's vocabulary table documents as current; both are read by the same case, so this is a deliberate, working choice, not a stale example.",
+    "toolbar's Type axis (Single/Combined/Group) has no rendering effect: ds-html-map.js's toolbar case branches only on Orientation and the `Show View scale` prop, and always draws a fixed filter/sort/view/more icon group. `Show View scale: false` is set here because a zoom control has no place in a results bulk-action bar; the fixed icon group approximates the captured bulk verbs (Edit / Move to catalog / Delete / Export selection) but does not literally read them, and there is no `Items` prop to supply real verb labels."
   ],
   "skeleton": {
     "content": [
@@ -46,18 +48,16 @@
             "type": "TEXT",
             "content": "{{result_count}} results",
             "font": "Inter:Semi Bold",
-            "size": 22,
+            "size": 24,
             "color": "var(--zen-color-text-default)"
           },
           {
             "type": "INSTANCE",
-            "ref": "fmButton",
-            "ds": "button",
-            "variant": "Type=Outline, Size=sm, Shape=Pill, State=Default",
+            "library": "ds",
+            "dsSlug": "button",
+            "variant": "Type=Secondary, State=Default",
             "props": {
-              "Label#1411:32": "Save filters",
-              "👁 Leading Icon": false,
-              "👁 Trailing Icon": false
+              "Label": "Save filters"
             }
           }
         ]
@@ -69,12 +69,7 @@
         "layout": {
           "mode": "HORIZONTAL",
           "spacing": 0,
-          "padding": [
-            10,
-            0,
-            10,
-            0
-          ],
+          "padding": [10, 0, 10, 0],
           "primaryAxisAlignItems": "SPACE_BETWEEN",
           "counterAxisAlignItems": "CENTER"
         },
@@ -87,51 +82,34 @@
               "spacing": 18,
               "counterAxisAlignItems": "CENTER"
             },
-            "children": [
-              {
-                "type": "INSTANCE",
-                "ref": "fmCheckbox",
-                "ds": "checkbox",
-                "variant": "State=Off",
-                "props": {}
-              },
-              {
-                "type": "TEXT",
-                "content": "Edit",
-                "font": "Inter:Regular",
-                "size": 13,
-                "color": "var(--zen-color-text-secondary)"
-              },
-              {
-                "type": "TEXT",
-                "content": "Move to catalog",
-                "font": "Inter:Regular",
-                "size": 13,
-                "color": "var(--zen-color-text-secondary)"
-              },
-              {
-                "type": "TEXT",
-                "content": "Delete",
-                "font": "Inter:Regular",
-                "size": 13,
-                "color": "var(--zen-color-text-secondary)"
-              },
-              {
-                "type": "TEXT",
-                "content": "Export selection",
-                "font": "Inter:Regular",
-                "size": 13,
-                "color": "var(--zen-color-text-secondary)"
-              }
-            ],
             "sizing": {
               "horizontal": "HUG",
               "vertical": "HUG"
-            }
+            },
+            "children": [
+              {
+                "type": "INSTANCE",
+                "library": "ds",
+                "dsSlug": "checkbox",
+                "variant": "Selection=Unchecked, State=Default",
+                "props": {
+                  "Label": ""
+                }
+              },
+              {
+                "type": "INSTANCE",
+                "library": "ds",
+                "dsSlug": "toolbar",
+                "variant": "Type=Group, Orientation=Horizontal",
+                "props": {
+                  "Show View scale": false
+                }
+              }
+            ]
           },
           {
             "type": "TEXT",
-            "content": "Sort by  Name ASC",
+            "content": "Sort  {{sort_label}}",
             "font": "Inter:Regular",
             "size": 13,
             "color": "var(--zen-color-text-default)"

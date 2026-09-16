@@ -163,3 +163,49 @@ it. Tracked as #558, which found the deeper cause: the pattern schema is `additi
 over five fields with nowhere to record when a pattern applies or which neighbour to use instead, and
 25 of the 31 patterns claim `studio`. Correcting the prose alone would leave the next reader with the
 same 25-way choice, so the fix is a selection field first.
+
+## The third capture, 2026-09-16: composed from DS leaves
+
+`faceted-browse` was re-authored, leaf by leaf, from the FM-tier `fmCheckbox` + `fmTag` + TEXT
+compositions the second capture left behind to real DS-tier INSTANCE nodes: `{ "type": "INSTANCE",
+"library": "ds", "dsSlug": "<slug>", "variant": "...", "props": {...} }`, the same shape
+`render-node.js` already dispatches on for a generated screen's `library:"ds"` nodes. The two prior
+captures proved the FM vocabulary reached the page; this one proves the DS vocabulary does too, with
+no gap. `item-type-tag` gives every facet row and the rail a real per-type colour (the six Studio item
+types resolve straight onto its `Type` axis, no `Custom-N` or `Glossary-N` stand-in needed);
+`search-result-card` replaced the three hand-built result cards with six; `pagination` closes the
+results pane, which had none. `../sections/control-bar.json` moved the same way: its results-header
+and bulk-bar roots now carry `button`, `checkbox` and `toolbar` instances instead of an `fmButton` +
+`fmCheckbox` + TEXT composition.
+
+**Held.** No new DS component was needed either, mirroring the first capture's FM finding: every leaf
+this composition reaches for (`checkbox`, `toggle`, `dropdown-select-default`, `item-type-tag`,
+`search-result-card`, `read-only-tag`, `progress-bar-small`, `pagination`, `button`, `toolbar`) is
+already `**BUILT**` in `references/generate-flow/ds-components-authoring.md`.
+
+**Corrected.** Two components read less than their variant vocabulary suggests, both recorded in
+`renderNotes` rather than papered over: `toolbar`'s `Type` axis (Single/Combined/Group) has no
+rendering effect at all (only `Orientation` and `Show View scale` do), so it cannot literally reproduce
+the captured bulk verbs (Edit / Move to catalog / Delete / Export selection); and `search-result-card`
+carries no completion or sharing prop, so the completion meter and the Shared tag are siblings
+(`progress-bar-small`, `read-only-tag`) rather than something the card itself renders.
+
+**A section gains its first DS-primary INSTANCE.** Every prior section kept the FM-primary `{ ref, ds
+}` pair the two `tests/app-context-sections.test.js` gates were written against. `control-bar.json`'s
+new `toolbar` instance has no FM equivalent at all (no `fmToolbar` exists), so it cannot carry a `ref`;
+both gates (`every DS slug ... resolves in the DS kit registry` and `every INSTANCE ... carries a ds
+slug`) were extended to also recognise a `{ library: "ds", dsSlug }` node as a first-class DS identity,
+checked exactly as strictly as the `ref`+`ds` shape already was, not exempted from it. Proven RED before
+GREEN by planting an unregistered `dsSlug` and reverting it, per this repo's gate doctrine.
+
+Not a lo-fi regression: `render-node.js` dispatches per node on `library === "ds"`, straight to
+`ds-html-map.js`, independently of the `--skin lofi`/hi-fi choice (a CSS-only overlay,
+`lofi-skin.js`, that grays non-focus text and `[class*="ds-"]` sub-elements regardless of which map
+drew them). A DS-primary node was never FM-only territory; this capture just no longer carries an FM
+`ref` alongside it.
+
+Not done here, and named so the next reader does not assume it was: every OTHER recipe and section
+still authors FM-primary `{ ref, ds }` pairs, converted to their DS equivalent by a page generated with
+`--hifi` through `transform-to-hifi.js` + `fm-to-ds-map.json`. Unifying every capture onto one
+DS-primary vocabulary (so that hand-kept map has nothing left to do) is Move 2, tracked separately;
+this capture and `control-bar` are the first two composed directly in it, not a general migration.
