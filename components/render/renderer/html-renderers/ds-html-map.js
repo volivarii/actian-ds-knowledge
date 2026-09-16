@@ -1018,7 +1018,7 @@
               '<svg class="ds-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="2" rx="1" fill="currentColor"/></svg>';
           }
           if (v.State === "Disabled") cbCls += " is-disabled";
-          var cbLabel = esc(props.Label || "Label");
+          var cbLabel = props.Label ? esc(props.Label) : "";
           return (
             '<label class="' +
             cbCls +
@@ -1026,9 +1026,11 @@
             '<span class="ds-checkbox__check">' +
             cbGlyph +
             "</span>" +
-            '</span><span class="ds-checkbox__label">' +
-            cbLabel +
-            "</span></label>"
+            "</span>" +
+            (cbLabel
+              ? '<span class="ds-checkbox__label">' + cbLabel + "</span>"
+              : "") +
+            "</label>"
           );
         }
 
@@ -1037,7 +1039,7 @@
           if (v.Selection === "Selected") rbCls += " ds-radio--checked";
           if (v.Format === "Card format") rbCls += " ds-radio--card";
           if (v.State === "Disabled") rbCls += " is-disabled";
-          var rbLabel = esc(props.Label || "Label");
+          var rbLabel = props.Label ? esc(props.Label) : "";
           // Optional slot: no helper prop, no helper element. The gallery's
           // helper string lives in matrix.js SPECIMEN_PROPS, not here.
           var rbHelper =
@@ -1051,9 +1053,10 @@
             rbCls +
             '">' +
             '<span class="ds-radio__circle"><span class="ds-radio__dot"></span></span>' +
-            '<span class="ds-radio__text"><span class="ds-radio__label">' +
-            rbLabel +
-            "</span>" +
+            '<span class="ds-radio__text">' +
+            (rbLabel
+              ? '<span class="ds-radio__label">' + rbLabel + "</span>"
+              : "") +
             rbHelper +
             "</span>" +
             "</label>"
@@ -1244,7 +1247,7 @@
           if (v.Selection === "On") tgCls += " ds-toggle--on";
           if (v["Toggle location"] === "Right") tgCls += " ds-toggle--right";
           if (v.State === "Disabled") tgCls += " is-disabled";
-          var tgLabel = esc(props.Label || "Label");
+          var tgLabel = props.Label ? esc(props.Label) : "";
           // Same as radio: optional slot, omitted when the prop is absent.
           var tgHelper =
             props["Helper text"] && props["Show Helper text"] !== false
@@ -1257,9 +1260,10 @@
             tgCls +
             '">' +
             '<span class="ds-toggle__switch"><span class="ds-toggle__thumb"></span></span>' +
-            '<span class="ds-toggle__text"><span class="ds-toggle__label">' +
-            tgLabel +
-            "</span>" +
+            '<span class="ds-toggle__text">' +
+            (tgLabel
+              ? '<span class="ds-toggle__label">' + tgLabel + "</span>"
+              : "") +
             tgHelper +
             "</span>" +
             "</label>"
@@ -2629,14 +2633,15 @@
               esc(props.Helper) +
               "</span>"
             : "";
+          var ddLabel = props.Label ? esc(props.Label) : "";
           return (
             '<div class="' +
             ddCls +
             '">' +
             '<div class="ds-dropdown-select__label-row">' +
-            '<span class="ds-dropdown-select__label">' +
-            esc(props.Label || "Label") +
-            "</span>" +
+            (ddLabel
+              ? '<span class="ds-dropdown-select__label">' + ddLabel + "</span>"
+              : "") +
             ddDesc +
             "</div>" +
             '<div class="ds-dropdown-select__field">' +

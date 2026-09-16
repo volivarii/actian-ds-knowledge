@@ -2798,3 +2798,18 @@ test("drawer: the gallery cell keeps its specimen body through the matrix", func
   assert.match(html, /aria-valuenow="50"/, "Completion from the matrix cell");
   assert.match(html, /ds-drawer__section-body--source">A short description carried over/, "the sections are there");
 });
+
+test("a leaf with no Label renders no label text and no empty label span", function () {
+  var DS = require(DS_PATH);
+  ["checkbox", "toggle", "dropdown-select-default"].forEach(function (slug) {
+    var html = DS.renderDSComponent({ dsSlug: slug, variant: "", props: {} });
+    assert.doesNotMatch(html, />Label</, slug + " must not print the placeholder word Label");
+    assert.doesNotMatch(html, /__label"><\/span>/, slug + " must not emit an empty label span");
+  });
+});
+
+test("positive control: a leaf WITH a Label still renders it", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({ dsSlug: "checkbox", variant: "", props: { Label: "Data Products" } });
+  assert.match(html, />Data Products</, "the authored label renders");
+});

@@ -363,8 +363,7 @@
       "group": "Form",
       "props": [
         {
-          "name": "Label",
-          "default": "Label"
+          "name": "Label"
         }
       ],
       "variants": {
@@ -737,8 +736,7 @@
           "name": "Helper"
         },
         {
-          "name": "Label",
-          "default": "Label"
+          "name": "Label"
         },
         {
           "name": "Placeholder",
@@ -1637,8 +1635,7 @@
           "name": "Helper text"
         },
         {
-          "name": "Label",
-          "default": "Label"
+          "name": "Label"
         },
         {
           "name": "Show Helper text"
@@ -2191,8 +2188,7 @@
           "name": "Helper text"
         },
         {
-          "name": "Label",
-          "default": "Label"
+          "name": "Label"
         },
         {
           "name": "Show Helper text"
