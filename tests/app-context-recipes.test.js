@@ -850,6 +850,24 @@ test("inlineSections stamps a SECTION node's slot onto the spliced root", () => 
 // the field is covered automatically, not only the one this task adds.
 // ---------------------------------------------------------------------------
 
+// Factored so the real test and its positive control drive the SAME code,
+// the way `slotCoverageViolations` already does above: a helper duplicated
+// between a check and its own control can quietly drift apart (the control
+// keeps passing while the real check stops testing what it claims to).
+// `baseDir` is the directory `derivedFrom.screenshot` is resolved against,
+// passed in rather than hardcoded to SRC, so the positive control can point
+// it at a self-contained tmp dir.
+function missingScreenshots(recipes, baseDir) {
+  const missing = [];
+  for (const r of recipes.filter((r) => r.derivedFrom.screenshot)) {
+    const p = path.join(baseDir, r.derivedFrom.screenshot);
+    if (!fs.existsSync(p)) {
+      missing.push(r.slug + ": " + r.derivedFrom.screenshot);
+    }
+  }
+  return missing;
+}
+
 test("every recipe's derivedFrom.screenshot, when set, names a file that exists in app-context/src/recipes", () => {
   const { recipes, errors } = readRecipes(
     path.join(ROOT, "app-context", "src"),
@@ -864,18 +882,10 @@ test("every recipe's derivedFrom.screenshot, when set, names a file that exists 
     "no recipe sets derivedFrom.screenshot; this check would be vacuous",
   );
 
-  const missing = [];
-  for (const r of withScreenshot) {
-    const p = path.join(SRC, r.derivedFrom.screenshot);
-    if (!fs.existsSync(p)) {
-      missing.push(r.slug + ": " + r.derivedFrom.screenshot);
-    }
-  }
   assert.deepEqual(
-    missing,
+    missingScreenshots(recipes, SRC),
     [],
-    "these recipes name a screenshot file that does not exist: " +
-      missing.join("; "),
+    "these recipes name a screenshot file that does not exist",
   );
 
   const faceted = recipes.find((r) => r.slug === "faceted-browse");
@@ -895,7 +905,6 @@ test("positive control: a derivedFrom.screenshot naming a missing file is caught
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "recipes-screenshot-"));
   fs.mkdirSync(path.join(tmp, "captures"));
   fs.writeFileSync(path.join(tmp, "captures", "real.png"), "");
-  const missing = [];
   const recipes = [
     { slug: "has-file", derivedFrom: { screenshot: "captures/real.png" } },
     { slug: "no-screenshot", derivedFrom: {} },
@@ -904,11 +913,7 @@ test("positive control: a derivedFrom.screenshot naming a missing file is caught
       derivedFrom: { screenshot: "captures/does-not-exist.png" },
     },
   ];
-  for (const r of recipes.filter((r) => r.derivedFrom.screenshot)) {
-    const p = path.join(tmp, r.derivedFrom.screenshot);
-    if (!fs.existsSync(p))
-      missing.push(r.slug + ": " + r.derivedFrom.screenshot);
-  }
+  const missing = missingScreenshots(recipes, tmp);
   fs.rmSync(tmp, { recursive: true, force: true });
   assert.deepEqual(missing, ["ghost: captures/does-not-exist.png"]);
 });
@@ -922,6 +927,31 @@ test("positive control: a derivedFrom.screenshot naming a missing file is caught
 // is caught here rather than discovered by grepping in production.
 // ---------------------------------------------------------------------------
 
+// Factored, same reason as missingScreenshots above: the real test and its
+// positive control now drive one implementation instead of two copies of the
+// same `matchAll`/`includes` logic drifting apart unnoticed.
+//
+// The key-capture regex is `[^}]+`, not `[a-z0-9_]+`: a strict character
+// class silently stops matching the moment a placeholder uses a character
+// outside it (say, a hyphen), which would shrink `keys` rather than widen it
+// -- the inventory would then look complete for a placeholder this check
+// never actually saw. `[^}]+` cannot under-match a `{{...}}` pair for that
+// reason; it can only ever capture too much, which non-vacuity (`keys.length
+// > 10`) and the missing-key diff below would surface immediately.
+function placeholderKeysIn(skeleton) {
+  return [
+    ...new Set(
+      [...JSON.stringify(skeleton).matchAll(/\{\{([^}]+)\}\}/g)].map(
+        (m) => m[1],
+      ),
+    ),
+  ];
+}
+
+function missingFromInventory(keys, inventory) {
+  return keys.filter((k) => !inventory.includes("{{" + k + "}}"));
+}
+
 test("faceted-browse's renderNotes carry a placeholder inventory covering every {{key}} in its own skeleton", () => {
   const { recipes, errors } = readRecipes(
     path.join(ROOT, "app-context", "src"),
@@ -931,13 +961,7 @@ test("faceted-browse's renderNotes carry a placeholder inventory covering every 
   const faceted = recipes.find((r) => r.slug === "faceted-browse");
   assert.ok(faceted, "faceted-browse recipe not read");
 
-  const keys = [
-    ...new Set(
-      [
-        ...JSON.stringify(faceted.skeleton).matchAll(/\{\{([a-z0-9_]+)\}\}/g),
-      ].map((m) => m[1]),
-    ),
-  ];
+  const keys = placeholderKeysIn(faceted.skeleton);
   assert.ok(
     keys.length > 10,
     "too few placeholder keys found in faceted-browse's skeleton; this check would be near-vacuous",
@@ -953,7 +977,7 @@ test("faceted-browse's renderNotes carry a placeholder inventory covering every 
     "faceted-browse renderNotes must carry the placeholder inventory entry",
   );
 
-  const missing = keys.filter((k) => !inventory.includes("{{" + k + "}}"));
+  const missing = missingFromInventory(keys, inventory);
   assert.deepEqual(
     missing,
     [],
@@ -965,6 +989,16 @@ test("faceted-browse's renderNotes carry a placeholder inventory covering every 
 test("positive control: a placeholder key missing from the inventory note is caught", () => {
   const inventory = "facets -- {{facet1_label}}; results -- {{result_1_title}}";
   const keys = ["facet1_label", "result_1_title", "page_count"];
-  const missing = keys.filter((k) => !inventory.includes("{{" + k + "}}"));
-  assert.deepEqual(missing, ["page_count"]);
+  assert.deepEqual(missingFromInventory(keys, inventory), ["page_count"]);
+});
+
+// Proves the widened `[^}]+` regex is not merely permissive but reaches a key
+// shape `[a-z0-9_]+` would have missed outright (a hyphen), and that the
+// missing-key diff still fires for it.
+test("positive control: placeholderKeysIn reaches a key shape [a-z0-9_]+ would miss", () => {
+  const keys = placeholderKeysIn({ content: "{{facet1-label}}" });
+  assert.deepEqual(keys, ["facet1-label"]);
+  assert.deepEqual(missingFromInventory(keys, "no placeholders named here"), [
+    "facet1-label",
+  ]);
 });

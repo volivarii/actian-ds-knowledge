@@ -174,9 +174,10 @@ function inlineSections(recipe, sectionsBySlug) {
           // `slot` is the one allowed per-use annotation: it says which of the
           // RECIPE's own slots this splice fulfils, so a consumer reading the
           // spliced dist (where the SECTION node itself no longer exists) can
-          // still find the region by name. It is not a content override, so it
-          // does not reopen "per-use overrides are not a thing": the section's
-          // own content is still edited only in the section file.
+          // still find the region by name. It is not a content override --
+          // the section's own content is still edited only in the section
+          // file -- so it does not widen the set of per-use overrides beyond
+          // this one narrow exception (the error below names it as such).
           const extraKeys = Object.keys(v).filter(
             (k) => k !== "type" && k !== "section" && k !== "slot",
           );
@@ -189,7 +190,7 @@ function inlineSections(recipe, sectionsBySlug) {
                 i +
                 " carries keys other than type, section and slot (" +
                 extraKeys.join(", ") +
-                "); per-use overrides are not a thing, edit the section",
+                "); slot is the one per-use override that exists, edit the section for anything else",
             );
             continue;
           }

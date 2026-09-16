@@ -328,7 +328,7 @@ test("inlineSections: a SECTION node carrying keys other than type, section and 
   assert.equal(errors.length, 1);
   assert.match(
     errors[0],
-    /recipes\/r\.json: SECTION node at skeleton\/content\/0 carries keys other than type, section and slot \(variant\); per-use overrides are not a thing, edit the section/,
+    /recipes\/r\.json: SECTION node at skeleton\/content\/0 carries keys other than type, section and slot \(variant\); slot is the one per-use override that exists, edit the section for anything else/,
   );
   assert.deepEqual(out.skeleton.content, []);
 });
@@ -478,6 +478,67 @@ test("inlineSections: a SECTION object outside a content/children array is an er
   assert.match(
     errors[0],
     /recipes\/r\.json: SECTION node at skeleton\/appHeader is not an element of content\[\] or children\[\]/,
+  );
+});
+
+// Task K, Minor 8: the stamp in the `slot` override test above (and the
+// multi-root test before it) writes onto `spliced[0]`, a clone made two
+// lines earlier by `JSON.parse(JSON.stringify(node))` -- but a clone proves
+// nothing about mutation unless something checks the ORIGINAL afterwards.
+// This asserts the shared SECTIONS fixture itself, not the output, so a
+// future edit that stamps the source node directly (skipping the clone)
+// would be caught here even though every other assertion in this file reads
+// only `out`.
+test("inlineSections: the section source is unmutated after a stamped splice", () => {
+  const { recipe: out, errors } = inlineSections(
+    {
+      slug: "r",
+      skeleton: {
+        content: [{ type: "SECTION", section: "item-header", slot: "header" }],
+      },
+    },
+    SECTIONS,
+  );
+  assert.deepEqual(errors, []);
+  assert.equal(out.skeleton.content[0].slot, "header");
+  assert.equal(
+    SECTIONS["item-header"].skeleton.content[0].slot,
+    undefined,
+    "stamping the spliced clone must not reach back into the shared section source",
+  );
+});
+
+// Two recipes splicing the SAME section with different `slot` values is the
+// real shape a shared control-bar-style section has once more than one page
+// recipe references it: each splice must get its own stamp, neither must
+// leak into the other, and neither must leak back into the shared source.
+test("inlineSections: two recipes splicing the same section with different slots each keep their own", () => {
+  const { recipe: a, errors: aErrors } = inlineSections(
+    {
+      slug: "recipe-a",
+      skeleton: {
+        content: [{ type: "SECTION", section: "item-header", slot: "alpha" }],
+      },
+    },
+    SECTIONS,
+  );
+  const { recipe: b, errors: bErrors } = inlineSections(
+    {
+      slug: "recipe-b",
+      skeleton: {
+        content: [{ type: "SECTION", section: "item-header", slot: "beta" }],
+      },
+    },
+    SECTIONS,
+  );
+  assert.deepEqual(aErrors, []);
+  assert.deepEqual(bErrors, []);
+  assert.equal(a.skeleton.content[0].slot, "alpha");
+  assert.equal(b.skeleton.content[0].slot, "beta");
+  assert.equal(
+    SECTIONS["item-header"].skeleton.content[0].slot,
+    undefined,
+    "neither splice's stamp reaches the shared section source",
   );
 });
 
