@@ -95,6 +95,12 @@
           "type": "string",
           "description": "Version or environment of the product screen captured, when known.",
           "examples": ["studio-dev", "2026.8"]
+        },
+        "screenshot": {
+          "type": "string",
+          "pattern": "^captures/[a-z0-9-]+\\.png$",
+          "description": "Path, relative to app-context/src/recipes, of the product screenshot this composition was derived from. The plugin's look step opens a render beside it.",
+          "examples": ["captures/faceted-browse.png"]
         }
       }
     },

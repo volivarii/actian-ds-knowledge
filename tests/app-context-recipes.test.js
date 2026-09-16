@@ -840,3 +840,75 @@ test("inlineSections stamps a SECTION node's slot onto the spliced root", () => 
   assert.equal(badErrors.length, 1);
   assert.match(badErrors[0], /carries keys other than type, section and slot/);
 });
+
+// ---------------------------------------------------------------------------
+// Task 7.1: `derivedFrom.screenshot` names the product screenshot a
+// composition was derived from, so the plugin's look step can open a render
+// beside it. A path that does not resolve to a real file on disk is a
+// citation to nothing; this reads every recipe's OWN authored path rather
+// than hardcoding "captures/faceted-browse.png", so a future recipe that sets
+// the field is covered automatically, not only the one this task adds.
+// ---------------------------------------------------------------------------
+
+test("every recipe's derivedFrom.screenshot, when set, names a file that exists in app-context/src/recipes", () => {
+  const { recipes, errors } = readRecipes(
+    path.join(ROOT, "app-context", "src"),
+    SCHEMA,
+  );
+  assert.deepEqual(errors, []);
+  assert.ok(recipes.length > 0, "no recipes read; this check would be vacuous");
+
+  const withScreenshot = recipes.filter((r) => r.derivedFrom.screenshot);
+  assert.ok(
+    withScreenshot.length > 0,
+    "no recipe sets derivedFrom.screenshot; this check would be vacuous",
+  );
+
+  const missing = [];
+  for (const r of withScreenshot) {
+    const p = path.join(SRC, r.derivedFrom.screenshot);
+    if (!fs.existsSync(p)) {
+      missing.push(r.slug + ": " + r.derivedFrom.screenshot);
+    }
+  }
+  assert.deepEqual(
+    missing,
+    [],
+    "these recipes name a screenshot file that does not exist: " +
+      missing.join("; "),
+  );
+
+  const faceted = recipes.find((r) => r.slug === "faceted-browse");
+  assert.ok(faceted, "faceted-browse recipe not read");
+  assert.equal(
+    faceted.derivedFrom.screenshot,
+    "captures/faceted-browse.png",
+    "faceted-browse must set derivedFrom.screenshot",
+  );
+});
+
+test("positive control: a derivedFrom.screenshot naming a missing file is caught", () => {
+  // Self-contained tmp dir, not the real SRC: this must hold regardless of
+  // whether Task 7.1's own PNG has landed on disk yet, or a later CI run
+  // where it has, so the control does not depend on the fixture it exists to
+  // prove is checked.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "recipes-screenshot-"));
+  fs.mkdirSync(path.join(tmp, "captures"));
+  fs.writeFileSync(path.join(tmp, "captures", "real.png"), "");
+  const missing = [];
+  const recipes = [
+    { slug: "has-file", derivedFrom: { screenshot: "captures/real.png" } },
+    { slug: "no-screenshot", derivedFrom: {} },
+    {
+      slug: "ghost",
+      derivedFrom: { screenshot: "captures/does-not-exist.png" },
+    },
+  ];
+  for (const r of recipes.filter((r) => r.derivedFrom.screenshot)) {
+    const p = path.join(tmp, r.derivedFrom.screenshot);
+    if (!fs.existsSync(p))
+      missing.push(r.slug + ": " + r.derivedFrom.screenshot);
+  }
+  fs.rmSync(tmp, { recursive: true, force: true });
+  assert.deepEqual(missing, ["ghost: captures/does-not-exist.png"]);
+});

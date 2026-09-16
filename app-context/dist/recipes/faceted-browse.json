@@ -27,7 +27,8 @@
   "derivedFrom": {
     "surface": "Studio > Catalog",
     "capturedOn": "2026-08-18",
-    "productVersion": "studio-dev"
+    "productVersion": "studio-dev",
+    "screenshot": "captures/faceted-browse.png"
   },
   "slots": {
     "rail": "Filter rail: a range facet, a counted checkbox facet list, a toggle facet, and type-to-search selects",
@@ -46,7 +47,8 @@
     "The results-header/bulk-bar leaves (button, checkbox, toolbar) are authored in ../sections/control-bar.json, spliced in here as the SECTION node above; its own renderNotes carry their deviations.",
     "search-result-card has no completion or sharing prop (Body, Catalog, Description, Featured property 1/2, Glossary initials/label, Stage, Tech name, Title, Type only). The completion meter is a sibling progress-bar-small (own Percent text, no separate TEXT, per the doubled-percent rule above); the Shared indicator is a sibling read-only-tag Type=Shared. read-only-tag's Type=Shared paints #cbe3ff (ds-base.css .ds-tag--shared), a light blue, not a literally dark fill; it is the leaf whose Type axis names Shared, and the closest built equivalent to the capture's dark filled fmTag.",
     "search-result-card's own Type text renders inside a single always-colored eyebrow pill (.ds-search-result-card__type, background var(--zen-color-error-50)); the fill does not change with the Type value, only the text does.",
-    "All six results render a Shared tag; the recipe does not model a non-shared result, matching every sample row in the capture."
+    "All six results render a Shared tag; the recipe does not model a non-shared result, matching every sample row in the capture.",
+    "derivedFrom.screenshot is a 2026-03-30 product capture of Studio > Catalog on the dev tenant (1583x1100), not the 2026-08-18 capture derivedFrom.capturedOn names: the original 08-18 screenshot was not retained on disk, and this is the closest real capture of the same surface, not the Figma frame (the design, not the product)."
   ],
   "skeleton": {
     "chrome": "standard",
