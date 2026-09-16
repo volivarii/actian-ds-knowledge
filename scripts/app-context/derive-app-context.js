@@ -131,17 +131,17 @@ function deriveToObject(srcDir) {
   };
 }
 
-function runCli(argv) {
-  const repoRoot = path.resolve(__dirname, "..", "..");
-  const srcDir = path.join(repoRoot, "app-context", "src");
-  const distDir = path.join(repoRoot, "app-context", "dist");
-  const dist = deriveToObject(srcDir);
-  const { validateAppContext } = require("./validate-app-context");
-  const { errors } = validateAppContext(dist);
-  if (errors.length) {
-    console.error("app-context integrity errors:\n" + errors.join("\n"));
-    return 1;
-  }
+// Reads, cross-checks, splices and writes the section and recipe
+// collections, parameterized by `distDir` rather than hardcoding the repo's
+// app-context/dist, so a caller can point it at a scratch directory (a test
+// proving the committed dist has not drifted from src) instead of the real
+// tree. runCli below is the only caller that passes the repo's own distDir.
+// Same fail-fast order as before the extraction: sections are read and
+// cross-checked first (recipes splice them), and nothing is written unless
+// both collections pass. On failure, `phase` says which collection the
+// errors belong to, so the caller can reproduce the original two distinct
+// console messages.
+function deriveSectionsAndRecipes(repoRoot, srcDir, distDir, dist) {
   // Sections first: per-slug dist leaves, validated against
   // schemas/app-context-section.json, cross-checked against the apps/patterns
   // just derived. Recipes reference them and the derive inlines them below.
@@ -160,8 +160,7 @@ function runCli(argv) {
   const sectionRefErrors = checkSectionReferences(sections, dist);
   const allSectionErrors = sectionErrors.concat(sectionRefErrors);
   if (allSectionErrors.length) {
-    console.error("app-context section errors:\n" + allSectionErrors.join("\n"));
-    return 1;
+    return { phase: "section", errors: allSectionErrors };
   }
   const sectionsBySlug = {};
   for (const s of sections) sectionsBySlug[s.slug] = s;
@@ -192,9 +191,33 @@ function runCli(argv) {
   const refErrors = checkReferences(inlined, dist);
   const allRecipeErrors = recipeErrors.concat(inlineErrors, refErrors);
   if (allRecipeErrors.length) {
-    console.error(
-      "app-context recipe errors:\n" + allRecipeErrors.join("\n"),
-    );
+    return { phase: "recipe", errors: allRecipeErrors };
+  }
+
+  const sectionCount = writeSections(distDir, sections, META);
+  const recipeCount = writeRecipes(distDir, inlined, META);
+  return { phase: null, errors: [], sections, inlined, sectionCount, recipeCount };
+}
+
+function runCli(argv) {
+  const repoRoot = path.resolve(__dirname, "..", "..");
+  const srcDir = path.join(repoRoot, "app-context", "src");
+  const distDir = path.join(repoRoot, "app-context", "dist");
+  const dist = deriveToObject(srcDir);
+  const { validateAppContext } = require("./validate-app-context");
+  const { errors } = validateAppContext(dist);
+  if (errors.length) {
+    console.error("app-context integrity errors:\n" + errors.join("\n"));
+    return 1;
+  }
+
+  const result = deriveSectionsAndRecipes(repoRoot, srcDir, distDir, dist);
+  if (result.errors.length) {
+    const label =
+      result.phase === "section"
+        ? "app-context section errors:\n"
+        : "app-context recipe errors:\n";
+    console.error(label + result.errors.join("\n"));
     return 1;
   }
 
@@ -207,10 +230,8 @@ function runCli(argv) {
       appContext: dist,
     }),
   );
-  const sectionCount = writeSections(distDir, sections, META);
-  console.log("derived app-context sections: " + sectionCount);
-  const recipeCount = writeRecipes(distDir, inlined, META);
-  console.log("derived app-context recipes: " + recipeCount);
+  console.log("derived app-context sections: " + result.sectionCount);
+  console.log("derived app-context recipes: " + result.recipeCount);
 
   require("./manifest-update").updatePathsManifest(
     path.join(repoRoot, "paths-manifest.json"),
@@ -223,5 +244,6 @@ module.exports = {
   deriveToObject,
   assembleAppRecord,
   deriveFieldRecord,
+  deriveSectionsAndRecipes,
   runCli,
 };

@@ -661,9 +661,10 @@ test("positive control: a non---zen custom property is NOT reported as undeclare
 // section-authored `slot` into the tree this walk reads. Same reasoning as
 // the axis-blind-FILL check above, which also reads dist because a section
 // root only meets its real parent there. Dist drifting from a fresh derive
-// of src is caught separately by the round-trip test in
-// tests/app-context-derive.test.js, so reading dist here does not skip
-// schema validation of the source.
+// of src is caught separately, locally (not only in CI), by
+// "derive(src) sections and recipes deep-equal the committed dist (round-trip
+// drift gate)" in tests/app-context-derive.test.js, so reading dist here does
+// not skip validation of the source against it.
 //
 // Deviation from the original brief, kept per controller ruling: the walker
 // is named `walkSlotNodes`, not `walkNodes`, because the file already
