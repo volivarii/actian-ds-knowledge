@@ -25,14 +25,7 @@ var fs = require("node:fs");
 var path = require("node:path");
 
 var DS = require("../../components/render/renderer/html-renderers/ds-html-map.js");
-var ANATOMY = path.join(
-  __dirname,
-  "..",
-  "..",
-  "components",
-  "dist",
-  "anatomy",
-);
+var ANATOMY = path.join(__dirname, "..", "..", "components", "dist", "anatomy");
 
 // Per-variant appearance facts for one axis, keyed by axis value. Read from the
 // dist the sync writes — never from a list kept here, which is the failure this
@@ -84,7 +77,11 @@ test("digram-item-types renders every captured Item type background as the captu
     assert.ok(
       html.indexOf("background:" + expected(f.background, f.backgroundToken)) >=
         0,
-      value + " should render background:" + expected(f.background, f.backgroundToken) + " — got " + html,
+      value +
+        " should render background:" +
+        expected(f.background, f.backgroundToken) +
+        " — got " +
+        html,
     );
   });
   // Positive control on the theming half: at least one value is token-bound, so
@@ -109,7 +106,11 @@ test("digram-item-types renders every captured Item type text colour as the capt
     });
     assert.ok(
       html.indexOf("color:" + expected(t.color, t.colorToken)) >= 0,
-      value + " should render color:" + expected(t.color, t.colorToken) + " — got " + html,
+      value +
+        " should render color:" +
+        expected(t.color, t.colorToken) +
+        " — got " +
+        html,
     );
   });
   assert.ok(bound >= 1, "captured token-bound text colours: " + bound);
@@ -131,7 +132,11 @@ test("digram-topic renders every captured Type background as the capture states 
     assert.ok(
       html.indexOf("background:" + expected(f.background, f.backgroundToken)) >=
         0,
-      value + " should render background:" + expected(f.background, f.backgroundToken) + " — got " + html,
+      value +
+        " should render background:" +
+        expected(f.background, f.backgroundToken) +
+        " — got " +
+        html,
     );
   });
 });
@@ -155,7 +160,11 @@ test("metamodel renders every captured Type border colour as the capture states 
     });
     assert.ok(
       html.indexOf("border-color:" + expected(b.color, b.colorToken)) >= 0,
-      value + " should render border-color:" + expected(b.color, b.colorToken) + " — got " + html,
+      value +
+        " should render border-color:" +
+        expected(b.color, b.colorToken) +
+        " — got " +
+        html,
     );
   });
   assert.ok(bound >= 1, "captured token-bound border colours: " + bound);
@@ -204,9 +213,27 @@ function nestedBadgeSubjects() {
     });
 }
 
+// search-result-card is the one subject here whose nested badge is opt-in:
+// review round 1 (2026-09-16) made its glossary badge draw nothing at all
+// when neither `Glossary initials` nor `Glossary label` is authored (the
+// same fix Task 1.2 applied to Label elsewhere), so the empty-props call this
+// helper used for every OTHER subject now renders no `.ds-item-type` span to
+// read a background from. The other four subjects draw their badge from the
+// variant/anatomy alone and need nothing extra.
+var BADGE_PROPS_BY_SLUG = {
+  "search-result-card": {
+    "Glossary initials": "VH",
+    "Glossary label": "Vehicle",
+  },
+};
+
 // The style the renderer put on the badge span, for one variant.
 function renderedBadgeStyle(slug, variant) {
-  var html = DS.renderDSComponent({ dsSlug: slug, variant: variant, props: {} });
+  var html = DS.renderDSComponent({
+    dsSlug: slug,
+    variant: variant,
+    props: BADGE_PROPS_BY_SLUG[slug] || {},
+  });
   var m = html.match(/class="ds-item-type"[^>]*style="([^"]*)"/);
   return m ? m[1] : null;
 }
@@ -226,8 +253,9 @@ test("every component nesting an item-type badge renders the captured background
     var style = renderedBadgeStyle(s.slug, String(s.root.name || ""));
     assert.ok(style, s.slug + " renders no ds-item-type badge at all");
     assert.ok(
-      style.indexOf("background:" + expected(a.background, a.backgroundToken)) >=
-        0,
+      style.indexOf(
+        "background:" + expected(a.background, a.backgroundToken),
+      ) >= 0,
       s.slug +
         " should render background:" +
         expected(a.background, a.backgroundToken) +

@@ -7,10 +7,16 @@ const Ajv = require("ajv/dist/2020");
 
 const ROOT = path.join(__dirname, "..");
 const SECTION_SCHEMA = JSON.parse(
-  fs.readFileSync(path.join(ROOT, "schemas", "app-context-section.json"), "utf8"),
+  fs.readFileSync(
+    path.join(ROOT, "schemas", "app-context-section.json"),
+    "utf8",
+  ),
 );
 const RECIPE_SCHEMA = JSON.parse(
-  fs.readFileSync(path.join(ROOT, "schemas", "app-context-recipe.json"), "utf8"),
+  fs.readFileSync(
+    path.join(ROOT, "schemas", "app-context-recipe.json"),
+    "utf8",
+  ),
 );
 
 const VALID_SECTION = {
@@ -21,7 +27,10 @@ const VALID_SECTION = {
   description: "Identity row over three metadata lines.",
   role: "header",
   apps: ["studio"],
-  derivedFrom: { surface: "Studio > Catalog > Dataset > General", capturedOn: "2026-08-18" },
+  derivedFrom: {
+    surface: "Studio > Catalog > Dataset > General",
+    capturedOn: "2026-08-18",
+  },
   skeleton: { content: [{ type: "FRAME", name: "Item header", children: [] }] },
 };
 
@@ -48,7 +57,11 @@ test("section schema accepts a valid record and rejects malformed ones", () => {
   const emptyContent = Object.assign({}, VALID_SECTION, {
     skeleton: { content: [] },
   });
-  assert.equal(v(emptyContent), false, "skeleton.content must hold at least one node");
+  assert.equal(
+    v(emptyContent),
+    false,
+    "skeleton.content must hold at least one node",
+  );
 
   const extra = Object.assign({}, VALID_SECTION, { pageRecipe: "x" });
   assert.equal(v(extra), false, "root is strict");
@@ -109,7 +122,9 @@ test("readSections: absent directory is an error, not zero sections", () => {
 test("readSections: slug must equal filename, JSON must be an object, schema must pass", () => {
   const dir = tmpSrc({
     "item-header.json": VALID_SECTION,
-    "wrong-name.json": Object.assign({}, VALID_SECTION, { slug: "item-header" }),
+    "wrong-name.json": Object.assign({}, VALID_SECTION, {
+      slug: "item-header",
+    }),
     "scalar.json": "42",
     "broken.json": "{",
     "norole.json": (() => {
@@ -120,7 +135,10 @@ test("readSections: slug must equal filename, JSON must be an object, schema mus
   });
   try {
     const { sections, errors } = readSections(dir, SECTION_SCHEMA);
-    assert.deepEqual(sections.map((s) => s.slug), ["item-header"]);
+    assert.deepEqual(
+      sections.map((s) => s.slug),
+      ["item-header"],
+    );
     assert.equal(errors.length, 4, errors.join("\n"));
     assert.ok(errors.some((e) => /wrong-name\.json.*slug/.test(e)));
     assert.ok(errors.some((e) => /scalar\.json.*not a JSON object/.test(e)));
@@ -136,7 +154,11 @@ test("readSections: a section referencing a section is an error (sections are fl
     slug: "nested",
     skeleton: {
       content: [
-        { type: "FRAME", name: "Wrap", children: [{ type: "SECTION", section: "item-header" }] },
+        {
+          type: "FRAME",
+          name: "Wrap",
+          children: [{ type: "SECTION", section: "item-header" }],
+        },
       ],
     },
   });
@@ -154,7 +176,10 @@ test("readSections: a section referencing a section is an error (sections are fl
 test("checkSectionReferences: unknown app or pattern is an error", () => {
   const ctx = { apps: { studio: {} }, patterns: { "asset-detail-360": {} } };
   assert.deepEqual(checkSectionReferences([VALID_SECTION], ctx), []);
-  const bad = Object.assign({}, VALID_SECTION, { apps: ["nope"], patterns: ["nada"] });
+  const bad = Object.assign({}, VALID_SECTION, {
+    apps: ["nope"],
+    patterns: ["nada"],
+  });
   const errors = checkSectionReferences([bad], ctx);
   assert.equal(errors.length, 2);
   assert.match(errors[0], /unknown app 'nope'/);
@@ -170,7 +195,9 @@ test("writeSections: stamps, writes one leaf per slug, prunes stale leaves", () 
     assert.equal(n, 1);
     const files = fs.readdirSync(path.join(dist, "sections")).sort();
     assert.deepEqual(files, ["item-header.json"]);
-    const leaf = JSON.parse(fs.readFileSync(path.join(dist, "sections", "item-header.json"), "utf8"));
+    const leaf = JSON.parse(
+      fs.readFileSync(path.join(dist, "sections", "item-header.json"), "utf8"),
+    );
     assert.equal(leaf._schema_version, 1);
     assert.deepEqual(leaf._meta, { auto_generated: true });
     assert.equal(leaf.kind, "section");
@@ -193,7 +220,9 @@ const SECTIONS = {
   },
   "item-header": {
     slug: "item-header",
-    skeleton: { content: [{ type: "FRAME", name: "Item header", children: [] }] },
+    skeleton: {
+      content: [{ type: "FRAME", name: "Item header", children: [] }],
+    },
   },
 };
 
@@ -212,7 +241,10 @@ test("inlineSections splices a section's content in place and records the order"
             {
               type: "FRAME",
               name: "Results pane",
-              children: [{ type: "SECTION", section: "control-bar" }, { type: "TEXT", content: "x" }],
+              children: [
+                { type: "SECTION", section: "control-bar" },
+                { type: "TEXT", content: "x" },
+              ],
             },
           ],
         },
@@ -223,7 +255,10 @@ test("inlineSections splices a section's content in place and records the order"
   assert.deepEqual(errors, []);
   assert.deepEqual(out.sections, ["item-header", "control-bar"]);
   const layout = out.skeleton.content[0];
-  assert.deepEqual(layout.children.map((c) => c.name || c.type), ["Item header", "DIVIDER", "Results pane"]);
+  assert.deepEqual(
+    layout.children.map((c) => c.name || c.type),
+    ["Item header", "DIVIDER", "Results pane"],
+  );
   assert.deepEqual(
     layout.children[2].children.map((c) => c.name || c.type),
     ["Results header", "Bulk action bar", "TEXT"],
@@ -267,7 +302,10 @@ test("inlineSections: a recipe with no SECTION node gets sections: []", () => {
 
 test("inlineSections: unknown slug is an error and the node is dropped", () => {
   const { recipe: out, errors } = inlineSections(
-    { slug: "r", skeleton: { content: [{ type: "SECTION", section: "ghost" }] } },
+    {
+      slug: "r",
+      skeleton: { content: [{ type: "SECTION", section: "ghost" }] },
+    },
     SECTIONS,
   );
   assert.equal(errors.length, 1);
@@ -275,29 +313,233 @@ test("inlineSections: unknown slug is an error and the node is dropped", () => {
   assert.deepEqual(out.skeleton.content, []);
 });
 
-test("inlineSections: a SECTION node carrying keys other than type and section is an error, and the node is dropped", () => {
+test("inlineSections: a SECTION node carrying keys other than type, section and slot is an error, and the node is dropped", () => {
   const { recipe: out, errors } = inlineSections(
     {
       slug: "r",
-      skeleton: { content: [{ type: "SECTION", section: "item-header", variant: "compact" }] },
+      skeleton: {
+        content: [
+          { type: "SECTION", section: "item-header", variant: "compact" },
+        ],
+      },
     },
     SECTIONS,
   );
   assert.equal(errors.length, 1);
   assert.match(
     errors[0],
-    /recipes\/r\.json: SECTION node at skeleton\/content\/0 carries keys other than type and section \(variant\); per-use overrides are not a thing, edit the section/,
+    /recipes\/r\.json: SECTION node at skeleton\/content\/0 carries keys other than type, section and slot \(variant\); slot is the one per-use override that exists, edit the section for anything else/,
   );
   assert.deepEqual(out.skeleton.content, []);
 });
 
+// `slot` is the one allowed per-use key: it says which of the recipe's own
+// slots this splice fulfils, stamped onto the spliced root so the region is
+// still findable once the SECTION node itself is gone from dist.
+test("inlineSections: a SECTION node's `slot` is stamped onto the spliced root, not treated as an illegal extra key", () => {
+  const { recipe: out, errors } = inlineSections(
+    {
+      slug: "r",
+      skeleton: {
+        content: [{ type: "SECTION", section: "item-header", slot: "header" }],
+      },
+    },
+    SECTIONS,
+  );
+  assert.deepEqual(errors, []);
+  assert.equal(out.skeleton.content.length, 1);
+  assert.equal(out.skeleton.content[0].slot, "header");
+  assert.equal(out.skeleton.content[0].name, "Item header");
+});
+
+// A section can inline to several roots (control-bar does, above); the
+// reference node has one `slot` (or array), so only the FIRST root gets it.
+test("inlineSections: a multi-root section stamps `slot` on the first root only", () => {
+  const { recipe: out, errors } = inlineSections(
+    {
+      slug: "r",
+      skeleton: {
+        content: [
+          { type: "SECTION", section: "control-bar", slot: "results-header" },
+        ],
+      },
+    },
+    SECTIONS,
+  );
+  assert.deepEqual(errors, []);
+  assert.deepEqual(
+    out.skeleton.content.map((c) => [c.name, c.slot]),
+    [
+      ["Results header", "results-header"],
+      ["Bulk action bar", undefined],
+    ],
+  );
+});
+
+// A section may author `slot` on its own root node(s) (control-bar's real
+// "Results header"/"Bulk action bar" roots do this now, self-tagging rather
+// than depending on every recipe that splices them to stamp the reference).
+// A reference-level `slot` still wins when both are present, but only for
+// root 0: the reference has one `slot` value (or array) and no way to name
+// "which root" beyond the first, so any other root keeps whatever it
+// authored itself, stamp or no stamp.
+test("inlineSections: a reference's `slot` overrides a section-authored `slot` on root 0 only, and never reaches root 1", () => {
+  const SELF_TAGGING = {
+    "self-tagging": {
+      slug: "self-tagging",
+      skeleton: {
+        content: [
+          { type: "FRAME", name: "Root 0", slot: "a" },
+          { type: "FRAME", name: "Root 1", slot: "c" },
+        ],
+      },
+    },
+  };
+
+  // No reference-level stamp: both roots keep the `slot` they authored.
+  const { recipe: unstamped, errors: unstampedErrors } = inlineSections(
+    {
+      slug: "r",
+      skeleton: { content: [{ type: "SECTION", section: "self-tagging" }] },
+    },
+    SELF_TAGGING,
+  );
+  assert.deepEqual(unstampedErrors, []);
+  assert.deepEqual(
+    unstamped.skeleton.content.map((c) => [c.name, c.slot]),
+    [
+      ["Root 0", "a"],
+      ["Root 1", "c"],
+    ],
+  );
+
+  // Reference stamps `slot: "b"`: root 0's own "a" is overridden; root 1 is
+  // not reachable from the reference and keeps its own "c" untouched.
+  const { recipe: stamped, errors: stampedErrors } = inlineSections(
+    {
+      slug: "r",
+      skeleton: {
+        content: [{ type: "SECTION", section: "self-tagging", slot: "b" }],
+      },
+    },
+    SELF_TAGGING,
+  );
+  assert.deepEqual(stampedErrors, []);
+  assert.deepEqual(
+    stamped.skeleton.content.map((c) => [c.name, c.slot]),
+    [
+      ["Root 0", "b"],
+      ["Root 1", "c"],
+    ],
+  );
+});
+
+// An array of strings is accepted too: one spliced root can be the sole
+// carrier of more than one of the recipe's own slots when the section has no
+// narrower node to split the tag across (studio-quick-edit-drawer's
+// `drawer-header` section is one FRAME that is the recipe's `header`,
+// `subtitle` and `metrics` regions at once).
+test("inlineSections: `slot` may be an array, stamped onto the spliced root as-is", () => {
+  const { recipe: out, errors } = inlineSections(
+    {
+      slug: "r",
+      skeleton: {
+        content: [
+          {
+            type: "SECTION",
+            section: "item-header",
+            slot: ["header", "subtitle", "metrics"],
+          },
+        ],
+      },
+    },
+    SECTIONS,
+  );
+  assert.deepEqual(errors, []);
+  assert.deepEqual(out.skeleton.content[0].slot, [
+    "header",
+    "subtitle",
+    "metrics",
+  ]);
+});
+
 test("inlineSections: a SECTION object outside a content/children array is an error", () => {
   const { errors } = inlineSections(
-    { slug: "r", skeleton: { content: [], appHeader: { type: "SECTION", section: "item-header" } } },
+    {
+      slug: "r",
+      skeleton: {
+        content: [],
+        appHeader: { type: "SECTION", section: "item-header" },
+      },
+    },
     SECTIONS,
   );
   assert.equal(errors.length, 1);
-  assert.match(errors[0], /recipes\/r\.json: SECTION node at skeleton\/appHeader is not an element of content\[\] or children\[\]/);
+  assert.match(
+    errors[0],
+    /recipes\/r\.json: SECTION node at skeleton\/appHeader is not an element of content\[\] or children\[\]/,
+  );
+});
+
+// Task K, Minor 8: the stamp in the `slot` override test above (and the
+// multi-root test before it) writes onto `spliced[0]`, a clone made two
+// lines earlier by `JSON.parse(JSON.stringify(node))` -- but a clone proves
+// nothing about mutation unless something checks the ORIGINAL afterwards.
+// This asserts the shared SECTIONS fixture itself, not the output, so a
+// future edit that stamps the source node directly (skipping the clone)
+// would be caught here even though every other assertion in this file reads
+// only `out`.
+test("inlineSections: the section source is unmutated after a stamped splice", () => {
+  const { recipe: out, errors } = inlineSections(
+    {
+      slug: "r",
+      skeleton: {
+        content: [{ type: "SECTION", section: "item-header", slot: "header" }],
+      },
+    },
+    SECTIONS,
+  );
+  assert.deepEqual(errors, []);
+  assert.equal(out.skeleton.content[0].slot, "header");
+  assert.equal(
+    SECTIONS["item-header"].skeleton.content[0].slot,
+    undefined,
+    "stamping the spliced clone must not reach back into the shared section source",
+  );
+});
+
+// Two recipes splicing the SAME section with different `slot` values is the
+// real shape a shared control-bar-style section has once more than one page
+// recipe references it: each splice must get its own stamp, neither must
+// leak into the other, and neither must leak back into the shared source.
+test("inlineSections: two recipes splicing the same section with different slots each keep their own", () => {
+  const { recipe: a, errors: aErrors } = inlineSections(
+    {
+      slug: "recipe-a",
+      skeleton: {
+        content: [{ type: "SECTION", section: "item-header", slot: "alpha" }],
+      },
+    },
+    SECTIONS,
+  );
+  const { recipe: b, errors: bErrors } = inlineSections(
+    {
+      slug: "recipe-b",
+      skeleton: {
+        content: [{ type: "SECTION", section: "item-header", slot: "beta" }],
+      },
+    },
+    SECTIONS,
+  );
+  assert.deepEqual(aErrors, []);
+  assert.deepEqual(bErrors, []);
+  assert.equal(a.skeleton.content[0].slot, "alpha");
+  assert.equal(b.skeleton.content[0].slot, "beta");
+  assert.equal(
+    SECTIONS["item-header"].skeleton.content[0].slot,
+    undefined,
+    "neither splice's stamp reaches the shared section source",
+  );
 });
 
 test("inlineSections: the returned recipe shares no object reference with the input", () => {
@@ -320,11 +562,17 @@ const DIST_RECIPES = path.join(ROOT, "app-context", "dist", "recipes");
 
 function jsonFiles(dir) {
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .sort();
 }
 
 test("every authored section has a dist leaf and vice versa", () => {
-  assert.ok(fs.existsSync(SRC_SECTIONS), "app-context/src/sections must exist (it may hold only a README)");
+  assert.ok(
+    fs.existsSync(SRC_SECTIONS),
+    "app-context/src/sections must exist (it may hold only a README)",
+  );
   assert.deepEqual(
     jsonFiles(DIST_SECTIONS),
     jsonFiles(SRC_SECTIONS),
@@ -344,7 +592,9 @@ test("every dist section is schema-valid, stamped, and named by its slug", () =>
   assert.ok(files.length > 0, "no dist sections to check");
 
   for (const f of files) {
-    const doc = JSON.parse(fs.readFileSync(path.join(DIST_SECTIONS, f), "utf8"));
+    const doc = JSON.parse(
+      fs.readFileSync(path.join(DIST_SECTIONS, f), "utf8"),
+    );
     assert.equal(doc.slug + ".json", f, f + ": slug must equal filename");
     assert.ok(doc._meta, f + ": missing _meta stamp");
     // _meta is added by the derive and is not part of the authored schema
@@ -360,7 +610,16 @@ test("every dist section is schema-valid, stamped, and named by its slug", () =>
 // component exists in Figma, not that any consumer (plugin, editor) has
 // shipped code for it. Test-side on purpose (not a derive error): a Figma
 // rename must not redden an unrelated PR by failing the derive.
-test("every `ds` slug in a section INSTANCE resolves in the DS kit registry", () => {
+//
+// Task 2.2 introduced a SECOND instance shape a section may carry, alongside
+// the FM-primary `{ ref, ds }` pair this check was written against: a
+// DS-primary `{ library: "ds", dsSlug }` node (control-bar's button, toolbar,
+// checkbox), the same shape a page recipe's own INSTANCE nodes use, and the
+// one `render-node.js` in the plugin actually dispatches on `library:"ds"`
+// for. Both name a DS kit slug; both must resolve the same way, or this test
+// would prove the property for one shape and silently stop covering it for
+// the other the moment a section adopts it.
+test("every DS slug in a section INSTANCE (`ds` or `dsSlug`) resolves in the DS kit registry", () => {
   const dskit = JSON.parse(
     fs.readFileSync(
       path.join(ROOT, "components", "dist", "registries", "dskit.json"),
@@ -370,12 +629,20 @@ test("every `ds` slug in a section INSTANCE resolves in the DS kit registry", ()
   const known = new Set(Object.keys(dskit.components || {}));
   assert.ok(
     known.size > 100,
-    "read only " + known.size + " DS kit components; this check would be near-vacuous",
+    "read only " +
+      known.size +
+      " DS kit components; this check would be near-vacuous",
   );
 
-  const { sections, errors } = readSections(path.join(ROOT, "app-context", "src"), SECTION_SCHEMA);
+  const { sections, errors } = readSections(
+    path.join(ROOT, "app-context", "src"),
+    SECTION_SCHEMA,
+  );
   assert.deepEqual(errors, []);
-  assert.ok(sections.length > 0, "no sections read; this check would be vacuous");
+  assert.ok(
+    sections.length > 0,
+    "no sections read; this check would be vacuous",
+  );
 
   const bad = [];
   for (const s of sections) {
@@ -385,6 +652,14 @@ test("every `ds` slug in a section INSTANCE resolves in the DS kit registry", ()
       if (v.type === "INSTANCE" && v.ds && !known.has(v.ds)) {
         bad.push(s.slug + ": ds '" + v.ds + "' (ref " + v.ref + ")");
       }
+      if (
+        v.type === "INSTANCE" &&
+        v.library === "ds" &&
+        v.dsSlug &&
+        !known.has(v.dsSlug)
+      ) {
+        bad.push(s.slug + ": dsSlug '" + v.dsSlug + "' not in dskit registry");
+      }
       Object.values(v).forEach(walk);
     })(s.skeleton.content);
   }
@@ -392,18 +667,28 @@ test("every `ds` slug in a section INSTANCE resolves in the DS kit registry", ()
     bad,
     [],
     "these ds slugs have no entry in components/dist/registries/dskit.json, so the Figma " +
-      "component this proves exists does not: " + bad.join("; "),
+      "component this proves exists does not: " +
+      bad.join("; "),
   );
 });
 
 test("no dist recipe holds a SECTION node, and its sections stamp matches its source", () => {
   const { readRecipes } = require("../scripts/app-context/derive-recipes");
-  const { recipes, errors } = readRecipes(path.join(ROOT, "app-context", "src"), RECIPE_SCHEMA);
+  const { recipes, errors } = readRecipes(
+    path.join(ROOT, "app-context", "src"),
+    RECIPE_SCHEMA,
+  );
   assert.deepEqual(errors, []);
   assert.ok(recipes.length > 0);
   for (const r of recipes) {
-    const dist = JSON.parse(fs.readFileSync(path.join(DIST_RECIPES, r.slug + ".json"), "utf8"));
-    assert.equal(JSON.stringify(dist.skeleton).includes('"SECTION"'), false, r.slug + ": dist still holds a SECTION node");
+    const dist = JSON.parse(
+      fs.readFileSync(path.join(DIST_RECIPES, r.slug + ".json"), "utf8"),
+    );
+    assert.equal(
+      JSON.stringify(dist.skeleton).includes('"SECTION"'),
+      false,
+      r.slug + ": dist still holds a SECTION node",
+    );
     const referenced = [];
     (function walk(v) {
       if (Array.isArray(v)) return v.forEach(walk);
@@ -411,24 +696,51 @@ test("no dist recipe holds a SECTION node, and its sections stamp matches its so
       if (v.type === "SECTION") referenced.push(v.section);
       Object.values(v).forEach(walk);
     })(r.skeleton);
-    assert.deepEqual(dist.sections, referenced, r.slug + ": sections stamp must list the source's references in order");
+    assert.deepEqual(
+      dist.sections,
+      referenced,
+      r.slug + ": sections stamp must list the source's references in order",
+    );
     for (const slug of referenced) {
-      assert.ok(fs.existsSync(path.join(DIST_SECTIONS, slug + ".json")), r.slug + " references " + slug + " which has no dist leaf");
+      assert.ok(
+        fs.existsSync(path.join(DIST_SECTIONS, slug + ".json")),
+        r.slug + " references " + slug + " which has no dist leaf",
+      );
     }
   }
 });
 
 test("paths-manifest declares the two section collections in the metadata zone", () => {
-  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "paths-manifest.json"), "utf8"));
-  assert.equal(manifest.collections.appContextSections.dir, "app-context/dist/sections");
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "paths-manifest.json"), "utf8"),
+  );
+  assert.equal(
+    manifest.collections.appContextSections.dir,
+    "app-context/dist/sections",
+  );
   assert.equal(manifest.collections.appContextSections.pattern, "{slug}.json");
-  assert.equal(manifest.collections.appContextSectionsSrc.dir, "app-context/src/sections");
+  assert.equal(
+    manifest.collections.appContextSectionsSrc.dir,
+    "app-context/src/sections",
+  );
   assert.ok(manifest._zones.metadata.includes("appContextSections"));
   assert.ok(manifest._zones.metadata.includes("appContextSectionsSrc"));
 });
 
+// Deviation from the original check, kept per the same reasoning as the
+// registry-resolution test above: a `{ library: "ds", dsSlug }` INSTANCE
+// (Task 2.2's control-bar) already names its DS identity directly, the same
+// property `ds` exists to prove for an FM-primary `{ ref, ds }` node. It is
+// checked on its own branch, first, rather than folded into the `!v.ds`
+// branch below, because `v.ds` is genuinely absent on this shape and the
+// excuse path there is written for the opposite case (an FM ref with no DS
+// leaf at all, e.g. fmSlider): running a dsSlug node through it would ask
+// for a renderNote quoting `v.ref`, which is undefined on this shape.
 test("every INSTANCE in a section carries a ds slug, or the section's renderNotes say why not", () => {
-  const { sections, errors } = readSections(path.join(ROOT, "app-context", "src"), SECTION_SCHEMA);
+  const { sections, errors } = readSections(
+    path.join(ROOT, "app-context", "src"),
+    SECTION_SCHEMA,
+  );
   assert.deepEqual(errors, []);
   assert.ok(sections.length >= 6, "expected the six sections");
   let instances = 0;
@@ -438,15 +750,38 @@ test("every INSTANCE in a section carries a ds slug, or the section's renderNote
       if (!v || typeof v !== "object") return;
       if (v.type === "INSTANCE") {
         instances++;
-        if (!v.ds) {
-          const excused = (s.renderNotes || []).some((n) => n.includes("`" + v.ref + "`") && /no DS/i.test(n));
-          assert.ok(excused, s.slug + ": INSTANCE " + v.ref + " has no ds slug and no renderNote saying there is no DS leaf for it");
+        if (v.library === "ds" && v.dsSlug) {
+          assert.match(
+            v.dsSlug,
+            /^[a-z][a-z0-9-]*$/,
+            s.slug + ": dsSlug must be a slug",
+          );
+        } else if (!v.ds) {
+          const excused = (s.renderNotes || []).some(
+            (n) => n.includes("`" + v.ref + "`") && /no DS/i.test(n),
+          );
+          assert.ok(
+            excused,
+            s.slug +
+              ": INSTANCE " +
+              v.ref +
+              " has no ds slug and no renderNote saying there is no DS leaf for it",
+          );
         } else {
-          assert.match(v.ds, /^[a-z][a-z0-9-]*$/, s.slug + ": ds must be a slug");
+          assert.match(
+            v.ds,
+            /^[a-z][a-z0-9-]*$/,
+            s.slug + ": ds must be a slug",
+          );
         }
       }
       Object.values(v).forEach(walk);
     })(s.skeleton.content);
   }
-  assert.ok(instances > 20, "walked only " + instances + " instances; the check is not reaching the sections");
+  assert.ok(
+    instances > 20,
+    "walked only " +
+      instances +
+      " instances; the check is not reaching the sections",
+  );
 });
