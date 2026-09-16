@@ -2881,6 +2881,136 @@ test("a leaf with no Label renders no label text and no empty label span", funct
     /ds-label__text"><\/span>/,
     "label must not emit an empty label-text span",
   );
+
+  // Task K, Important 4: the fallback removal left the WRAPPER behind on
+  // three of these leaves even though the TEXT inside it is gone -- radio and
+  // toggle still emit their `__text` span (an 8px flex gap next to the
+  // circle/switch with nothing in it), and dropdown-select-default still
+  // emits its whole `__label-row` div (an 8px column gap above every select).
+  // `label`'s own row is a fourth case with a different trigger: it is gated
+  // on the `Label` show/hide boolean, not on whether there is any text, so an
+  // unauthored `Label text` left a row holding only a lone "*" and an info
+  // icon. Guard hoisted one level in each case: the wrapper itself is now
+  // conditional, not just the text span inside it.
+  assert.doesNotMatch(
+    DS.renderDSComponent({ dsSlug: "radio", variant: "", props: {} }),
+    /<span class="ds-radio__text"><\/span>/,
+    "radio must not emit an empty ds-radio__text wrapper",
+  );
+  assert.doesNotMatch(
+    DS.renderDSComponent({ dsSlug: "toggle", variant: "", props: {} }),
+    /<span class="ds-toggle__text"><\/span>/,
+    "toggle must not emit an empty ds-toggle__text wrapper",
+  );
+  assert.doesNotMatch(
+    DS.renderDSComponent({
+      dsSlug: "dropdown-select-default",
+      variant: "",
+      props: {},
+    }),
+    /<div class="ds-dropdown-select__label-row"><\/div>/,
+    "dropdown-select-default must not emit an empty label-row wrapper",
+  );
+  assert.doesNotMatch(
+    DS.renderDSComponent({ dsSlug: "label", variant: "", props: {} }),
+    /ds-label__row/,
+    "label must not emit its row at all with no label text, even though " +
+      "the star and info icon would otherwise show",
+  );
+});
+
+test("positive control: the text/label-row wrapper still renders with only the OTHER piece present", function () {
+  var DS = require(DS_PATH);
+  assert.match(
+    DS.renderDSComponent({
+      dsSlug: "radio",
+      variant: "",
+      props: { "Helper text": "Optional detail" },
+    }),
+    /<span class="ds-radio__text"><span class="ds-radio__helper">Optional detail<\/span><\/span>/,
+    "radio: helper text alone still renders the wrapper",
+  );
+  assert.match(
+    DS.renderDSComponent({
+      dsSlug: "toggle",
+      variant: "",
+      props: { "Helper text": "Optional detail" },
+    }),
+    /<span class="ds-toggle__text"><span class="ds-toggle__helper">Optional detail<\/span><\/span>/,
+    "toggle: helper text alone still renders the wrapper",
+  );
+  assert.match(
+    DS.renderDSComponent({
+      dsSlug: "dropdown-select-default",
+      variant: "",
+      props: { Description: "Optional detail" },
+    }),
+    /<div class="ds-dropdown-select__label-row"><span class="ds-dropdown-select__desc">Optional detail<\/span><\/div>/,
+    "dropdown-select-default: description alone still renders the label-row",
+  );
+  assert.match(
+    DS.renderDSComponent({
+      dsSlug: "label",
+      variant: "",
+      props: { "Label text": "Dataset name" },
+    }),
+    /ds-label__row/,
+    "label: authored label text still renders the row",
+  );
+});
+
+// Task K, Important 3: `selectionCard` (shared by checkbox-card and
+// radio-card) hardcoded `props: {}` for the child control, so once the
+// child's own Label fallback was removed (Task 1.2), both cards render no
+// label at all no matter what a caller authors -- the child was never wired
+// to receive one. Neither card publishes a Label prop of its own in the
+// registry (checkbox-card: Show Digram/Show Icon/Show slot for dynamic
+// content/Dynamic content/Show description; radio-card: Slot only), so the
+// fix threads the CARD's own top-level `Label` prop straight through to the
+// child, the same key the child control reads.
+test("checkbox-card/radio-card thread a Label from the card's own props into the child control", function () {
+  var DS = require(DS_PATH);
+  var CHILD_LABEL_CLASS = {
+    "checkbox-card": "ds-checkbox__label",
+    "radio-card": "ds-radio__label",
+  };
+  Object.keys(CHILD_LABEL_CLASS).forEach(function (slug) {
+    var withLabel = DS.renderDSComponent({
+      dsSlug: slug,
+      variant: "",
+      props: { Label: "Include finance data" },
+    });
+    assert.match(
+      withLabel,
+      />Include finance data</,
+      slug + ": the card's own Label reaches the child control",
+    );
+    assert.match(
+      withLabel,
+      new RegExp(CHILD_LABEL_CLASS[slug]),
+      slug + ": the child renders its own label span",
+    );
+    var emptyLabel = DS.renderDSComponent({
+      dsSlug: slug,
+      variant: "",
+      props: { Label: "" },
+    });
+    assert.doesNotMatch(
+      emptyLabel,
+      new RegExp(CHILD_LABEL_CLASS[slug]),
+      slug + ': Label:"" renders no label span',
+    );
+    var unauthored = DS.renderDSComponent({
+      dsSlug: slug,
+      variant: "",
+      props: {},
+    });
+    assert.doesNotMatch(
+      unauthored,
+      new RegExp(CHILD_LABEL_CLASS[slug]),
+      slug + ": an unauthored Label still renders no label span",
+    );
+  });
 });
 
 test("positive control: a leaf WITH a Label still renders it", function () {

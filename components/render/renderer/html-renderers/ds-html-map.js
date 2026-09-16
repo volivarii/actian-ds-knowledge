@@ -594,17 +594,21 @@
     var cardState = CARD_PAINTED_STATES[o.state]
       ? " " + o.cls + "--" + o.state.toLowerCase()
       : "";
-    // No Label prop, deliberately. Neither card PUBLISHES one -- checkbox-card
-    // publishes Dynamic content and four booleans, radio-card publishes Slot --
-    // and the label belongs to the control, which carries its own fallback. A
-    // Label here would have read as the card inventing content for a prop it
-    // does not have, and would have DISPLACED the checkbox's own "Label".
+    // Neither card PUBLISHES a Label prop of its own (checkbox-card publishes
+    // Dynamic content and four booleans; radio-card publishes Slot only), so
+    // there is nothing here to invent. But the child control's own Label
+    // fallback is gone (Task 1.2): with nothing forwarded it now renders no
+    // label at all, not the placeholder word "Label" the old comment here
+    // was guarding against displacing. So a caller who wants a labelled
+    // control passes Label at the CARD's own top level -- the same key the
+    // child reads -- and it is threaded straight through; "" or omitted
+    // forwards as no label, exactly like the child leaf itself.
     var control = renderDSComponent({
       type: "INSTANCE",
       library: "ds",
       dsSlug: o.child,
       variant: parts.join(","),
-      props: {},
+      props: { Label: o.label },
     });
     // An unset Slot invents no body copy: the slot is a published SLOT prop, so
     // its content belongs to the caller. The slot ELEMENT goes with it, for the
@@ -1049,17 +1053,25 @@
                 esc(props["Helper text"]) +
                 "</span>"
               : "";
+          // Guard hoisted one level: with neither a label nor a helper, the
+          // wrapper itself is the empty element now (the label fallback that
+          // used to fill it is gone), so it is omitted too, not just the
+          // (already-empty) label span inside it.
+          var rbText =
+            rbLabel || rbHelper
+              ? '<span class="ds-radio__text">' +
+                (rbLabel
+                  ? '<span class="ds-radio__label">' + rbLabel + "</span>"
+                  : "") +
+                rbHelper +
+                "</span>"
+              : "";
           return (
             '<label class="' +
             rbCls +
             '">' +
             '<span class="ds-radio__circle"><span class="ds-radio__dot"></span></span>' +
-            '<span class="ds-radio__text">' +
-            (rbLabel
-              ? '<span class="ds-radio__label">' + rbLabel + "</span>"
-              : "") +
-            rbHelper +
-            "</span>" +
+            rbText +
             "</label>"
           );
         }
@@ -1269,17 +1281,23 @@
                 esc(props["Helper text"]) +
                 "</span>"
               : "";
+          // Same hoist as radio: an empty wrapper still claims the row's 8px
+          // gap next to the switch, so it is omitted with neither piece.
+          var tgText =
+            tgLabel || tgHelper
+              ? '<span class="ds-toggle__text">' +
+                (tgLabel
+                  ? '<span class="ds-toggle__label">' + tgLabel + "</span>"
+                  : "") +
+                tgHelper +
+                "</span>"
+              : "";
           return (
             '<label class="' +
             tgCls +
             '">' +
             '<span class="ds-toggle__switch"><span class="ds-toggle__thumb"></span></span>' +
-            '<span class="ds-toggle__text">' +
-            (tgLabel
-              ? '<span class="ds-toggle__label">' + tgLabel + "</span>"
-              : "") +
-            tgHelper +
-            "</span>" +
+            tgText +
             "</label>"
           );
         }
@@ -2650,16 +2668,26 @@
               "</span>"
             : "";
           var ddLabel = props.Label ? esc(props.Label) : "";
+          // Guard hoisted one level: with neither a label nor a description,
+          // the row itself is the empty element (an 8px column gap above the
+          // select with nothing in it), so it is omitted, not just its
+          // (already-empty) label span.
+          var ddLabelRow =
+            ddLabel || ddDesc
+              ? '<div class="ds-dropdown-select__label-row">' +
+                (ddLabel
+                  ? '<span class="ds-dropdown-select__label">' +
+                    ddLabel +
+                    "</span>"
+                  : "") +
+                ddDesc +
+                "</div>"
+              : "";
           return (
             '<div class="' +
             ddCls +
             '">' +
-            '<div class="ds-dropdown-select__label-row">' +
-            (ddLabel
-              ? '<span class="ds-dropdown-select__label">' + ddLabel + "</span>"
-              : "") +
-            ddDesc +
-            "</div>" +
+            ddLabelRow +
             '<div class="ds-dropdown-select__field">' +
             '<span class="' +
             ddValueCls +
@@ -4135,6 +4163,7 @@
             selection: v.Selection,
             state: v.State,
             slot: props.Slot,
+            label: props.Label,
           });
         }
 
@@ -4145,6 +4174,7 @@
             selection: v.Selection,
             state: v.State,
             slot: props.Slot,
+            label: props.Label,
           });
         }
 
@@ -4167,11 +4197,17 @@
           var lblShowStar = props["* (Asterisk)"] !== false;
           var lblShowInfo = props["Info icon"] !== false;
           var lblShowDesc = props.Description !== false;
+          // `lblShowLabel` alone used to gate the row, so an unauthored
+          // `Label text` (the fallback for which is gone) left the row
+          // rendering with only a lone "*" and the info icon: the row's own
+          // text is optional, but the row is not empty-safe, so it also needs
+          // real text to appear at all.
+          var lblRowVisible = lblShowLabel && !!lblText;
           return (
             '<div class="' +
             lblCls +
             '">' +
-            (lblShowLabel
+            (lblRowVisible
               ? '<span class="ds-label__row">' +
                 (lblText
                   ? '<span class="ds-label__text">' + lblText + "</span>"

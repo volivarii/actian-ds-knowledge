@@ -395,6 +395,9 @@
       "group": "Form",
       "props": [
         {
+          "name": "Label"
+        },
+        {
           "name": "Slot"
         }
       ],
@@ -1667,6 +1670,9 @@
     "radio-card": {
       "group": "Form",
       "props": [
+        {
+          "name": "Label"
+        },
         {
           "name": "Slot"
         }

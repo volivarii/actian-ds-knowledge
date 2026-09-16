@@ -903,6 +903,17 @@ var SPECIMEN_PROPS = {
   // unset -- and these strings exist so the gallery shows a card with something
   // in it rather than an empty rectangle.
   card: { Slot: "Rows read in the last 30 days" },
+  // Task K: checkbox-card/radio-card's child control lost its own Label
+  // fallback (Task 1.2), and `selectionCard` in ds-html-map.js now forwards
+  // the CARD's own top-level Label straight through to it. NO Label entry
+  // here though, for the same reason checkbox-group/radio-group have none
+  // above: variantMatrix already sets `Label` on every generic cell to the
+  // cell's own Selection value ("Unselected", "Selected", "Indeterminate",
+  // "Disabled"), and a specimen prop loses to a prop the cell already sets --
+  // verified by rendering both fragments, not assumed. That axis-value text
+  // is what labels the gallery's checkbox/radio child today; a Label entry
+  // here would never reach it. Do not add one back without first checking
+  // variantMatrix, as the checkbox-group comment above says.
   "checkbox-card": {
     Slot: "Includes every dataset in the Finance catalog.",
   },
