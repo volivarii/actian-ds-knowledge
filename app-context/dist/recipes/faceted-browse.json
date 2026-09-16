@@ -35,16 +35,11 @@
     "bulk-bar": "Select-all plus batch actions, with the sort control opposite",
     "results": "Result cards: type and sharing tags, title, source metadata, summary, domain, pending-suggestion chip, and a right meta column with completion and last-updated"
   },
-  "undrawnSlots": [
-    "results-header",
-    "bulk-bar"
-  ],
   "renderNotes": [
     "Children of a VERTICAL frame must omit `sizing`. `sizing.horizontal:\"FILL\"` emits `flex:1`, which in a column container stretches them vertically and distributes the height evenly.",
     "fmSlider and fmProgressBar read the VARIANT (Progress= / Completion=), not props, and collapse to zero width inside a centred row unless hosted in a fixed-width frame.",
     "fmCheckbox and fmToggle render no text; pair them with a sibling TEXT node.",
-    "Use DIVIDER for full-width rules. RECT takes a fixed pixel width and will not span.",
-    "`results-header` and `bulk-bar` are undrawn until the third capture adds the bulk bar and results header (Task 2.2); `undrawnSlots` is temporary and comes back out of this file when those nodes land."
+    "Use DIVIDER for full-width rules. RECT takes a fixed pixel width and will not span."
   ],
   "skeleton": {
     "chrome": "standard",
@@ -781,6 +776,7 @@
               {
                 "type": "FRAME",
                 "name": "Results header",
+                "slot": "results-header",
                 "layout": {
                   "mode": "HORIZONTAL",
                   "spacing": 0,
@@ -811,6 +807,7 @@
               {
                 "type": "FRAME",
                 "name": "Bulk action bar",
+                "slot": "bulk-bar",
                 "layout": {
                   "mode": "HORIZONTAL",
                   "spacing": 0,

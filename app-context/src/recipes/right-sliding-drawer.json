@@ -241,6 +241,7 @@
               {
                 "type": "FRAME",
                 "name": "Tab panel: Description",
+                "slot": "tabs",
                 "layout": {
                   "mode": "VERTICAL",
                   "spacing": 8,

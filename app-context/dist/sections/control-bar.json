@@ -39,6 +39,7 @@
       {
         "type": "FRAME",
         "name": "Results header",
+        "slot": "results-header",
         "layout": {
           "mode": "HORIZONTAL",
           "spacing": 0,
@@ -69,6 +70,7 @@
       {
         "type": "FRAME",
         "name": "Bulk action bar",
+        "slot": "bulk-bar",
         "layout": {
           "mode": "HORIZONTAL",
           "spacing": 0,

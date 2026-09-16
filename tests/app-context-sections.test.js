@@ -376,6 +376,61 @@ test("inlineSections: a multi-root section stamps `slot` on the first root only"
   );
 });
 
+// A section may author `slot` on its own root node(s) (control-bar's real
+// "Results header"/"Bulk action bar" roots do this now, self-tagging rather
+// than depending on every recipe that splices them to stamp the reference).
+// A reference-level `slot` still wins when both are present, but only for
+// root 0: the reference has one `slot` value (or array) and no way to name
+// "which root" beyond the first, so any other root keeps whatever it
+// authored itself, stamp or no stamp.
+test("inlineSections: a reference's `slot` overrides a section-authored `slot` on root 0 only, and never reaches root 1", () => {
+  const SELF_TAGGING = {
+    "self-tagging": {
+      slug: "self-tagging",
+      skeleton: {
+        content: [
+          { type: "FRAME", name: "Root 0", slot: "a" },
+          { type: "FRAME", name: "Root 1", slot: "c" },
+        ],
+      },
+    },
+  };
+
+  // No reference-level stamp: both roots keep the `slot` they authored.
+  const { recipe: unstamped, errors: unstampedErrors } = inlineSections(
+    { slug: "r", skeleton: { content: [{ type: "SECTION", section: "self-tagging" }] } },
+    SELF_TAGGING,
+  );
+  assert.deepEqual(unstampedErrors, []);
+  assert.deepEqual(
+    unstamped.skeleton.content.map((c) => [c.name, c.slot]),
+    [
+      ["Root 0", "a"],
+      ["Root 1", "c"],
+    ],
+  );
+
+  // Reference stamps `slot: "b"`: root 0's own "a" is overridden; root 1 is
+  // not reachable from the reference and keeps its own "c" untouched.
+  const { recipe: stamped, errors: stampedErrors } = inlineSections(
+    {
+      slug: "r",
+      skeleton: {
+        content: [{ type: "SECTION", section: "self-tagging", slot: "b" }],
+      },
+    },
+    SELF_TAGGING,
+  );
+  assert.deepEqual(stampedErrors, []);
+  assert.deepEqual(
+    stamped.skeleton.content.map((c) => [c.name, c.slot]),
+    [
+      ["Root 0", "b"],
+      ["Root 1", "c"],
+    ],
+  );
+});
+
 // An array of strings is accepted too: one spliced root can be the sole
 // carrier of more than one of the recipe's own slots when the section has no
 // narrower node to split the tag across (studio-quick-edit-drawer's

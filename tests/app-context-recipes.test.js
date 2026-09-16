@@ -652,15 +652,25 @@ test("positive control: a non---zen custom property is NOT reported as undeclare
 // parsing prose against layout by hand, and a genuinely absent region reads
 // as absent rather than as a missed tag.
 //
-// Deviations from the original brief, both necessary and both kept per
-// controller ruling: `readRecipes` is called with `app-context/src` (not the
-// bare repo ROOT the brief's snippet used, which points at a directory that
-// does not exist and would make this test vacuously pass over an empty
-// list); the walker is named `walkSlotNodes`, not `walkNodes`, because the
-// file already declares a top-level `walkNodes(value, parentMode, visit)`
-// above for the axis-blind FILL checks — a second `function walkNodes` here
-// would hoist over the first and silently break every 3-arg caller with a
-// "visit is not a function" throw.
+// Checked against DIST, not the authored source: a slot a SECTION splice
+// fulfils (faceted-browse's `results-header`/`bulk-bar`, carried by
+// control-bar's own two roots, not by anything faceted-browse.json itself
+// writes) is invisible before the splice: the source skeleton still holds a
+// bare `{ "type": "SECTION", "section": "control-bar" }` reference with no
+// `slot` of its own; only inlineSections's splice (dist) puts the
+// section-authored `slot` into the tree this walk reads. Same reasoning as
+// the axis-blind-FILL check above, which also reads dist because a section
+// root only meets its real parent there. Dist drifting from a fresh derive
+// of src is caught separately by the round-trip test in
+// tests/app-context-derive.test.js, so reading dist here does not skip
+// schema validation of the source.
+//
+// Deviation from the original brief, kept per controller ruling: the walker
+// is named `walkSlotNodes`, not `walkNodes`, because the file already
+// declares a top-level `walkNodes(value, parentMode, visit)` above for the
+// axis-blind FILL checks, and a second `function walkNodes` here would hoist
+// over the first and silently break every 3-arg caller with a "visit is not
+// a function" throw.
 // ---------------------------------------------------------------------------
 
 function walkSlotNodes(node, visit) {
@@ -677,43 +687,113 @@ function slotKeysOf(node) {
   return Array.isArray(node.slot) ? node.slot : [node.slot];
 }
 
-test("every declared slot key is carried by a node or listed in undrawnSlots, never both", () => {
-  const { recipes } = readRecipes(
-    path.join(ROOT, "app-context", "src"),
-    SCHEMA,
+// Every slot-coverage violation for one recipe (dist shape: `slots`,
+// `undrawnSlots` and an already-spliced `skeleton.content`), as
+// human-readable strings, or [] when the recipe is clean. Factored out so a
+// synthetic recipe can drive each of the four branches directly, as its own
+// positive control below: a check that has never been seen to fail is not
+// known to work (feedback_a_poll_loop_must_not_pass_on_absence).
+function slotCoverageViolations(r) {
+  const declared = Object.keys(r.slots || {});
+  const undrawn = r.undrawnSlots || [];
+  const carried = new Set();
+  (r.skeleton.content || []).forEach((n) =>
+    walkSlotNodes(n, (x) => {
+      slotKeysOf(x).forEach((k) => carried.add(k));
+    }),
   );
-  for (const r of recipes) {
-    const declared = Object.keys(r.slots || {});
-    const undrawn = r.undrawnSlots || [];
-    const carried = new Set();
-    (r.skeleton.content || []).forEach((n) =>
-      walkSlotNodes(n, (x) => {
-        slotKeysOf(x).forEach((k) => carried.add(k));
-      }),
-    );
-    for (const key of undrawn) {
-      assert.ok(
-        declared.includes(key),
+  const violations = [];
+  for (const key of undrawn) {
+    if (!declared.includes(key)) {
+      violations.push(
         `${r.slug}: undrawnSlots lists "${key}", which is not a declared slot`,
       );
-      assert.ok(
-        !carried.has(key),
+    }
+    if (carried.has(key)) {
+      violations.push(
         `${r.slug}: "${key}" is in undrawnSlots but is also carried by a skeleton node — it IS drawn, pick one`,
       );
     }
-    for (const key of declared) {
-      assert.ok(
-        carried.has(key) || undrawn.includes(key),
+  }
+  for (const key of declared) {
+    if (!carried.has(key) && !undrawn.includes(key)) {
+      violations.push(
         `${r.slug}: slot "${key}" is declared but neither carried by a skeleton node nor listed in undrawnSlots`,
       );
     }
-    for (const key of carried) {
-      assert.ok(
-        declared.includes(key),
+  }
+  for (const key of carried) {
+    if (!declared.includes(key)) {
+      violations.push(
         `${r.slug}: node carries slot:"${key}" that slots does not declare`,
       );
     }
   }
+  return violations;
+}
+
+test("every declared slot key is carried by a node or listed in undrawnSlots, never both", () => {
+  const files = distFiles();
+  assert.ok(
+    files.length > 0,
+    "no dist recipes to check; this test would be vacuous",
+  );
+  for (const f of files) {
+    const r = JSON.parse(fs.readFileSync(path.join(DIST, f), "utf8"));
+    assert.deepEqual(
+      slotCoverageViolations(r),
+      [],
+      `${f}: slot coverage violations`,
+    );
+  }
+});
+
+// Positive controls: each plants exactly one of the four violation branches
+// on a synthetic recipe (never a real one) and asserts the helper names it.
+// The declared-but-uncovered branch (not planted below) has already been
+// seen red for real, on asset-detail-360 during round 0 of this task before
+// its SECTION-delegated slots were tagged (task-2.1-report.md); these three
+// close the remaining branches, which this file's own gate doctrine (a check
+// that prints nothing reads as a pass) requires proven able to fire too.
+
+test("positive control: undrawnSlots naming an undeclared key is caught", () => {
+  const r = {
+    slug: "mock",
+    slots: { a: "A" },
+    undrawnSlots: ["ghost"],
+    skeleton: { content: [{ type: "FRAME", slot: "a" }] },
+  };
+  assert.deepEqual(slotCoverageViolations(r), [
+    'mock: undrawnSlots lists "ghost", which is not a declared slot',
+  ]);
+});
+
+test("positive control: a key both carried and listed in undrawnSlots is caught", () => {
+  const r = {
+    slug: "mock",
+    slots: { a: "A" },
+    undrawnSlots: ["a"],
+    skeleton: { content: [{ type: "FRAME", slot: "a" }] },
+  };
+  assert.deepEqual(slotCoverageViolations(r), [
+    'mock: "a" is in undrawnSlots but is also carried by a skeleton node — it IS drawn, pick one',
+  ]);
+});
+
+test("positive control: a node carrying an undeclared slot key is caught", () => {
+  const r = {
+    slug: "mock",
+    slots: { a: "A" },
+    skeleton: {
+      content: [
+        { type: "FRAME", slot: "a" },
+        { type: "FRAME", slot: "ghost" },
+      ],
+    },
+  };
+  assert.deepEqual(slotCoverageViolations(r), [
+    'mock: node carries slot:"ghost" that slots does not declare',
+  ]);
 });
 
 // ---------------------------------------------------------------------------
