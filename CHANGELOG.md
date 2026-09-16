@@ -26,6 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Added
 
+- **`slot`, `undrawnSlots` and `derivedFrom.screenshot` on captured recipes; DS leaves stop inventing text.** ([#713](https://github.com/volivarii/actian-ds-knowledge/pull/713)) A skeleton node, a SECTION reference (stamped onto the spliced root) or a section root may carry `slot`, and a recipe declares `undrawnSlots` for the keys it does not draw; a coverage test keeps declared = carried plus undrawn, and a local round-trip test derives `src` into a temp dir and compares every `dist/recipes` and `dist/sections` file. `derivedFrom.screenshot` names the product screenshot under `app-context/src/recipes/captures/` that a composition was derived from; `faceted-browse` carries one and is re-authored from DS leaves (typed facet rows, the control bar with the product's four verbs, six `search-result-card` instances, pagination) with every varying value a `{{...}}` placeholder listed in `renderNotes`. In the renderer, `checkbox`, `radio`, `toggle`, `dropdown-select-default`, `text-input` and `label` render no label and no empty wrapper when none is given, `search-result-card` no longer prints "Stage" or the "VH Vehicle" glossary badge for unset props, and `checkbox-card` / `radio-card` thread their label to the control; the gallery keeps every leaf fully drawn through specimen props.
+
 - **Personas.** ([#712](https://github.com/volivarii/actian-ds-knowledge/pull/712)) Six personas under
   `app-context/src/personas/` (Data steward, Data engineer and Data
   architect in Studio; Business user and Analyst in Explorer; Administrator in Administration), one
