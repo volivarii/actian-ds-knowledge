@@ -47,8 +47,11 @@
     "The results-header/bulk-bar leaves (button, checkbox, toolbar) are authored in ../sections/control-bar.json, spliced in here as the SECTION node above; its own renderNotes carry their deviations.",
     "search-result-card has no completion or sharing prop (Body, Catalog, Description, Featured property 1/2, Glossary initials/label, Stage, Tech name, Title, Type only). The completion meter is a sibling progress-bar-small (own Percent text, no separate TEXT, per the doubled-percent rule above); the Shared indicator is a sibling read-only-tag Type=Shared. read-only-tag's Type=Shared paints #cbe3ff (ds-base.css .ds-tag--shared), a light blue, not a literally dark fill; it is the leaf whose Type axis names Shared, and the closest built equivalent to the capture's dark filled fmTag.",
     "search-result-card's own Type text renders inside a single always-colored eyebrow pill (.ds-search-result-card__type, background var(--zen-color-error-50)); the fill does not change with the Type value, only the text does.",
-    "All six results render a Shared tag; the recipe does not model a non-shared result, matching every sample row in the capture.",
-    "derivedFrom.screenshot is a 2026-03-30 product capture of Studio > Catalog on the dev tenant (1583x1100), not the 2026-08-18 capture derivedFrom.capturedOn names: the original 08-18 screenshot was not retained on disk, and this is the closest real capture of the same surface, not the Figma frame (the design, not the product)."
+    "All six results render a Shared tag; the recipe does not model a non-shared result, matching every sample row in the capture. The marker is a sibling read-only-tag placed BEFORE the search-result-card instance, not inside it: the leaf has no shared prop and no slot for one, so it sits to the left of the whole card rather than in the title row the way the product's own Shared indicator does. A leaf-level shared marker (a real prop or slot on search-result-card) is a follow-up, not done here.",
+    "derivedFrom.screenshot is a 2026-03-30 product capture of Studio > Catalog on the dev tenant (1583x1100), not the 2026-08-18 capture derivedFrom.capturedOn names: the original 08-18 screenshot was not retained on disk, and this is the closest real capture of the same surface, not the Figma frame (the design, not the product).",
+    "No DS-tier slider exists (checked ds-components-authoring.md's vocabulary table): the range facet keeps fmSlider, unreplaced, same as the pre-2.2 capture.",
+    "Review round 1 (Critical): search-result-card's Stage pill and glossary badge painted unconditional fallback text (\"Stage\", \"VH\", \"Vehicle\") even when the props were omitted, the same defect Task 1.2 fixed for Label elsewhere. Fixed in ds-html-map.js: no Stage prop draws no stage pill at all; no Glossary initials AND no Glossary label draws no glossary badge at all. This recipe's six cards set Stage, Glossary initials and Glossary label to \"\" because the captured product page names neither a lifecycle stage nor a glossary relationship for these six sample rows; a future capture that has real values for either should set them instead of leaving them empty.",
+    "Every {{...}} placeholder this recipe's own skeleton carries (65 keys), grouped so a future author can check coverage without grepping: facets -- {{facet1_count}}, {{facet1_label}}, {{facet2_count}}, {{facet2_label}}, {{facet3_count}}, {{facet3_label}}, {{facet4_count}}, {{facet4_label}}, {{facet5_count}}, {{facet5_label}}, {{facet6_count}}, {{facet6_label}}, {{facet_overflow}}, {{range_facet_label}}, {{select1_label}}, {{select2_label}}, {{select3_label}}, {{toggle_facet_label}}, {{toggle_label}}; results -- {{result_count}}, {{result_1_completion}}, {{result_1_connection}}, {{result_1_description}}, {{result_1_tech}}, {{result_1_title}}, {{result_1_type}}, {{result_1_updated}}, {{result_2_completion}}, {{result_2_connection}}, {{result_2_description}}, {{result_2_tech}}, {{result_2_title}}, {{result_2_type}}, {{result_2_updated}}, {{result_3_completion}}, {{result_3_connection}}, {{result_3_description}}, {{result_3_tech}}, {{result_3_title}}, {{result_3_type}}, {{result_3_updated}}, {{result_4_completion}}, {{result_4_connection}}, {{result_4_description}}, {{result_4_tech}}, {{result_4_title}}, {{result_4_type}}, {{result_4_updated}}, {{result_5_completion}}, {{result_5_connection}}, {{result_5_description}}, {{result_5_tech}}, {{result_5_title}}, {{result_5_type}}, {{result_5_updated}}, {{result_6_completion}}, {{result_6_connection}}, {{result_6_description}}, {{result_6_tech}}, {{result_6_title}}, {{result_6_type}}, {{result_6_updated}}; header -- {{app}}; pagination -- {{page_count}}; catalog -- {{catalog}}. The spliced-in ../sections/control-bar.json carries two more of its own ({{result_count}} again, plus {{sort_label}}), inventoried in its own renderNotes."
   ],
   "skeleton": {
     "chrome": "standard",
@@ -946,7 +949,10 @@
                       "Catalog": "{{catalog}}",
                       "Description": "{{result_1_description}}",
                       "Featured property 1": "Connection: {{result_1_connection}}",
-                      "Featured property 2": "Last updated: {{result_1_updated}}"
+                      "Featured property 2": "Last updated: {{result_1_updated}}",
+                      "Stage": "",
+                      "Glossary initials": "",
+                      "Glossary label": ""
                     },
                     "sizing": {
                       "horizontal": "FILL",
@@ -1017,7 +1023,10 @@
                       "Catalog": "{{catalog}}",
                       "Description": "{{result_2_description}}",
                       "Featured property 1": "Connection: {{result_2_connection}}",
-                      "Featured property 2": "Last updated: {{result_2_updated}}"
+                      "Featured property 2": "Last updated: {{result_2_updated}}",
+                      "Stage": "",
+                      "Glossary initials": "",
+                      "Glossary label": ""
                     },
                     "sizing": {
                       "horizontal": "FILL",
@@ -1088,7 +1097,10 @@
                       "Catalog": "{{catalog}}",
                       "Description": "{{result_3_description}}",
                       "Featured property 1": "Connection: {{result_3_connection}}",
-                      "Featured property 2": "Last updated: {{result_3_updated}}"
+                      "Featured property 2": "Last updated: {{result_3_updated}}",
+                      "Stage": "",
+                      "Glossary initials": "",
+                      "Glossary label": ""
                     },
                     "sizing": {
                       "horizontal": "FILL",
@@ -1159,7 +1171,10 @@
                       "Catalog": "{{catalog}}",
                       "Description": "{{result_4_description}}",
                       "Featured property 1": "Connection: {{result_4_connection}}",
-                      "Featured property 2": "Last updated: {{result_4_updated}}"
+                      "Featured property 2": "Last updated: {{result_4_updated}}",
+                      "Stage": "",
+                      "Glossary initials": "",
+                      "Glossary label": ""
                     },
                     "sizing": {
                       "horizontal": "FILL",
@@ -1230,7 +1245,10 @@
                       "Catalog": "{{catalog}}",
                       "Description": "{{result_5_description}}",
                       "Featured property 1": "Connection: {{result_5_connection}}",
-                      "Featured property 2": "Last updated: {{result_5_updated}}"
+                      "Featured property 2": "Last updated: {{result_5_updated}}",
+                      "Stage": "",
+                      "Glossary initials": "",
+                      "Glossary label": ""
                     },
                     "sizing": {
                       "horizontal": "FILL",
@@ -1301,7 +1319,10 @@
                       "Catalog": "{{catalog}}",
                       "Description": "{{result_6_description}}",
                       "Featured property 1": "Connection: {{result_6_connection}}",
-                      "Featured property 2": "Last updated: {{result_6_updated}}"
+                      "Featured property 2": "Last updated: {{result_6_updated}}",
+                      "Stage": "",
+                      "Glossary initials": "",
+                      "Glossary label": ""
                     },
                     "sizing": {
                       "horizontal": "FILL",

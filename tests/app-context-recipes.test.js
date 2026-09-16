@@ -912,3 +912,59 @@ test("positive control: a derivedFrom.screenshot naming a missing file is caught
   fs.rmSync(tmp, { recursive: true, force: true });
   assert.deepEqual(missing, ["ghost: captures/does-not-exist.png"]);
 });
+
+// ---------------------------------------------------------------------------
+// Review round 1: faceted-browse's renderNotes must carry a full inventory of
+// every {{...}} placeholder its own skeleton uses (facets, results, header,
+// pagination, catalog), so a future author can check coverage without
+// grepping the file. This reads the keys straight from the skeleton, not a
+// hardcoded count, so a placeholder added later without an inventory update
+// is caught here rather than discovered by grepping in production.
+// ---------------------------------------------------------------------------
+
+test("faceted-browse's renderNotes carry a placeholder inventory covering every {{key}} in its own skeleton", () => {
+  const { recipes, errors } = readRecipes(
+    path.join(ROOT, "app-context", "src"),
+    SCHEMA,
+  );
+  assert.deepEqual(errors, []);
+  const faceted = recipes.find((r) => r.slug === "faceted-browse");
+  assert.ok(faceted, "faceted-browse recipe not read");
+
+  const keys = [
+    ...new Set(
+      [
+        ...JSON.stringify(faceted.skeleton).matchAll(/\{\{([a-z0-9_]+)\}\}/g),
+      ].map((m) => m[1]),
+    ),
+  ];
+  assert.ok(
+    keys.length > 10,
+    "too few placeholder keys found in faceted-browse's skeleton; this check would be near-vacuous",
+  );
+
+  const inventory = (faceted.renderNotes || []).find((n) =>
+    n.startsWith(
+      "Every {{...}} placeholder this recipe's own skeleton carries",
+    ),
+  );
+  assert.ok(
+    inventory,
+    "faceted-browse renderNotes must carry the placeholder inventory entry",
+  );
+
+  const missing = keys.filter((k) => !inventory.includes("{{" + k + "}}"));
+  assert.deepEqual(
+    missing,
+    [],
+    "these {{...}} keys appear in the skeleton but not in the renderNotes inventory: " +
+      missing.join(", "),
+  );
+});
+
+test("positive control: a placeholder key missing from the inventory note is caught", () => {
+  const inventory = "facets -- {{facet1_label}}; results -- {{result_1_title}}";
+  const keys = ["facet1_label", "result_1_title", "page_count"];
+  const missing = keys.filter((k) => !inventory.includes("{{" + k + "}}"));
+  assert.deepEqual(missing, ["page_count"]);
+});

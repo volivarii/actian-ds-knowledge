@@ -673,7 +673,7 @@ test("paths-manifest declares the two section collections in the metadata zone",
 // checked on its own branch, first, rather than folded into the `!v.ds`
 // branch below, because `v.ds` is genuinely absent on this shape and the
 // excuse path there is written for the opposite case (an FM ref with no DS
-// leaf at all, e.g. fmSlider) — running a dsSlug node through it would ask
+// leaf at all, e.g. fmSlider): running a dsSlug node through it would ask
 // for a renderNote quoting `v.ref`, which is undefined on this shape.
 test("every INSTANCE in a section carries a ds slug, or the section's renderNotes say why not", () => {
   const { sections, errors } = readSections(
