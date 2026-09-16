@@ -2801,15 +2801,25 @@ test("drawer: the gallery cell keeps its specimen body through the matrix", func
 
 test("a leaf with no Label renders no label text and no empty label span", function () {
   var DS = require(DS_PATH);
-  ["checkbox", "toggle", "dropdown-select-default"].forEach(function (slug) {
+  ["checkbox", "radio", "toggle", "dropdown-select-default", "text-input"].forEach(function (slug) {
     var html = DS.renderDSComponent({ dsSlug: slug, variant: "", props: {} });
     assert.doesNotMatch(html, />Label</, slug + " must not print the placeholder word Label");
     assert.doesNotMatch(html, /__label"><\/span>/, slug + " must not emit an empty label span");
   });
+  // "label" carries its text in a differently-named prop (Label text, not Label) and a
+  // differently-classed span (ds-label__text, not *__label), so it gets its own assertion
+  // rather than joining the loop above.
+  var labelHtml = DS.renderDSComponent({ dsSlug: "label", variant: "", props: {} });
+  assert.doesNotMatch(labelHtml, />Label</, "label must not print the placeholder word Label");
+  assert.doesNotMatch(labelHtml, /ds-label__text"><\/span>/, "label must not emit an empty label-text span");
 });
 
 test("positive control: a leaf WITH a Label still renders it", function () {
   var DS = require(DS_PATH);
-  var html = DS.renderDSComponent({ dsSlug: "checkbox", variant: "", props: { Label: "Data Products" } });
-  assert.match(html, />Data Products</, "the authored label renders");
+  ["checkbox", "radio", "toggle", "dropdown-select-default", "text-input"].forEach(function (slug) {
+    var html = DS.renderDSComponent({ dsSlug: slug, variant: "", props: { Label: "Data Products" } });
+    assert.match(html, />Data Products</, slug + ": the authored label renders");
+  });
+  var labelHtml = DS.renderDSComponent({ dsSlug: "label", variant: "", props: { "Label text": "Data Products" } });
+  assert.match(labelHtml, />Data Products</, "label: the authored label text renders");
 });

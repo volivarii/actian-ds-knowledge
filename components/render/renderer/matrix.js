@@ -976,6 +976,16 @@ var SPECIMEN_PROPS = {
   // specimen content in a customer-facing bundle is not acceptable, so the
   // structure is kept and the address replaced.
   "global-header-account-dropdown": { Email: "account.user@example.com" },
+
+  // substituted, not captured: anatomy/label.json's text layer reads "Label",
+  // the raw Figma placeholder -- the same word a flow now renders nothing for
+  // when Label text is omitted (see ds-html-map.js case "label"). variantMatrix
+  // auto-sets `Label` (the show/hide boolean this leaf also reads) to the
+  // cell's variant name on every cell, but that is a different prop from the
+  // text content `Label text` reads, so without an entry here the gallery's
+  // label leaf rendered visibly empty once the placeholder fallback was
+  // removed. The structure is kept and the text replaced with real content.
+  label: { "Label text": "Dataset name" },
 };
 
 // Merge, never replace, and never in place: a cell's own prop wins, and the

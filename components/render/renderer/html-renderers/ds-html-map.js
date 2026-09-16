@@ -977,7 +977,7 @@
         }
 
         case "text-input": {
-          var inLabel = esc(props.Label || "Label");
+          var inLabel = props.Label ? esc(props.Label) : "";
           var inPlaceholder = esc(
             props["Placeholder text"] || "Placeholder text",
           );
@@ -995,9 +995,11 @@
             '<div class="' +
             fieldCls +
             '">' +
-            '<div class="ds-field__label-row"><span class="ds-field__label">' +
-            inLabel +
-            "</span></div>" +
+            (inLabel
+              ? '<div class="ds-field__label-row"><span class="ds-field__label">' +
+                inLabel +
+                "</span></div>"
+              : "") +
             '<div class="ds-input"><span class="ds-input__text">' +
             inPlaceholder +
             "</span>" +
@@ -4125,7 +4127,7 @@
           // also the strings in the capture.
           var lblDisabled = v.State === "Disabled";
           var lblCls = "ds-label" + (lblDisabled ? " is-disabled" : "");
-          var lblText = esc(props["Label text"] || "Label");
+          var lblText = props["Label text"] ? esc(props["Label text"]) : "";
           var lblDesc = esc(
             props["Description text"] ||
               "A description helps users to define and understand the purpose of the input.",
@@ -4142,9 +4144,9 @@
             '">' +
             (lblShowLabel
               ? '<span class="ds-label__row">' +
-                '<span class="ds-label__text">' +
-                lblText +
-                "</span>" +
+                (lblText
+                  ? '<span class="ds-label__text">' + lblText + "</span>"
+                  : "") +
                 (lblShowStar
                   ? '<span class="ds-label__required">*</span>'
                   : "") +

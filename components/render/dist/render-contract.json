@@ -1113,8 +1113,7 @@
           "name": "Label"
         },
         {
-          "name": "Label text",
-          "default": "Label"
+          "name": "Label text"
         }
       ],
       "variants": {
@@ -2119,8 +2118,7 @@
       "group": "Form",
       "props": [
         {
-          "name": "Label",
-          "default": "Label"
+          "name": "Label"
         },
         {
           "name": "Placeholder text",
