@@ -110,7 +110,7 @@ var CSS_OWNERS = {
   "dropdown-select-default": ["ds-dropdown-select"],
   "global-header": ["ds-header"],
   "lineage-grouped-node": ["ds-lineage-group"],
-  "lineage": ["ds-lineage-node"],
+  lineage: ["ds-lineage-node"],
   "notification-dropdown": ["ds-notification-menu"],
   "progress-bar-small": ["ds-progress"],
   "search-dropdown-menu": ["ds-search-menu"],
@@ -329,8 +329,10 @@ var MATRIX_OVERRIDES = {
       label: "Default",
       variant: "",
       props: {
-        Series: "79, 74, 73, 76, 71, 76, 72, 66, 69, 65, 27, 15, 61, 51, 72, 74, 71, 75, 74, 62, 75, 77, 72, 77, 72, 48, 58, 61, 60, 64, 60, 67, 75, 70",
-        Comparison: "74, 64, 65, 78, 74, 77, 73, 68, 68, 71, 74, 73, 63, 76, 78, 76, 79, 76, 75, 74, 76, 75, 77, 72, 68, 72, 53, 58, 71, 74, 72, 77, 78, 80",
+        Series:
+          "79, 74, 73, 76, 71, 76, 72, 66, 69, 65, 27, 15, 61, 51, 72, 74, 71, 75, 74, 62, 75, 77, 72, 77, 72, 48, 58, 61, 60, 64, 60, 67, 75, 70",
+        Comparison:
+          "74, 64, 65, 78, 74, 77, 73, 68, 68, 71, 74, 73, 63, 76, 78, 76, 79, 76, 75, 74, 76, 75, 77, 72, 68, 72, 53, 58, 71, 74, 72, 77, 78, 80",
       },
     },
   ],
@@ -575,6 +577,7 @@ var MATRIX_OVERRIDES = {
           "A product is anything that can be offered to a market that might satisfy a want or need by potential customers.",
         "Featured property 1": "Business Domain: IT",
         "Featured property 2": "Source Application: App 120",
+        "Glossary initials": "VH",
         "Glossary label": "Vehicle",
       },
     },
@@ -591,6 +594,7 @@ var MATRIX_OVERRIDES = {
           "A product is anything that can be offered to a market that might satisfy a want or need by potential customers.",
         "Featured property 1": "Business Domain: IT",
         "Featured property 2": "Source Application: App 120",
+        "Glossary initials": "VH",
         "Glossary label": "Vehicle",
       },
     },
@@ -669,16 +673,24 @@ var MATRIX_OVERRIDES = {
   // App (Studio/Explorer) is the identity axis, but this leaf reads
   // Name/Type/Show Back, not Label -- curate both cells so the gallery
   // shows the faithful Studio default plus the minimal Explorer accent.
-  "drawer": [
+  drawer: [
     {
       label: "Studio",
       variant: "App=Studio",
-      props: { Name: "Financial Summary EY2024", Type: "Dataset", Completion: 50 },
+      props: {
+        Name: "Financial Summary EY2024",
+        Type: "Dataset",
+        Completion: 50,
+      },
     },
     {
       label: "Explorer",
       variant: "App=Explorer",
-      props: { Name: "Financial Summary EY2024", Type: "Dataset", Completion: 50 },
+      props: {
+        Name: "Financial Summary EY2024",
+        Type: "Dataset",
+        Completion: 50,
+      },
     },
   ],
 
@@ -793,7 +805,7 @@ var MATRIX_OVERRIDES = {
   // title with no body. Curate two real cells (mirrors the empty-state
   // override's rationale). The "Expanede" value is the literal registry
   // typo -- see the case comment.
-  "collapse": [
+  collapse: [
     {
       label: "Collapsed",
       variant: "State=Collapsed",
@@ -952,7 +964,7 @@ var SPECIMEN_PROPS = {
   stepper: { Body: "Optional body" },
 
   // authored: the capture holds "Date", "*" and "mm/dd/yyyy" but no helper layer
-  "calendar": { Helper: "Use MM/DD/YYYY." },
+  calendar: { Helper: "Use MM/DD/YYYY." },
 
   "dropdown-select-default": {
     // capture: anatomy/dropdown-select-default.json layer "description"

@@ -333,8 +333,7 @@
     var fg = DIGRAM_ITEM_TYPE_TEXT[itemType];
     if (fg) {
       var fgToken = DIGRAM_ITEM_TYPE_TEXT_TOKENS[itemType];
-      style +=
-        ";color:" + (fgToken ? "var(" + fgToken + ", " + fg + ")" : fg);
+      style += ";color:" + (fgToken ? "var(" + fgToken + ", " + fg + ")" : fg);
     }
     return style;
   }
@@ -1165,7 +1164,9 @@
           // modifier (the unowned-modifier census is FM-tier only).
           var fbClear =
             props["Show clear button"] === true
-              ? '<span class="ds-fieldbox__icon">' + renderIcon("close") + "</span>"
+              ? '<span class="ds-fieldbox__icon">' +
+                renderIcon("close") +
+                "</span>"
               : "";
           var fbTrail =
             props["Show trailing icon"] === true
@@ -1182,7 +1183,9 @@
             : "";
 
           return (
-            '<div class="' + fbCls + '">' +
+            '<div class="' +
+            fbCls +
+            '">' +
             fbLead +
             fbText +
             fbClear +
@@ -1211,7 +1214,9 @@
           // addition. Both conditions have to hold.
           var taLabel =
             props["Show label"] !== false && props.Label
-              ? '<span class="ds-text-area__label">' + esc(props.Label) + "</span>"
+              ? '<span class="ds-text-area__label">' +
+                esc(props.Label) +
+                "</span>"
               : "";
 
           // The count is part of the helper ROW in the capture, so it goes with
@@ -1228,15 +1233,22 @@
             : "";
           var taHelper =
             props["Show helper text"] !== false && (taHelperText || taCount)
-              ? '<div class="ds-text-area__footer">' + taHelperText + taCount + "</div>"
+              ? '<div class="ds-text-area__footer">' +
+                taHelperText +
+                taCount +
+                "</div>"
               : "";
 
           return (
-            '<div class="' + taCls + '">' +
+            '<div class="' +
+            taCls +
+            '">' +
             taLabel +
             '<div class="ds-text-area__box">' +
             (props.Slot
-              ? '<span class="ds-text-area__text">' + esc(props.Slot) + "</span>"
+              ? '<span class="ds-text-area__text">' +
+                esc(props.Slot) +
+                "</span>"
               : "") +
             "</div>" +
             taHelper +
@@ -1462,7 +1474,8 @@
           // one -- against Global header, which is the captured default and so
           // keeps the base rule. Search/Multiple carries no fact and gets none.
           var searchType = String(v.Type || "").toLowerCase();
-          if (searchType === "explorer home") searchCls += " ds-search--emphasis";
+          if (searchType === "explorer home")
+            searchCls += " ds-search--emphasis";
           if (searchType === "inline") searchCls += " ds-search--inline";
           // Accept the kit's typo "Dsiabled" as well as the canonical spelling.
           if (v.State === "Disabled" || v.State === "Dsiabled") {
@@ -1783,7 +1796,9 @@
             '<span class="ds-header__logo" aria-hidden="true">' +
             renderGraphic(hasLockup ? logoSlug : "actian-pyramid") +
             "</span>" +
-            (hasLockup ? "" : '<span class="ds-header__app">' + headerApp + "</span>") +
+            (hasLockup
+              ? ""
+              : '<span class="ds-header__app">' + headerApp + "</span>") +
             "</div>";
 
           // Context dropdown: micro label (Catalog) + value in --zen-color-primary-500.
@@ -2371,8 +2386,7 @@
           var notifTypeRaw = (v.Type || "Default").toLowerCase();
           var notifCritical = notifTypeRaw === "critical";
           var notifCls =
-            "ds-toast" +
-            (notifCritical ? " ds-toast--critical" : "");
+            "ds-toast" + (notifCritical ? " ds-toast--critical" : "");
           var notifRole = notifCritical ? "alert" : "status";
           // capture: anatomy/toast.json text layer "Item deleted"
           var notifMsg = esc(props.Message || "Item deleted");
@@ -2465,8 +2479,7 @@
               .toLowerCase()
               .indexOf("expan") === 0;
           var accCls =
-            "ds-collapse" +
-            (accExpanded ? " ds-collapse--expanded" : "");
+            "ds-collapse" + (accExpanded ? " ds-collapse--expanded" : "");
           var accBody = accExpanded
             ? '<div class="ds-collapse__body">' +
               esc(props.Body || "") +
@@ -2546,10 +2559,10 @@
           // caller still names the message, the switch only turns it off.
           var dateHelper =
             props.Helper && props["Show message"] !== false
-            ? '<span class="ds-calendar__helper">' +
-              esc(props.Helper) +
-              "</span>"
-            : "";
+              ? '<span class="ds-calendar__helper">' +
+                esc(props.Helper) +
+                "</span>"
+              : "";
           return (
             '<div class="' +
             dateCls +
@@ -2572,7 +2585,8 @@
           // a content area below the toolbar.
           var rtExpanded = v.State === "Expanded";
           var rtCls =
-            "ds-rich-text-froala" + (rtExpanded ? " ds-rich-text-froala--expanded" : "");
+            "ds-rich-text-froala" +
+            (rtExpanded ? " ds-rich-text-froala--expanded" : "");
           function rtBtn(iconSlug, label) {
             return (
               '<button class="ds-rich-text-froala__btn" type="button" aria-label="' +
@@ -3963,7 +3977,14 @@
           var srcTitle = esc(props.Title || "Financial Summary EY2024");
           var srcTech = esc(props["Tech name"] || "[Financial Summary EY2024]");
           var srcType = esc(props.Type || "Category");
-          var srcStage = esc(props.Stage || "Stage");
+          // Stage and the glossary badge are OPTIONAL slots, the same shape
+          // Task 1.2 fixed for checkbox/radio/toggle/dropdown-select-default/
+          // text-input/label: `esc(props.X || "placeholder")` fed markup that
+          // always drew, so a card authored without a stage or a glossary
+          // relationship printed "Stage" / "VH" / "Vehicle" verbatim rather
+          // than omitting the region. No prop, no markup at all, not even an
+          // empty span (see the two `? ... : ""` guards below in the return).
+          var srcStage = props.Stage ? esc(props.Stage) : "";
           var srcCatalog = esc(props.Catalog || "Catalog");
           var srcDesc = esc(
             props.Description ||
@@ -3976,8 +3997,12 @@
           var srcProp2 = esc(
             props["Featured property 2"] || "Source Application: App 120",
           );
-          var srcGlossaryLabel = esc(props["Glossary label"] || "Vehicle");
-          var srcGlossaryInitials = esc(props["Glossary initials"] || "VH");
+          var srcGlossaryLabel = props["Glossary label"]
+            ? esc(props["Glossary label"])
+            : "";
+          var srcGlossaryInitials = props["Glossary initials"]
+            ? esc(props["Glossary initials"])
+            : "";
           // The captured anatomy's Glossary badge resolves to #fff9e5 --
           // that is DIGRAM_ITEM_TYPE_COLORS["Glossary 1"] (also shared by
           // "Use case"), NOT "Category" (#ffdacf); "Glossary 1" is the
@@ -4010,10 +4035,12 @@
             srcTech +
             "</span>" +
             "</div>" +
-            '<span class="ds-tag ds-tag-stage ds-search-result-card__stage">' +
-            '<span class="ds-tag-stage__dot"></span>' +
-            srcStage +
-            "</span>" +
+            (srcStage
+              ? '<span class="ds-tag ds-tag-stage ds-search-result-card__stage">' +
+                '<span class="ds-tag-stage__dot"></span>' +
+                srcStage +
+                "</span>"
+              : "") +
             "</div>" +
             '<div class="ds-search-result-card__details">' +
             '<span class="ds-tag ds-tag--catalog ds-search-result-card__catalog">' +
@@ -4030,16 +4057,18 @@
             srcProp2 +
             "</span>" +
             "</div>" +
-            '<div class="ds-search-result-card__glossary">' +
-            '<span class="ds-item-type" style="' +
-            srcGlossaryBadge +
-            '">' +
-            srcGlossaryInitials +
-            "</span>" +
-            '<span class="ds-search-result-card__glossary-label">' +
-            srcGlossaryLabel +
-            "</span>" +
-            "</div>" +
+            (srcGlossaryInitials || srcGlossaryLabel
+              ? '<div class="ds-search-result-card__glossary">' +
+                '<span class="ds-item-type" style="' +
+                srcGlossaryBadge +
+                '">' +
+                srcGlossaryInitials +
+                "</span>" +
+                '<span class="ds-search-result-card__glossary-label">' +
+                srcGlossaryLabel +
+                "</span>" +
+                "</div>"
+              : "") +
             "</div>" +
             "</div>"
           );

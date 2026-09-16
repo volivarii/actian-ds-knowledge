@@ -2222,11 +2222,7 @@ test("collapse-accordion: State=Collapsed renders Title, hides --expanded and __
     /ds-collapse--expanded/,
     "collapsed does not carry the expanded modifier",
   );
-  assert.doesNotMatch(
-    html,
-    /ds-collapse__body/,
-    "collapsed hides the body",
-  );
+  assert.doesNotMatch(html, /ds-collapse__body/, "collapsed hides the body");
 });
 
 test('collapse-accordion: State="Expanede" (registry typo) matches -- expanded modifier + body render', function () {
@@ -2241,11 +2237,7 @@ test('collapse-accordion: State="Expanede" (registry typo) matches -- expanded m
     /ds-collapse--expanded/,
     "the literal registry value 'Expanede' matches the expanded check",
   );
-  assert.match(
-    html,
-    /ds-collapse__body">Hidden detail/,
-    "renders the body",
-  );
+  assert.match(html, /ds-collapse__body">Hidden detail/, "renders the body");
 });
 
 test("collapse-accordion: escapes a hostile Title", function () {
@@ -2473,7 +2465,11 @@ test("data-viz-legend: Color takes a colour and nothing else", function () {
     Color: "red;position:fixed;inset:0",
   });
   assert.doesNotMatch(hostile, /position:fixed/);
-  assert.doesNotMatch(hostile, /style=/, "a value that is not a colour is dropped whole");
+  assert.doesNotMatch(
+    hostile,
+    /style=/,
+    "a value that is not a colour is dropped whole",
+  );
 });
 
 test("data-viz-legend: the series name is not a Label", function () {
@@ -2547,7 +2543,10 @@ test("the charts draw their chrome with no data at all", function () {
 test("line-graph: one point is not a line", function () {
   // polyline with a single pair draws nothing, and an empty <polyline> in the
   // markup would claim a series the caller did not give.
-  assert.doesNotMatch(renderTen("line-graph", "", { Series: "40" }), /<polyline/);
+  assert.doesNotMatch(
+    renderTen("line-graph", "", { Series: "40" }),
+    /<polyline/,
+  );
   assert.match(renderTen("line-graph", "", { Series: "40, 60" }), /<polyline/);
 });
 
@@ -2591,11 +2590,11 @@ test("data-quality-checks-graph: the stack puts Error on top and OK on the basel
     Warning: "20",
     OK: "30",
   });
-  var order = (html.match(/ds-quality-graph__seg--(error|warning|ok)/g) || []).map(
-    function (m) {
-      return m.split("--")[1];
-    },
-  );
+  var order = (
+    html.match(/ds-quality-graph__seg--(error|warning|ok)/g) || []
+  ).map(function (m) {
+    return m.split("--")[1];
+  });
   assert.deepEqual(order, ["error", "warning", "ok"]);
 });
 
@@ -2653,7 +2652,11 @@ test("lineage-connecting-line: direction picks a path, and Show icon drops the n
       assert.equal(
         tipY,
         endY,
-        variant + ": the head tip is at " + tipY + " and the line ends at " + endY,
+        variant +
+          ": the head tip is at " +
+          tipY +
+          " and the line ends at " +
+          endY,
       );
     },
   );
@@ -2717,9 +2720,21 @@ test("drawer: a Name alone renders the header and tabs and none of the specimen 
       "specimen text leaked into a caller's drawer: " + s,
     );
   });
-  assert.doesNotMatch(html, /ds-drawer__body/, "no body element without body props");
-  assert.doesNotMatch(html, /ds-drawer__section/, "no section without section props");
-  assert.doesNotMatch(html, /ds-progress/, "no progress bar without Completion");
+  assert.doesNotMatch(
+    html,
+    /ds-drawer__body/,
+    "no body element without body props",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-drawer__section/,
+    "no section without section props",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-progress/,
+    "no progress bar without Completion",
+  );
   assert.match(html, /ds-drawer__tabs/, "the tab strip is chrome and stays");
 });
 
@@ -2749,9 +2764,21 @@ test("drawer: body, meta and section props render in their own elements, escaped
     /<p class="ds-drawer__facts"><span class="ds-drawer__catalog">Catalog: Sales<\/span> \/ <span class="ds-drawer__connection">Connection: Snowflake<\/span><\/p>/,
     "present facts join with a separator and the absent Category leaves no gap",
   );
-  assert.doesNotMatch(html, /ds-drawer__category/, "absent Category emits no element");
-  assert.match(html, /ds-drawer__meta-value--updated">Sep 8, 2026</, "Last updated in its own element");
-  assert.match(html, /ds-drawer__meta-value--fields">42 Fields</, "Fields in its own element");
+  assert.doesNotMatch(
+    html,
+    /ds-drawer__category/,
+    "absent Category emits no element",
+  );
+  assert.match(
+    html,
+    /ds-drawer__meta-value--updated">Sep 8, 2026</,
+    "Last updated in its own element",
+  );
+  assert.match(
+    html,
+    /ds-drawer__meta-value--fields">42 Fields</,
+    "Fields in its own element",
+  );
   assert.match(html, /aria-valuenow="75"/, "Completion drives the bar");
   assert.match(html, /width:75%/, "Completion drives the fill");
   assert.match(
@@ -2759,8 +2786,16 @@ test("drawer: body, meta and section props render in their own elements, escaped
     /ds-drawer__section-body--description">Golden customer record\.</,
     "Description in its own section",
   );
-  assert.doesNotMatch(html, /ds-drawer__section-body--glossary/, "absent Glossary items emits no section");
-  assert.doesNotMatch(html, /ds-drawer__section-body--source/, "absent Source description emits no section");
+  assert.doesNotMatch(
+    html,
+    /ds-drawer__section-body--glossary/,
+    "absent Glossary items emits no section",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-drawer__section-body--source/,
+    "absent Source description emits no section",
+  );
 });
 
 test("drawer: Completion clamps to the bar's range and a non-numeric value renders 0", function () {
@@ -2789,37 +2824,178 @@ test("drawer: the gallery cell keeps its specimen body through the matrix", func
     variant: cell.variant,
     props: cell.props,
   });
-  assert.match(html, /Technical name: able_agency/, "specimen technical name via SPECIMEN_PROPS");
+  assert.match(
+    html,
+    /Technical name: able_agency/,
+    "specimen technical name via SPECIMEN_PROPS",
+  );
   assert.match(
     html,
     /Catalog: Finance<\/span> \/ <span class="ds-drawer__category">Category: 24\/7<\/span> \/ <span class="ds-drawer__connection">Connection: Powerbi</,
     "the three facts on one line",
   );
   assert.match(html, /aria-valuenow="50"/, "Completion from the matrix cell");
-  assert.match(html, /ds-drawer__section-body--source">A short description carried over/, "the sections are there");
+  assert.match(
+    html,
+    /ds-drawer__section-body--source">A short description carried over/,
+    "the sections are there",
+  );
 });
 
 test("a leaf with no Label renders no label text and no empty label span", function () {
   var DS = require(DS_PATH);
-  ["checkbox", "radio", "toggle", "dropdown-select-default", "text-input"].forEach(function (slug) {
+  [
+    "checkbox",
+    "radio",
+    "toggle",
+    "dropdown-select-default",
+    "text-input",
+  ].forEach(function (slug) {
     var html = DS.renderDSComponent({ dsSlug: slug, variant: "", props: {} });
-    assert.doesNotMatch(html, />Label</, slug + " must not print the placeholder word Label");
-    assert.doesNotMatch(html, /__label"><\/span>/, slug + " must not emit an empty label span");
+    assert.doesNotMatch(
+      html,
+      />Label</,
+      slug + " must not print the placeholder word Label",
+    );
+    assert.doesNotMatch(
+      html,
+      /__label"><\/span>/,
+      slug + " must not emit an empty label span",
+    );
   });
   // "label" carries its text in a differently-named prop (Label text, not Label) and a
   // differently-classed span (ds-label__text, not *__label), so it gets its own assertion
   // rather than joining the loop above.
-  var labelHtml = DS.renderDSComponent({ dsSlug: "label", variant: "", props: {} });
-  assert.doesNotMatch(labelHtml, />Label</, "label must not print the placeholder word Label");
-  assert.doesNotMatch(labelHtml, /ds-label__text"><\/span>/, "label must not emit an empty label-text span");
+  var labelHtml = DS.renderDSComponent({
+    dsSlug: "label",
+    variant: "",
+    props: {},
+  });
+  assert.doesNotMatch(
+    labelHtml,
+    />Label</,
+    "label must not print the placeholder word Label",
+  );
+  assert.doesNotMatch(
+    labelHtml,
+    /ds-label__text"><\/span>/,
+    "label must not emit an empty label-text span",
+  );
 });
 
 test("positive control: a leaf WITH a Label still renders it", function () {
   var DS = require(DS_PATH);
-  ["checkbox", "radio", "toggle", "dropdown-select-default", "text-input"].forEach(function (slug) {
-    var html = DS.renderDSComponent({ dsSlug: slug, variant: "", props: { Label: "Data Products" } });
-    assert.match(html, />Data Products</, slug + ": the authored label renders");
+  [
+    "checkbox",
+    "radio",
+    "toggle",
+    "dropdown-select-default",
+    "text-input",
+  ].forEach(function (slug) {
+    var html = DS.renderDSComponent({
+      dsSlug: slug,
+      variant: "",
+      props: { Label: "Data Products" },
+    });
+    assert.match(
+      html,
+      />Data Products</,
+      slug + ": the authored label renders",
+    );
   });
-  var labelHtml = DS.renderDSComponent({ dsSlug: "label", variant: "", props: { "Label text": "Data Products" } });
-  assert.match(labelHtml, />Data Products</, "label: the authored label text renders");
+  var labelHtml = DS.renderDSComponent({
+    dsSlug: "label",
+    variant: "",
+    props: { "Label text": "Data Products" },
+  });
+  assert.match(
+    labelHtml,
+    />Data Products</,
+    "label: the authored label text renders",
+  );
+});
+
+// Task 1.2 fixed four leaves whose optional Label fell back to the literal
+// word "Label". search-result-card has the identical shape for two more
+// slots, missed by the original scoping because it reads different prop
+// names (Stage, Glossary initials, Glossary label): `esc(props.Stage ||
+// "Stage")` fed an UNCONDITIONAL stage pill, and `esc(props["Glossary
+// initials"] || "VH")` / `esc(props["Glossary label"] || "Vehicle")` fed an
+// UNCONDITIONAL glossary badge, so a card authored without a stage or a
+// glossary relationship printed placeholder text the product does not carry,
+// and a caller had no way to omit either region. Fixed the same way: no
+// prop, no markup, not even an empty span.
+test("search-result-card renders no stage pill and no glossary badge when Stage/Glossary props are absent", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Studio, State=Default",
+    props: { Title: "Foo", Type: "Dataset" },
+  });
+  assert.doesNotMatch(
+    html,
+    />Stage</,
+    "must not print the placeholder word Stage",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-search-result-card__stage/,
+    "must not emit the stage pill markup at all",
+  );
+  assert.doesNotMatch(
+    html,
+    />VH</,
+    "must not print the placeholder glossary initials VH",
+  );
+  assert.doesNotMatch(
+    html,
+    />Vehicle</,
+    "must not print the placeholder glossary label Vehicle",
+  );
+  assert.doesNotMatch(
+    html,
+    /ds-search-result-card__glossary/,
+    "must not emit the glossary badge markup at all",
+  );
+});
+
+test("positive control: search-result-card WITH Stage and Glossary props still renders them", function () {
+  var DS = require(DS_PATH);
+  var html = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Studio, State=Default",
+    props: {
+      Stage: "Draft",
+      "Glossary initials": "CX",
+      "Glossary label": "Customer",
+    },
+  });
+  assert.match(
+    html,
+    /ds-search-result-card__stage/,
+    "the stage pill renders when Stage is authored",
+  );
+  assert.match(html, />Draft</, "Stage text renders");
+  assert.match(
+    html,
+    /ds-search-result-card__glossary/,
+    "the glossary badge renders when either prop is authored",
+  );
+  assert.match(html, />CX</, "Glossary initials render when authored");
+  assert.match(html, />Customer</, "Glossary label renders when authored");
+});
+
+test("positive control: search-result-card renders the glossary badge when only ONE of the two glossary props is set", function () {
+  var DS = require(DS_PATH);
+  var initialsOnly = DS.renderDSComponent({
+    dsSlug: "search-result-card",
+    variant: "App=Studio, State=Default",
+    props: { "Glossary initials": "CX" },
+  });
+  assert.match(
+    initialsOnly,
+    /ds-search-result-card__glossary/,
+    "one prop set is enough to draw the badge",
+  );
+  assert.match(initialsOnly, />CX</);
 });
