@@ -5,8 +5,8 @@
 // keyCandidates/valueCandidates conservatively return no candidates rather
 // than throwing — this is a CodeMirror completion source, and a throw here
 // would break the whole pane, so "no suggestions" is the right degrade, not
-// a bug. The six schemas behind frontmatterForms.ts's registry
-// (app-context-app, app-context-entity, app-context-pattern,
+// a bug. The seven schemas behind frontmatterForms.ts's registry
+// (app-context-app, app-context-entity, app-context-pattern, app-context-persona,
 // category-defaults, content, foundations) contain zero `$ref` and zero
 // `$defs` (verified 2026-07-24), so this path is inert on the substrate
 // today; see the pinned test below for the behavior if that ever changes.

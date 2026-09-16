@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 import { appContextAppUiSchema } from "../../src/uiSchemas/appContextApp";
 import { appContextEntityUiSchema } from "../../src/uiSchemas/appContextEntity";
 import { appContextPatternUiSchema } from "../../src/uiSchemas/appContextPattern";
+import { appContextPersonaUiSchema } from "../../src/uiSchemas/appContextPersona";
 
 test("slug and _schema_version are read-only in every app-context uiSchema", () => {
-  for (const ui of [appContextAppUiSchema, appContextEntityUiSchema, appContextPatternUiSchema]) {
+  for (const ui of [appContextAppUiSchema, appContextEntityUiSchema, appContextPatternUiSchema, appContextPersonaUiSchema]) {
     assert.equal((ui.slug as any)["ui:readonly"], true);
     assert.equal((ui._schema_version as any)["ui:readonly"], true);
     const order = ui["ui:order"] as string[];
@@ -13,10 +14,11 @@ test("slug and _schema_version are read-only in every app-context uiSchema", () 
   }
 });
 
-test("entity/pattern uiSchemas do not list description (it is the prose body)", () => {
+test("entity/pattern/persona uiSchemas do not list description (it is the prose body)", () => {
   assert.ok(!("description" in appContextEntityUiSchema) ||
     (appContextEntityUiSchema["ui:order"] as string[]).indexOf("description") === -1);
   assert.ok((appContextPatternUiSchema["ui:order"] as string[]).indexOf("description") === -1);
+  assert.ok((appContextPersonaUiSchema["ui:order"] as string[]).indexOf("description") === -1);
 });
 
 // The generalisable half of #646. The rendering tests in
@@ -96,6 +98,7 @@ for (const [name, ui, file] of [
   ["pattern", appContextPatternUiSchema, "app-context-pattern.json"],
   ["entity", appContextEntityUiSchema, "app-context-entity.json"],
   ["app", appContextAppUiSchema, "app-context-app.json"],
+  ["persona", appContextPersonaUiSchema, "app-context-persona.json"],
 ] as const) {
   test(`every author-facing ${name} field carries a human title`, () => {
     const fields = authorFacing(

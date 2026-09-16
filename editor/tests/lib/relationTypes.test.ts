@@ -22,6 +22,7 @@ const KNOWN_TYPES = [
   "app",
   "app_entity",
   "terminology_term",
+  "persona",
 ] as const;
 
 test("every known node type maps to a Radix color var, not hardcoded hex", () => {
@@ -58,6 +59,7 @@ test("relationTypeLabel speaks the nomenclature, not its own copy", () => {
   assert.equal(relationTypeLabel("motion_pattern"), "Motion");
   assert.equal(relationTypeLabel("app_entity"), "Entity");
   assert.equal(relationTypeLabel("terminology_term"), "Term");
+  assert.equal(relationTypeLabel("persona"), "Persona");
   assert.equal(relationTypeLabel("something-unknown"), "Node");
 });
 

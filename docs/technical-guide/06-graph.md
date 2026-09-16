@@ -30,7 +30,7 @@ Three sources, and none of them is the graph itself:
 | --- | --- |
 | Frontmatter connections | `a11y_refs`, `motion_refs`, `foundations_refs` on categories and components; `relationships` on app-context entities; `components[]` on UX patterns |
 | Figma registries | Component identity, category membership, and structural composition |
-| App-context dist | Apps, entities, patterns, terminology |
+| App-context dist | Apps, entities, patterns, personas, terminology |
 
 The rule that follows: **to get a new edge into the graph, author the frontmatter
 field it derives from.** There is no way to add one directly, and that is what
@@ -53,6 +53,7 @@ than typed data and there is nothing structured to carry.
 | `category` | 12 | Component categories |
 | `content_topic` | 8 | Content guidance topics |
 | `motion_pattern` | 8 | Anchored motion patterns |
+| `persona` | 6 | Roles that use the products |
 | `app` | 3 | Studio, Explorer, Administration |
 
 That component count is the number that surprises people. It counts every entry in
@@ -67,7 +68,7 @@ it from the dist rather than from here, since an additive nightly moves it.
 | `composed_of` | 383 | component | component |
 | `in_category` | 324 | component | category |
 | `uses_component` | 110 | ux_pattern | component |
-| `in_app` | 95 | app_entity, ux_pattern | app |
+| `in_app` | 101 | app_entity, ux_pattern, persona | app |
 | `a11y_ref` | 79 | category, component | a11y_criterion |
 | `narrower` | 73 | foundation_section | foundation_section |
 | `entity_related` | 42 | app_entity | app_entity |

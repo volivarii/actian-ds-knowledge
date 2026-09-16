@@ -102,6 +102,7 @@ test("vocabulary: app-context edge types have the correct endpoint constraints",
   // Copy before sort: never mutate the shared module-scoped vocab fixture.
   assert.deepEqual([...vocab.edgeTypes.in_app.source].sort(), [
     "app_entity",
+    "persona",
     "ux_pattern",
   ]);
   assert.deepEqual(vocab.edgeTypes.in_app.target, ["app"]);

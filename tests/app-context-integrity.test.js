@@ -157,6 +157,9 @@ test("useCases.patterns must exist and be scoped to the app", () => {
       "p-studio": { apps: ["studio"] },
       "p-explorer": { apps: ["explorer"] },
     },
+    // The audience "s" names a persona that works in studio, so the persona
+    // join stays quiet and only the pattern checks speak.
+    personas: { s: { label: "s", apps: ["studio"] } },
   };
   assert.deepEqual(validateAppContext(base).errors, []);
 
@@ -181,4 +184,74 @@ test("useCases.patterns must exist and be scoped to the app", () => {
     },
   };
   assert.match(validateAppContext(cross).errors[0], /not scoped to app/);
+});
+
+// The persona join. An audience is a persona's label, so a label no persona
+// carries is a word the substrate cannot resolve, and a persona that exists but
+// does not work in the app is a use case no screen can realise for it. Both
+// halves plus a negative control, the same shape as the entity/pattern join.
+test("a use case audience must name a persona that works in that app", () => {
+  const base = () => ({
+    apps: {
+      studio: { useCases: [{ audience: ["Data steward"], jobs: ["Govern"] }] },
+      explorer: {},
+    },
+    entities: {},
+    patterns: {},
+    terminology: {},
+    personas: {},
+  });
+
+  const unknownErrors = validateAppContext(base()).errors;
+  assert.ok(
+    unknownErrors.includes(
+      'app "studio".useCases → audience "Data steward" is not a persona',
+    ),
+    unknownErrors.join("\n"),
+  );
+
+  const wrongApp = base();
+  wrongApp.personas["data-steward"] = {
+    label: "Data steward",
+    apps: ["explorer"],
+  };
+  const wrongAppErrors = validateAppContext(wrongApp).errors;
+  assert.ok(
+    wrongAppErrors.includes(
+      'app "studio".useCases → audience "Data steward" is not scoped to app "studio"',
+    ),
+    wrongAppErrors.join("\n"),
+  );
+
+  const ok = base();
+  ok.personas["data-steward"] = { label: "Data steward", apps: ["studio"] };
+  assert.deepEqual(
+    validateAppContext(ok).errors,
+    [],
+    "a persona that works in the app must NOT be reported",
+  );
+});
+
+test("a persona lists only apps that exist, and no two personas share a label", () => {
+  const dist = {
+    apps: { studio: {} },
+    entities: {},
+    patterns: {},
+    terminology: {},
+    personas: {
+      "data-steward": { label: "Data steward", apps: ["studio", "ghost-app"] },
+      steward: { label: "Data steward", apps: ["studio"] },
+    },
+  };
+  const { errors } = validateAppContext(dist);
+  assert.ok(
+    errors.includes('persona "data-steward".apps → "ghost-app" is not an app'),
+    errors.join("\n"),
+  );
+  assert.ok(
+    errors.includes(
+      'persona label "Data steward" is used by more than one persona (data-steward, steward)',
+    ),
+    errors.join("\n"),
+  );
 });

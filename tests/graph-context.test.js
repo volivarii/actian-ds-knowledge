@@ -44,6 +44,7 @@ test("context defines a type term for every node type", function () {
     app_entity: "DomainEntity",
     terminology_term: "Term",
     ux_pattern: "UXPattern",
+    persona: "Persona",
   };
   Object.keys(vocab.nodeTypes).forEach(function (t) {
     assert.ok(ctx[TERM[t]], "type term for '" + t + "' (" + TERM[t] + ")");

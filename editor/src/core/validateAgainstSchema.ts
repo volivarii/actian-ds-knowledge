@@ -49,6 +49,8 @@ export function pickSchemaKey(path: string): string | null {
     return "app-context-entity";
   if (/^app-context\/src\/patterns\/[^/]+\.md$/.test(path))
     return "app-context-pattern";
+  if (/^app-context\/src\/personas\/[^/]+\.md$/.test(path))
+    return "app-context-persona";
   return null;
 }
 

@@ -53,7 +53,7 @@ function updatePathsManifest(manifestPath, opts) {
     origin: "ci",
     generator: "scripts/app-context/derive-app-context.js",
     description:
-      "Per-app patterns + persona + terminology (consolidated dist — do not edit)",
+      "Apps, entities, patterns, personas and terminology (consolidated dist, do not edit)",
   };
   added.push("appContext");
 
@@ -71,7 +71,7 @@ function updatePathsManifest(manifestPath, opts) {
   // Named "appContextSrc" (not "appContext.src") to avoid the leaf-XOR-namespace
   // collision: "appContext" is a leaf in paths, so nothing may use "appContext."
   // as a namespace prefix in collections — same pattern as "components.categoriesSrc".
-  // recursive: true so gatherCoveredFiles walks into apps/, entities/, patterns/
+  // recursive: true so gatherCoveredFiles walks into apps/, entities/, patterns/, personas/
   // subdirs and also picks up terminology.yml at the collection root.
   manifest.collections["appContextSrc"] = {
     dir: "app-context/src",
@@ -80,7 +80,7 @@ function updatePathsManifest(manifestPath, opts) {
     origin: "human",
     recursive: true,
     description:
-      "Authoring surface for app context. Per-kind subdirs: apps, entities, patterns. Terminology lives in terminology.yml (not covered by this collection).",
+      "Authoring surface for app context. Per-kind subdirs: apps, entities, patterns, personas. Terminology lives in terminology.yml (not covered by this collection).",
   };
   added.push("appContextSrc");
 

@@ -48,7 +48,7 @@ const CORE_SCHEMA = JSON.stringify({
 });
 
 const STUDIO_FILE =
-  "---\n_schema_version: 1\nslug: studio\nlabel: Studio\nheader:\n  type: Studio\nsidebar: []\n---\n\n## Purpose\n\nGovernance\n\n## Users\n\n- Data steward\n";
+  "---\n_schema_version: 1\nslug: studio\nlabel: Studio\nheader:\n  type: Studio\nsidebar: []\n---\n\n## Purpose\n\nGovernance\n\n## Signals\n\n- govern\n";
 
 const ENUM_SCHEMA = JSON.stringify({
   type: "object",

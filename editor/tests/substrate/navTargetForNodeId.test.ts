@@ -71,6 +71,10 @@ test("navTargetForNodeId resolves app-context nodes to their src files", () => {
     navTargetForNodeId("pattern:import-wizard"),
     "app-context/src/patterns/import-wizard.md",
   );
+  assert.equal(
+    navTargetForNodeId("persona:data-steward"),
+    "app-context/src/personas/data-steward.md",
+  );
 });
 
 test("navTargetForNodeId keeps existing mappings (component -> workspace, content -> null)", () => {

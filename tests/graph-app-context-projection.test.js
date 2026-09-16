@@ -16,7 +16,7 @@ function project() {
   return g.build();
 }
 
-test("collectAppContext: node counts by type (3 app / 30 app_entity / 33 terminology_term / 31 ux_pattern)", function () {
+test("collectAppContext: node counts by type (3 app / 30 app_entity / 33 terminology_term / 31 ux_pattern / 6 persona)", function () {
   var out = project();
   var byType = {};
   out.nodes.forEach(function (n) {
@@ -26,7 +26,8 @@ test("collectAppContext: node counts by type (3 app / 30 app_entity / 33 termino
   assert.equal(byType.app_entity, 30);
   assert.equal(byType.terminology_term, 33);
   assert.equal(byType.ux_pattern, 31);
-  assert.equal(out.nodes.length, 97);
+  assert.equal(byType.persona, 6);
+  assert.equal(out.nodes.length, 103);
 });
 
 test("collectAppContext: app node carries title<-label and description<-purpose", function () {
@@ -66,7 +67,16 @@ test("collectAppContext: ux_pattern node carries title<-label and description", 
   assert.equal(p.description, AC.patterns["marketplace-browsing"].description);
 });
 
-test("derive(): emitted graph.json includes the app-context nodes (97 island nodes)", function () {
+test("collectAppContext: persona node carries title<-label and description", function () {
+  var p = project().nodes.find(function (n) {
+    return n.id === "persona:data-steward";
+  });
+  assert.equal(p.type, "persona");
+  assert.equal(p.title, "Data steward");
+  assert.equal(p.description, AC.personas["data-steward"].description);
+});
+
+test("derive(): emitted graph.json includes the app-context nodes (103 island nodes)", function () {
   D.derive();
   var g = JSON.parse(
     fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
@@ -75,11 +85,11 @@ test("derive(): emitted graph.json includes the app-context nodes (97 island nod
   // `g.nodes.length === 815` and so broke on any Figma sync that added or
   // removed a component, which has nothing to do with app-context. See the
   // long note in the losslessness test below.
-  var ISLAND_PREFIXES = ["app", "entity", "pattern", "term"];
+  var ISLAND_PREFIXES = ["app", "entity", "pattern", "term", "persona"];
   var islandNodes = g.nodes.filter(function (n) {
     return ISLAND_PREFIXES.indexOf(String(n.id).split(":")[0]) !== -1;
   });
-  assert.equal(islandNodes.length, 97, "app-context island nodes");
+  assert.equal(islandNodes.length, 103, "app-context island nodes");
   assert.ok(
     g.nodes.some(function (n) {
       return n.id === "app:studio";
@@ -97,27 +107,29 @@ var VOCAB = JSON.parse(
   fs.readFileSync(path.join(ROOT, "graph/vocabulary.json"), "utf8"),
 );
 
-test("collectAppContext: edge counts (95 in_app / 42 entity_related / 17 term_about, 154 total)", function () {
+test("collectAppContext: edge counts (101 in_app / 42 entity_related / 17 term_about, 160 total)", function () {
   var edges = project().edges;
   function n(type) {
     return edges.filter(function (e) {
       return e.type === type;
     }).length;
   }
-  assert.equal(n("in_app"), 95);
+  assert.equal(n("in_app"), 101);
   assert.equal(n("entity_related"), 42);
   assert.equal(n("term_about"), 17);
-  assert.equal(edges.length, 154);
+  assert.equal(edges.length, 160);
 });
 
-test("collectAppContext: in_app edges point entities/patterns to apps, asserted + provenance cites the dist", function () {
+test("collectAppContext: in_app edges point entities/patterns/personas to apps, asserted + provenance cites the dist", function () {
   var inApp = project().edges.filter(function (e) {
     return e.type === "in_app";
   });
   inApp.forEach(function (e) {
     assert.ok(e.target.startsWith("app:"));
     assert.ok(
-      e.source.startsWith("entity:") || e.source.startsWith("pattern:"),
+      e.source.startsWith("entity:") ||
+        e.source.startsWith("pattern:") ||
+        e.source.startsWith("persona:"),
     );
     assert.equal(e.confidence, "asserted");
     assert.equal(e.provenance.source_file, "app-context/dist/app-context.json");
@@ -133,6 +145,15 @@ test("collectAppContext: in_app edges point entities/patterns to apps, asserted 
       return (
         e.source === "pattern:marketplace-browsing" &&
         e.target === "app:explorer"
+      );
+    }),
+  );
+  assert.ok(
+    inApp.some(function (e) {
+      return (
+        e.source === "persona:data-steward" &&
+        e.target === "app:studio" &&
+        e.provenance.method === "personas.apps"
       );
     }),
   );
@@ -237,10 +258,11 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   assert.equal(term.definition, AC.terminology.studio.meaning);
   assert.deepEqual(term.hiddenLabels, AC.terminology.studio.notUse);
 
-  // app_entity -> DomainEntity; app -> App; ux_pattern -> UXPattern
+  // app_entity -> DomainEntity; app -> App; ux_pattern -> UXPattern; persona -> Persona
   assert.equal(byId["entity:data-product"]["@type"], "DomainEntity");
   assert.equal(byId["app:studio"]["@type"], "App");
   assert.equal(byId["pattern:marketplace-browsing"]["@type"], "UXPattern");
+  assert.equal(byId["persona:data-steward"]["@type"], "Persona");
 
   // entity_related edges keep their predicate through reification
   var rel = ld["@graph"].filter(function (o) {
@@ -327,7 +349,7 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // for what is a full page of radio cards (+4 net). Both were among the five
   // patterns cited as depending on `card-for-items` in the #526 hold, so the
   // recorded cost of that decision falls as a side effect of the correction.
-  var ISLAND_PREFIXES = ["app", "entity", "pattern", "term"];
+  var ISLAND_PREFIXES = ["app", "entity", "pattern", "term", "persona"];
   var inIsland = function (id) {
     return ISLAND_PREFIXES.indexOf(String(id).split(":")[0]) !== -1;
   };
@@ -337,7 +359,10 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   var islandEdges = g.edges.filter(function (e) {
     return inIsland(e.source) || inIsland(e.target);
   });
-  assert.equal(islandNodes.length, 97, "app-context island nodes");
+  assert.equal(islandNodes.length, 103, "app-context island nodes");
+  // 312 -> 318 edges and 97 -> 103 nodes on 2026-09-11: personas joined the
+  // island, six persona nodes with one in_app edge each to the app they work in.
+  //
   // 264 -> 312 on 2026-09-07: the entity -> pattern join landed, adding one
   // shown_in edge per authored `patterns[]` entry (48, across the 25 entities a
   // pattern actually shows). This is the count moving because the island stopped
@@ -350,7 +375,7 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // 266 -> 264 on 2026-08-31: analytics-dashboard and data-profiling-sampling
   // each stopped naming bar-graph, which the sync retired from the Figma library
   // with no replacement. Two pattern_component edges, no other change.
-  assert.equal(islandEdges.length, 312, "app-context island edges");
+  assert.equal(islandEdges.length, 318, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {

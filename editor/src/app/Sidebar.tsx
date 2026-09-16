@@ -92,6 +92,7 @@ interface GroupedEntries {
   appContextApps: string[];
   appContextEntities: string[];
   appContextPatterns: string[];
+  appContextPersonas: string[];
 }
 
 /** Keys that carry file listings in GroupedEntries. */
@@ -112,14 +113,15 @@ const SECTION_KEYS: ReadonlyArray<SectionKey> = [
   "appContextApps",
   "appContextEntities",
   "appContextPatterns",
+  "appContextPersonas",
 ];
 
 // Author-language section labels (editing-experience direction: plain
 // words a designer recognizes, never repo-shaped names). Vincent's IA
 // (2026-07-11): Content is a nested parent, so its children read plainly
 // ("Writing rules", "Patterns", "Product") without needing "copy"
-// disambiguators; the application-context trio is "Products / Entities /
-// Patterns" — which is what the substrate directory, the dist key, the schema
+// disambiguators; the application-context sections are "Products / Entities /
+// Patterns / Personas" — which is what the substrate directory, the dist key, the schema
 // title and the graph node type have always called them. "Features" was a word
 // the editor invented for itself, and the only place it existed.
 const CONTENT_GROUP_LABEL: Record<"patterns" | "product" | "writing", string> =
@@ -129,10 +131,24 @@ const CONTENT_GROUP_LABEL: Record<"patterns" | "product" | "writing", string> =
     writing: "Writing rules",
   };
 
-const APP_CONTEXT_LABEL: Record<"apps" | "entities" | "patterns", string> = {
+const APP_CONTEXT_LABEL: Record<
+  "apps" | "entities" | "patterns" | "personas",
+  string
+> = {
   apps: "Products",
   entities: "Entities",
   patterns: "Patterns",
+  personas: "Personas",
+};
+
+/** The listing each creatable record kind lands in. */
+const ENTRIES_KEY_BY_KIND: Record<
+  ContextRecordKind,
+  "appContextEntities" | "appContextPatterns" | "appContextPersonas"
+> = {
+  entity: "appContextEntities",
+  pattern: "appContextPatterns",
+  persona: "appContextPersonas",
 };
 
 /** The Content parent's children, in display order — single source for the
@@ -165,6 +181,7 @@ function defaultCollapsed(): Record<SectionKey, boolean> {
     appContextApps: true,
     appContextEntities: true,
     appContextPatterns: true,
+    appContextPersonas: true,
   };
 }
 
@@ -270,6 +287,7 @@ export function Sidebar({
     for (const [kind, key] of [
       ["entity", "appContextEntities"],
       ["pattern", "appContextPatterns"],
+      ["persona", "appContextPersonas"],
     ] as const) {
       for (const file of entries?.[key] ?? []) {
         const slug = slugFromPath(file);
@@ -294,6 +312,7 @@ export function Sidebar({
   }, [
     entries?.appContextEntities,
     entries?.appContextPatterns,
+    entries?.appContextPersonas,
     cartEntries,
     products,
   ]);
@@ -301,12 +320,13 @@ export function Sidebar({
 
   // Each application-context section owns its own create affordance.
   const appContextAdd: Record<
-    "apps" | "entities" | "patterns",
+    "apps" | "entities" | "patterns" | "personas",
     { label: string; open: () => void }
   > = {
     apps: { label: "New product", open: () => setNewProductOpen(true) },
     entities: { label: "New entity", open: () => setNewRecordKind("entity") },
     patterns: { label: "New pattern", open: () => setNewRecordKind("pattern") },
+    personas: { label: "New persona", open: () => setNewRecordKind("persona") },
   };
   const [deleteDialog, setDeleteDialog] = useState<{
     domain: EntriesKey;
@@ -487,8 +507,8 @@ export function Sidebar({
   }
 
   /**
-   * Creates an entity or a feature, or joins the one that already carries that
-   * name. Joining is not a fallback: entity and feature names are one flat
+   * Creates an entity, a pattern or a persona, or joins the one that already
+   * carries that name. Joining is not a fallback: those names are one flat
    * namespace across every product, so the record a team wants usually exists
    * and belongs to someone else's product too, and a second file would split
    * the vocabulary rather than share it.
@@ -534,8 +554,7 @@ export function Sidebar({
       return;
     }
 
-    const entriesKey =
-      value.kind === "entity" ? "appContextEntities" : "appContextPatterns";
+    const entriesKey = ENTRIES_KEY_BY_KIND[value.kind];
     setEntries((prev) =>
       prev
         ? {
@@ -696,6 +715,7 @@ export function Sidebar({
         appContextApps,
         appContextEntities,
         appContextPatterns,
+        appContextPersonas,
       ] = await Promise.all([
         listFilesByGlob(octokit, "foundations/src", {
           extension: ".md",
@@ -732,6 +752,10 @@ export function Sidebar({
           extension: ".md",
           exclude: ["AUTHORING.md"],
         }).catch(() => [] as string[]),
+        listFilesByGlob(octokit, "app-context/src/personas", {
+          extension: ".md",
+          exclude: ["AUTHORING.md"],
+        }).catch(() => [] as string[]),
       ]);
       setEntries({
         foundations: applyOrder(foundations, foundationsOrder?.order),
@@ -743,6 +767,7 @@ export function Sidebar({
         appContextApps,
         appContextEntities,
         appContextPatterns,
+        appContextPersonas,
       });
       setOrderShas({
         foundations: foundationsOrder?.sha ?? null,
@@ -926,7 +951,8 @@ export function Sidebar({
       domain !== "components" &&
       domain !== "appContextApps" &&
       domain !== "appContextEntities" &&
-      domain !== "appContextPatterns";
+      domain !== "appContextPatterns" &&
+      domain !== "appContextPersonas";
     return (
       <Flex
         align="center"
@@ -1334,9 +1360,10 @@ export function Sidebar({
             ["appContextApps", "apps"],
             ["appContextEntities", "entities"],
             ["appContextPatterns", "patterns"],
+            ["appContextPersonas", "personas"],
           ] as const
         ).map(([entriesKey, kind]) => {
-          // All three always render, empty or not: each one carries the "+" that
+          // All four always render, empty or not: each one carries the "+" that
           // creates its first record, so hiding an empty section would hide the
           // only way in.
           const items = entries[entriesKey];
@@ -1414,7 +1441,9 @@ export function Sidebar({
           <NewProductDialog
             open
             existingSlugs={entries.appContextApps.map(slugFromPath)}
-            records={contextRecords}
+            // What a product is built from. Which products a persona works in
+            // is set on the persona itself, so personas are not offered here.
+            records={contextRecords.filter((r) => r.kind !== "persona")}
             onCancel={() => setNewProductOpen(false)}
             onConfirm={async (value) => {
               setNewProductOpen(false);

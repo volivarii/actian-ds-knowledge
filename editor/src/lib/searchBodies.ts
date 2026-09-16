@@ -50,6 +50,7 @@ const KIND_FOR_SEGMENT = {
   app: "app-context",
   entity: "app-context",
   "ux-pattern": "app-context",
+  persona: "app-context",
   writing: "content",
   pattern: "content",
   product: "content",

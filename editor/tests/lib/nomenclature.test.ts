@@ -40,6 +40,7 @@ test("every graph node type has exactly one Thing word", () => {
   assert.equal(THING_LABEL.ux_pattern, "Pattern");
   assert.equal(THING_LABEL.app_entity, "Entity");
   assert.equal(THING_LABEL.terminology_term, "Term");
+  assert.equal(THING_LABEL.persona, "Persona");
 });
 
 test("states are the one vocabulary, not two", () => {

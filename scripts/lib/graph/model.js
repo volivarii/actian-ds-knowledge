@@ -16,6 +16,8 @@ var PREFIX = {
   app_entity: "entity",
   terminology_term: "term",
   ux_pattern: "pattern",
+  // The roles that use the products, from app-context/src/personas.
+  persona: "persona",
 };
 
 function nodeId(type, slug) {

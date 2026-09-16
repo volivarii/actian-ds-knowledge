@@ -322,7 +322,7 @@ function collectFoundationChildEdges(g, root) {
   })(root);
 }
 // App-context projection ("the island"): apps, domain entities, terminology
-// terms, and UX patterns from app-context/dist/app-context.json become a
+// terms, UX patterns and personas from app-context/dist/app-context.json become a
 // self-contained set of nodes + internal edges beside the DS component graph.
 // No authored data links app-context to components, so no component bridge is
 // emitted (spec Decision 1). Every edge cites the consolidated dist as its
@@ -333,6 +333,7 @@ function collectAppContext(g, ac) {
   var entities = (ac && ac.entities) || {};
   var terminology = (ac && ac.terminology) || {};
   var patterns = (ac && ac.patterns) || {};
+  var personas = (ac && ac.personas) || {};
 
   // --- Nodes ---
   Object.keys(apps).forEach(function (slug) {
@@ -379,8 +380,23 @@ function collectAppContext(g, ac) {
     if (p.description) node.description = p.description;
     g.addNode(node);
   });
+  Object.keys(personas).forEach(function (slug) {
+    var p = personas[slug] || {};
+    var node = {
+      id: M.nodeId("persona", slug),
+      type: "persona",
+      title: p.label || slug,
+    };
+    if (p.description) node.description = p.description;
+    g.addNode(node);
+  });
 
   // --- Edges (after all nodes; term_about slug-match reads the node set) ---
+  var IN_APP_METHOD = {
+    app_entity: "entities.apps",
+    ux_pattern: "patterns.apps",
+    persona: "personas.apps",
+  };
   function inAppEdges(map, sourceType) {
     Object.keys(map).forEach(function (slug) {
       var list = (map[slug] && map[slug].apps) || [];
@@ -393,8 +409,7 @@ function collectAppContext(g, ac) {
           provenance: {
             source_file: APP_CONTEXT_SOURCE,
             deriver: "derive-graph.js",
-            method:
-              sourceType === "app_entity" ? "entities.apps" : "patterns.apps",
+            method: IN_APP_METHOD[sourceType],
           },
         });
       });
@@ -402,6 +417,7 @@ function collectAppContext(g, ac) {
   }
   inAppEdges(entities, "app_entity");
   inAppEdges(patterns, "ux_pattern");
+  inAppEdges(personas, "persona");
 
   Object.keys(entities).forEach(function (slug) {
     var rels = (entities[slug] && entities[slug].relationships) || {};

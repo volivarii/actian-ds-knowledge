@@ -48,6 +48,7 @@ const PAIRS: ReadonlyArray<readonly [string | null, string]> = [
     ["app-context/src/apps/studio.md", "#/app/studio"],
   ["app-context/src/entities/data-product.md", "#/entity/data-product"],
   ["app-context/src/patterns/import-wizard.md", "#/ux-pattern/import-wizard"],
+  ["app-context/src/personas/data-steward.md", "#/persona/data-steward"],
 ];
 
 for (const [path, hash] of PAIRS) {

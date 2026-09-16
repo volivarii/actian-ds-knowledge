@@ -261,6 +261,7 @@ test("every property example validates against the property it illustrates", () 
     "app-context-entity.json",
     "app-context-app.json",
     "app-context-pattern.json",
+    "app-context-persona.json",
   ]) {
     const schema = load(file);
     for (const [name, sub] of Object.entries(schema.properties || {})) {
@@ -279,4 +280,53 @@ test("every property example validates against the property it illustrates", () 
     }
   }
   assert.deepEqual(bad, []);
+});
+
+test("persona schema accepts a valid persona and a fresh stub, rejects bad shapes", () => {
+  const v = new Ajv({ strict: false, allowUnionTypes: true }).compile(
+    load("app-context-persona.json"),
+  );
+  assert.ok(
+    v({
+      _schema_version: 1,
+      slug: "data-steward",
+      label: "Data steward",
+      apps: ["studio"],
+      permissionGroup: "Data Steward",
+      sources: ["app-context/src/apps/studio.md"],
+    }),
+    JSON.stringify(v.errors),
+  );
+  assert.ok(
+    v({ _schema_version: 1, slug: "analyst", label: "Analyst", apps: [] }),
+    "a stub with no products yet is valid: the editor writes exactly this",
+  );
+  const base = { _schema_version: 1, slug: "x", label: "X", apps: [] };
+  assert.equal(
+    v({ _schema_version: 1, slug: "x", label: "X" }),
+    false,
+    "apps is required",
+  );
+  assert.equal(v({ ...base, slug: "Bad Slug" }), false, "slug shape");
+  assert.equal(
+    v({ ...base, label: "" }),
+    false,
+    "an empty label joins nothing",
+  );
+  assert.equal(
+    v({ ...base, permissionGroup: "Owner" }),
+    false,
+    "group outside the list",
+  );
+  assert.equal(
+    v({ ...base, literacy: "expert" }),
+    false,
+    "literacy outside the list",
+  );
+  assert.equal(
+    v({ ...base, frequency: "weekly" }),
+    false,
+    "frequency outside the list",
+  );
+  assert.equal(v({ ...base, bogus: true }), false, "unknown key");
 });

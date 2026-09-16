@@ -12,6 +12,7 @@
 //   app:        → app-context/src/apps/<slug>.md
 //   entity:     → app-context/src/entities/<slug>.md
 //   pattern:    → app-context/src/patterns/<slug>.md
+//   persona:    → app-context/src/personas/<slug>.md
 //   content:    → null  (the group dir patterns|product|writing is NOT
 //                 recoverable from the id alone)
 //   motion:     → null  (no standalone editable file convention)
@@ -39,6 +40,8 @@ export function navTargetForNodeId(nodeId: string): string | null {
       return `app-context/src/entities/${slug}.md`;
     case "pattern":
       return `app-context/src/patterns/${slug}.md`;
+    case "persona":
+      return `app-context/src/personas/${slug}.md`;
     default:
       return null;
   }
