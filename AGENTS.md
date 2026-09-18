@@ -23,6 +23,7 @@ CI does the rest automatically: on your PR it regenerates the `dist/` files, bum
 ## Read order
 
 1. [llms.txt](llms.txt) — content index
+   Building a screen from this knowledge? Start at its "Building a screen" section, then [CONSUMING.md](CONSUMING.md) section 7.
 2. [CONTRIBUTING.md](CONTRIBUTING.md) — `src/`+`dist/` convention + edit-here table
 3. [CLAUDE.md](CLAUDE.md) — full editing rules + don'ts
 4. Per-domain `AUTHORING.md` files (e.g., `foundations/src/AUTHORING.md`, `components/src/AUTHORING.md`)
