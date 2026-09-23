@@ -26,6 +26,8 @@ no entry defers its link to a placeholder.
 
 ### Added
 
+- **The Claude Design bundle says what it cannot produce, and a check holds it to that.** ([#724](https://github.com/volivarii/actian-ds-knowledge/pull/724)) `build-bundle.js` emits one card per `RENDER_SLUGS` slug, and `RENDER_SLUGS` is derived from the `case "<slug>":` branches in `ds-html-map.js`, so a card in a Claude Design project without such a branch cannot be reproduced: a rebuild omits it and a push never deletes it. Running the exporter for the first time and diffing it against the live dogfood project found ten such cards. New `components/render/bundle-external.json` declares them with a status and a reason (`card-for-items` and `chat-with-ai-steward` as `author`, kept deliberately because they scaffold specific screens; the six `tag-*` variants `undecided`; `calendar-date-input` and `rich-text` `retire`, the latter superseded by `rich-text-froala`). New `scripts/render/bundle-reconcile.js` diffs what the substrate produces against a project's live listing and that declaration, and exits 1 on a live card that is neither; it takes the listing as a file because this repository holds no credentials for the project, which is also why it is a script rather than a suite gate. New `npm run bundle:build` and `npm run bundle:reconcile`: `build-bundle.js` had been the only file in `scripts/render/` referenced by no script and no workflow, which is why it had never been run. Against the live dogfood: 77 produced, 87 live, 0 unpushed, 10 declared, 0 undeclared.
+
 - **An entry point for building a screen.** ([#721](https://github.com/volivarii/actian-ds-knowledge/pull/721)) `llms.txt` gains a "Building a screen" section, `CONSUMING.md` a section 7 and `AGENTS.md` a pointer: the app files, the captured pages and their screenshots, the captured sections, the component markup, the stylesheet, the fonts, the icons, the render contract and the terminology, each by its manifest name. On 2026-09-18 an assistant given only this repository built a correct Studio screen from these files, found them by listing folders, and said the captured page's screenshot was the most useful file (#720).
 
 - **`slot`, `undrawnSlots` and `derivedFrom.screenshot` on captured recipes; DS leaves stop inventing text.** ([#713](https://github.com/volivarii/actian-ds-knowledge/pull/713)) A skeleton node, a SECTION reference (stamped onto the spliced root) or a section root may carry `slot`, and a recipe declares `undrawnSlots` for the keys it does not draw; a coverage test keeps declared = carried plus undrawn, and a local round-trip test derives `src` into a temp dir and compares every `dist/recipes` and `dist/sections` file. `derivedFrom.screenshot` names the product screenshot under `app-context/src/recipes/captures/` that a composition was derived from; `faceted-browse` carries one and is re-authored from DS leaves (typed facet rows, the control bar with the product's four verbs, six `search-result-card` instances, pagination) with every varying value a `{{...}}` placeholder listed in `renderNotes`. In the renderer, `checkbox`, `radio`, `toggle`, `dropdown-select-default`, `text-input` and `label` render no label and no empty wrapper when none is given, `search-result-card` no longer prints "Stage" or the "VH Vehicle" glossary badge for unset props, and `checkbox-card` / `radio-card` thread their label to the control; the gallery keeps every leaf fully drawn through specimen props.
@@ -174,7 +176,7 @@ no entry defers its link to a placeholder.
 
   Exempting a file from a directory-wide guard would have dropped the numbers guard in silence, since
   the #571 probe found `quality-trend.json` stays green under mutation of the whole render suite. A
-  second step now compares the half that *is* a function of the tree, every measure's `value` and the
+  second step now compares the half that _is_ a function of the tree, every measure's `value` and the
   `detail` census they are counted from, over the union of keys so a renamed or dropped measure is
   reported rather than skipped. Everything else in the directory keeps the subject it was built with,
   so a new artifact is still covered the day it is written.
@@ -210,7 +212,6 @@ no entry defers its link to a placeholder.
 
   A `Start the Tokens pass` button called `onOpenFile` on one file; its label says what the click
   does.
-
 
 - **A rule was charged to every component that nests the one it belongs to**
   ([#696](https://github.com/volivarii/actian-ds-knowledge/pull/696)).
@@ -344,7 +345,6 @@ no entry defers its link to a placeholder.
   added rather than reused because each of the other four says something false about the edge: a
   Dataset is not built from a faceted browse, nor part of one, and `association` is symmetric so it
   would discard the direction, which is the whole of what the edge says.
-
 
 - **Four form components render as real controls instead of empty grey boxes**
   ([#678](https://github.com/volivarii/actian-ds-knowledge/pull/678)):
@@ -935,16 +935,16 @@ no entry defers its link to a placeholder.
   read, gating the helper the caller names.
 
   **Accepted coverage move**, recorded here because the reason lives only in the commit that took
-  it: *rich-text became rich-text-froala and calendar-date-input became calendar in the 2026-09-03
+  it: _rich-text became rich-text-froala and calendar-date-input became calendar in the 2026-09-03
   Figma sync. rich-text's 2 checkable declarations move to rich-text-froala with its class prefix;
-  the repo-wide total is unchanged at 85, which is what a move looks like and a loss does not.*
+  the repo-wide total is unchanged at 85, which is what a move looks like and a loss does not._
   Verified per slug: `rich-text-froala` reports `verified: 2, unverifiable: 5` — byte-identical to
   what `rich-text` reported — and `calendar` reports `verified: 0, unverifiable: 7, blind: true`,
   identical to `calendar-date-input`.
 
   **A re-key defeated the category carry-forward, and that is fixed here.** `illustration` came
   back on a Figma page called `Playground` with **no section at all** — and
-  `preserveKnownCategories` did not fire, because Figma had also *re-keyed* it, so the identity
+  `preserveKnownCategories` did not fire, because Figma had also _re-keyed_ it, so the identity
   lookup (key, then nodeId, then slug) found no twin. The sync's own diff already reports a re-key
   as "same slug and name under a new Figma node"; that fact is now used, as a slug fallback gated on
   the name matching. The name gate is what makes it safe: a slug can **change occupant** — this very
@@ -956,7 +956,7 @@ no entry defers its link to a placeholder.
 
   **And the repair is one-shot, which is worse than the bug it repairs.** Re-running the sync after
   fixing the lookup reported `verdict=unchanged` and pushed nothing: `preserveKnownCategories` reads
-  the *previous dist* as its baseline, so the sectionless value committed by the first run had
+  the _previous dist_ as its baseline, so the sectionless value committed by the first run had
   already become the new last-known-good. Recovering it meant replaying the generator by hand over
   the pre-sync commit. A new `assertNoAttributionLoss` therefore gates the **commit** instead —
   a surviving component (matched by slug, because a re-key is exactly what defeats identity
@@ -1045,7 +1045,7 @@ no entry defers its link to a placeholder.
   values were indistinguishable. Measured on v0.34.178: of the 44 unexplained variant collapses,
   **20 were exactly this** — evidence fetched, diffed, and thrown away — and 14 of those carried
   only a bare `childCount:1!=5` in `quality.structuralVariants`, a signal that something differs
-  with the *what* discarded. Three additions, all in `scripts/sync/normalize-anatomy.js`:
+  with the _what_ discarded. Three additions, all in `scripts/sync/normalize-anatomy.js`:
   `layout.size` records an **authored** fixed dimension (a side appears only where its
   `layoutSizing` is `FIXED` — a hug dimension is a consequence of content, and recording it would
   invite a consumer to pin a size that must grow); `layout.variants` carries per-variant layout
@@ -1100,6 +1100,7 @@ no entry defers its link to a placeholder.
   the summary, the table, the front door and the a11y list all count the same rows. An index
   with no media entries rejects for every reader before it is cached, and a missing recipes
   directory reads as zero captures rather than as unmeasured.
+
 - **The editor speaks one controlled vocabulary**
   ([#643](https://github.com/volivarii/actian-ds-knowledge/pull/643), phase 1 of the editor
   nomenclature design). Every screen used to invent its own words. One state was called two things
@@ -1173,7 +1174,7 @@ no entry defers its link to a placeholder.
 
 - **The editor's render panel compares against the isolated default variant**
   ([#637](https://github.com/volivarii/actian-ds-knowledge/pull/637)). The panel picked
-  `entry.preview ?? entry.default`, so it put the render beside the component's Figma *doc page* —
+  `entry.preview ?? entry.default`, so it put the render beside the component's Figma _doc page_ —
   many variants at page scale — rather than beside the default variant captured on its own. 198
   slugs carry a `default` and 88 carry a `preview`, so the same column meant two different things
   depending on which component was open, while the caption claimed the render was always what needed
@@ -1273,7 +1274,7 @@ no entry defers its link to a placeholder.
   behind **View source**. The source view is seeded from whichever surface is being left, so a toggle
   never shows a stale snapshot, and it resets per record, so looking at one file's source does not
   make the next one open as YAML. Because a form save serialises from parsed data while the schema
-  directive is a YAML *comment*, these records now save through the comment-preserving path; a test
+  directive is a YAML _comment_, these records now save through the comment-preserving path; a test
   asserts that on the registry rather than on a screen handed the flag by hand. This is also what
   makes the relationship picker from the entry below reachable: it lives in the form, which these
   records never rendered.
@@ -1407,7 +1408,7 @@ no entry defers its link to a placeholder.
   sheet PER COMPONENT, and that would not have touched the weight: every per-component slice would
   still have carried the fonts, so the total would have grown. Measuring the file first is what found
   that, and the split itself was nearly free because `render.css` was already `tokens.css +
-  ds-fonts.css + ds-base.css` concatenated.
+ds-fonts.css + ds-base.css` concatenated.
 
   The offline contract (`NO network font loads`) is kept and made opt-in rather than dropped:
   `selfContainedCard` takes the faces as an explicit parameter and inlines both, so a standalone card
@@ -1874,7 +1875,7 @@ no entry defers its link to a placeholder.
 
 - **A Figma re-key is no longer reported as a removal.** The sync pairs components by Figma `key`,
   which is what makes a rename safe (the name moves, the key does not, resolution survives).
-  Dissolving a component *set* is the opposite shape: the child publishes as a new node with a new
+  Dissolving a component _set_ is the opposite shape: the child publishes as a new node with a new
   key, so the same slug arrives as a removal plus an addition. The DS Kit reorg did that six times
   (`action-bar`, `breadcrumb`, `segmented-control`, `tabs`, `textfield-buttons`,
   `glossary-item-hierarchy-diagram`), each keeping its slug **and** its display name, and each
@@ -1925,12 +1926,12 @@ no entry defers its link to a placeholder.
   moved.** ([#588](https://github.com/volivarii/actian-ds-knowledge/pull/588)) Two renames, three retirements, three additions, and the
   first breaking sync ever carried from CI rather than from one person's laptop.
 
-  | change | slug |
-  | --- | --- |
-  | renamed | `sticky-footer` to `action-bar`, `view-details` to `view-detail` |
-  | retired | `alert-inline`, `card-for-items`, `identification-key` |
-  | added | `Card`, `Dot` |
-  | re-keyed | `snowflake` |
+  | change   | slug                                                             |
+  | -------- | ---------------------------------------------------------------- |
+  | renamed  | `sticky-footer` to `action-bar`, `view-details` to `view-detail` |
+  | retired  | `alert-inline`, `card-for-items`, `identification-key`           |
+  | added    | `Card`, `Dot`                                                    |
+  | re-keyed | `snowflake`                                                      |
 
   **`snowflake` is not an addition, and the sync summary calling it one is worth correcting.** The slug
   already existed; what changed is its Figma key, `046781...` (node `7691:4999`) to `14abdd...` (node
@@ -1977,6 +1978,7 @@ no entry defers its link to a placeholder.
     retiring `card-for-items` removed 6 **unverifiable** declarations. A smaller denominator is not a
     coverage win, and this repo's own rule is that a gate must report direction honestly. The rule
     applies to a sentence a human writes next to the gate just as much as to the gate.
+
   - The sparse-render ratchet read `action-bar.Primary` and `.Secondary` as brand-new invented slots,
     because it compares against the merge base, which still says `sticky-footer`. Both are named in
     `ACCEPTED_INVENTED` with that reason, and with a note that the real question (should an action bar
@@ -1989,7 +1991,7 @@ no entry defers its link to a placeholder.
     which is exactly `--zen-border-subtle`. Figma is the oracle for the render tier (#518), so this
     was a defect rather than a difference. **The committed report shows no delta**, because the gate
     refuses to write a report on a blocking failure: the new capture produced `verified: 74,
-    mismatch: 1`, the rebind restored `75 / 0`, and only the second was ever written. A reader diffing
+mismatch: 1`, the rebind restored `75 / 0`, and only the second was ever written. A reader diffing
     the dist will find the totals identical on both sides and should not conclude nothing happened.
   - The tag capture now names an icon for the whole Stage range (`Stage-1..8` to `dot`, an icon this
     sync adds) where before it named none, and `TAG_TYPE_ICONS` is hand-copied from that capture.
@@ -2060,7 +2062,7 @@ no entry defers its link to a placeholder.
   commit.** #584 replaced "the `if ! git diff --quiet` this replaced exited 128" on two guards, having
   verified only the state at `d7aae3a8^1`. For app-context that is right: it never used `git diff`. For
   the identity ledger it is wrong: `6cca872d` introduced it **as** `if ! git diff --quiet --
-  components/dist/identity.json`, and `5020e482` converted it to the silent inline form. The original
+components/dist/identity.json`, and `5020e482` converted it to the silent inline form. The original
   comment was wrong about which commit did the conversion; the replacement was wrong about whether it
   happened at all, which is worse, and it sat on a required check.
 
@@ -2078,7 +2080,7 @@ no entry defers its link to a placeholder.
     change-detection step would have failed with a message naming the wrong problem. Only
     **locally-captured** names are evidence now; an env var or an input is not, which is what
     separates a legitimate guard from a decision routed through a non-git capture.
-  - **The `--untracked-files=all` binding was half made.** It asked whether *some* porcelain call in
+  - **The `--untracked-files=all` binding was half made.** It asked whether _some_ porcelain call in
     the block carried the flag, so a logging capture that had it vouched for a decision capture that
     did not. It now binds to the call the decision actually reads.
 
@@ -2144,7 +2146,7 @@ no entry defers its link to a placeholder.
 - **The guard #583 added to catch a failure handler that does not exit accepted one that merely says
   the word "exit".** ([#584](https://github.com/volivarii/actian-ds-knowledge/pull/584)) `classifyLine` tested `/\bexit\b/` against
   everything after `||`, so `CHANGED="$(git status …)" || { echo "::warning::git status exit code
-  ignored"; }` classified as `capture-checked`. The handler does not exit; the word does. That is the
+ignored"; }` classified as `capture-checked`. The handler does not exit; the word does. That is the
   precise bypass the no-exit case exists to catch, reintroduced by the check written to close it.
 
   **It survived because `classifyLine` had no positive control.** The `positive control:` test
@@ -2292,7 +2294,7 @@ no entry defers its link to a placeholder.
 
   **The drift guards were converted too, after an argument against deferring them held up.** An earlier
   revision of this entry deferred `validate-manifest.yml`'s five inverted guards (`if ! git diff --quiet
-  ... then fail`) on the grounds that "fail on drift" is a different rule, and justified it in the
+... then fail`) on the grounds that "fail on drift" is a different rule, and justified it in the
   workflow comment by saying they "guard fixed file sets". **That was false** for `foundations/dist` and
   `accessibility/dist`, which take directory pathspecs. The live case: on a fork PR the derive's commit
   step is skipped, so `validate-manifest` re-derives, a new leaf is untracked, `git diff --quiet` reports
@@ -2440,6 +2442,7 @@ no entry defers its link to a placeholder.
   `components`, so the graph kept asserting a `uses_component` edge to it; `import-wizard` described
   radio cards and a persistent action bar it did not name. Correcting prose and leaving `components` is
   how a graph goes on asserting something the record itself denies.
+
 - **Two Studio patterns corrected against the running product, and the `sticky-footer` rename proven
   unpreparable.** Both come out of investigating the five-day breaking sync (#526).
 
@@ -2471,6 +2474,7 @@ no entry defers its link to a placeholder.
   One thing found on the way, not fixed here: `rename-preconditions.mentions()` reads the whole file, so a
   slug named only in **prose** blocks a rename exactly as a real `components[]` entry does. Its own
   rationale is about gates that fail, and prose fails none, so the gate is stricter than its reason.
+
 - **Registry removals can be deliberately deferred, so one component mid-rework in Figma stops freezing
   the whole nightly.** `aggregateVerdict` is any-breaking-is-breaking and a breaking sync commits nothing
   (#519), so between 2026-08-13 and 2026-08-18 the Card family being decomposed halfway held back 241 icon
@@ -2489,7 +2493,7 @@ no entry defers its link to a placeholder.
 
   **The block is its own field, not a `status` value**, and that correction came from the schema. `status`
   is an enum sourced from the Figma page emoji (`in-progress` / `warn` / `deprecated`), so it says what
-  *Figma* thinks of a component; a deferral is a fact about the substrate's handling of it. Writing one
+  _Figma_ thinks of a component; a deferral is a fact about the substrate's handling of it. Writing one
   into the other would conflate two sources and clobber a real Figma status where an entry has one, which
   a test now guards.
 
@@ -2518,7 +2522,7 @@ no entry defers its link to a placeholder.
 
   **A review found two defects in the first cut of this, and both shared one root cause: the deferral was
   applied too late.** It ran at classify time, which is after the category mass-loss tripwire (which
-  *throws*, so a deferred family decomposition would have made the night `error`, strictly worse than the
+  _throws_, so a deferred family decomposition would have made the night `error`, strictly worse than the
   breaking night this replaces) and after the identity ledger is built and written from the run's
   registries. So a deferred component dropped out of `identity.json` and lost its accumulated
   `previousSlugs`, the one field not derivable from current state and the field
@@ -2560,10 +2564,10 @@ no entry defers its link to a placeholder.
   **The measurement, including the half that went the wrong way.** Scored over the 25 Studio patterns
   against the plugin's 12 flow archetypes:
 
-  | | no match | 2-3 candidates | 4+ candidates |
-  | --- | --- | --- | --- |
-  | Slug words (today) | 11 | 5 | 1 |
-  | Real tags, same boolean join | 6 | 8 | **2** |
+  |                              | no match | 2-3 candidates | 4+ candidates |
+  | ---------------------------- | -------- | -------------- | ------------- |
+  | Slug words (today)           | 11       | 5              | 1             |
+  | Real tags, same boolean join | 6        | 8              | **2**         |
 
   So better tags alone **made ambiguity worse**: silence fell from 11 to 6, and floods rose. That result
   is worth keeping because it says the join itself is wrong, not just its input. Treating any single
@@ -2579,7 +2583,7 @@ no entry defers its link to a placeholder.
 
   Two records were also corrected against the running product rather than left as written:
   `import-wizard` said 6 steps and named "Data Product" as the sixth, and there are **7** with `Data
-  source` first and `Category` sixth; `access-request-management` said "Status tabs: Pending / Done",
+source` first and `Category` sixth; `access-request-management` said "Status tabs: Pending / Done",
   and there are no status tabs at all, the filter being a status multi-select of removable chips beside
   a per-row reject/approve pair.
 
@@ -2665,7 +2669,7 @@ no entry defers its link to a placeholder.
 - **`components/dist/identity.json`: the slug is now a label and the stable Figma identity is the
   record, so a rename stops being a migration.** Every registry entry already carried a rename-proof
   Figma `key` and a `nodeId`, and the sync already used them to tell a rename apart from a
-  delete-plus-add. Nothing downstream did: the slug, which is a slugified *display name*, is the
+  delete-plus-add. Nothing downstream did: the slug, which is a slugified _display name_, is the
   address in 15 of 18 manifest collections, in the manifest keys themselves
   (`components.guidelineDoc.<slug>`), in the media and anatomy filenames, and in the authored
   `components/src/<slug>/` directories. So renaming one Figma component cost about 90 references
@@ -2676,7 +2680,7 @@ no entry defers its link to a placeholder.
   the three registries, and **`clients/resolve-paths.js` reads it**, so a consumer holding a slug a
   component was renamed away from now resolves it instead of breaking on it. That is one change at
   the single place every `{slug}` collection resolves through, rather than a fix per collection. A
-  slug that is *current* for some component is never treated as retired, so a freed-and-reused name
+  slug that is _current_ for some component is never treated as retired, so a freed-and-reused name
   resolves to the live component and not to the renamed one. An absent or unreadable ledger means
   "no renames" rather than an error, so snapshots vendored before this keep resolving.
 
@@ -2700,12 +2704,11 @@ no entry defers its link to a placeholder.
   While a slug rename stays breaking (below), history advances only through the human follow-through
   PR, where the drift guard is what tells the author to regenerate and commit it.
 
-
 - **`components/render/dist/render-contract.json`: what the renderer actually implements, per slug,
   so consumers stop restating it.** Each entry carries the content props that slug's branch reads,
   the fallback literal each prop has, and, per registry variant axis, which values the renderer
   renders distinctly. Consumers had been keeping their own copies and drifting: the plugin's
-  flow-authoring reference opens with *"the following 19 slugs have real HTML leaf renderers"* while
+  flow-authoring reference opens with _"the following 19 slugs have real HTML leaf renderers"_ while
   the renderer has **58**, and documents **45** `(slug, prop)` bindings against the **177** the
   renderer exposes. The visible cost is that 39 built components are invisible to flow generation,
   and a documented one can still be short (`empty-state` is described with 3 props and reads 7, so an
@@ -2730,8 +2733,8 @@ no entry defers its link to a placeholder.
   token resolves through the OKLCH formula in `color-primitives.md`) while the fidelity gate judges it
   against design values (Figma hand-picked hex), and nothing said which is right where they disagree, so
   every fidelity number was measuring a seam rather than a quality. This extends doctrine that already
-  existed for tokens (*"always defer to the Figma file for design decisions and engineering code for
-  production output"*) to the render tier. Consequences: the gate's comparison against Figma is
+  existed for tokens (_"always defer to the Figma file for design decisions and engineering code for
+  production output"_) to the render tier. Consequences: the gate's comparison against Figma is
   legitimate today and raising its coverage is worth doing; when the web components exist, the CEM
   contract carries authority and the design-versus-development drift measure replaces fidelity as the
   number that matters; and the shades where computed OKLCH disagrees with Figma hex now need a
@@ -2839,7 +2842,7 @@ no entry defers its link to a placeholder.
   emitting keeps its committed note by design, which is what makes the prune safe, so the run now names
   those slugs instead of leaving the frozen copy silent.
 
-    **Both inputs are declared now, and a test holds them there.** `derive-usage-notes.js` reads
+  **Both inputs are declared now, and a test holds them there.** `derive-usage-notes.js` reads
   `components/dist/guidelines/` for the per-domain prose and `components/dist/categories/` for the
   inherited category rationale that 58 of the 60 notes carry. Neither was watched. It exports `INPUTS`
   and `tests/render/derive-usage-notes.test.js` asserts `render-derive.yml` watches every one, the same
@@ -2857,7 +2860,7 @@ no entry defers its link to a placeholder.
   at entirely the wrong cause. Every one of those is a negative control in the test, and every one was
   found by review or by mutating the helper, none by reading it. The weaker duplicate of this same gate in `tests/render/derive-contract.test.js` is #570, deliberately left out of this change.
 
-    **`--strict` no longer writes.** It drops every non-approved domain, so its output is a different
+  **`--strict` no longer writes.** It drops every non-approved domain, so its output is a different
   artifact from the committed dist, which is the permissive one, and it was writing that different
   artifact straight into the shipped directory. Nothing in `package.json` or CI passes the flag, so only
   a human running it by hand could silently clobber 60 vendored notes. It reports and writes nothing.
@@ -2909,6 +2912,7 @@ no entry defers its link to a placeholder.
   PR. The pair now passes in both states. Worth recording because my own local run was green at 1661/0
   while CI was red: I had reverted the regenerated dist before testing, so the assertion never saw the
   state that broke it.
+
 - **The sync's registry verdict no longer calls a slug rename breaking, because the run now records
   where the slug went before it decides what the change means.** `components/dist/identity.json`
   already let a consumer resolve a slug a component was renamed away from, but the verdict could not
@@ -3060,7 +3064,7 @@ no entry defers its link to a placeholder.
   a renamed slug from a new one. Left undone and stated here rather than stubbed in.
 
 - **A change to a component's display name no longer stalls a night's sync.** The differ reports a
-  rename when the slug *or* the display name changes, and the classifier pushed a breaking reason for
+  rename when the slug _or_ the display name changes, and the classifier pushed a breaking reason for
   either, while any single breaking reason makes the whole sync breaking, which commits nothing. So
   editing a status emoji in a component's name could discard a night of otherwise additive work
   (#512). No consumer addresses a component by display name, so a name change that leaves the slug
@@ -3070,7 +3074,7 @@ no entry defers its link to a placeholder.
   since the old slug still resolves, but the verdict cannot see that yet: the sync classifies inside
   its orchestrator step while the ledger is derived in a later one, and a breaking verdict opens no
   PR, so the regenerated ledger is discarded and the same rename is re-detected identically the next
-  night. Making it additive requires computing absorption from the rename the run is *about to*
+  night. Making it additive requires computing absorption from the rename the run is _about to_
   record, which needs `syncRegistry` split into compute-then-classify. Filed as #552 rather than stubbed in,
   because a rule that cannot fire reads as a rule that works.
 
@@ -3178,13 +3182,13 @@ no entry defers its link to a placeholder.
 - **A thirteenth optional slot was still carrying a literal fallback, and the test that was supposed
   to catch it could only check slots somebody had remembered to list.**
   ([#545](https://github.com/volivarii/actian-ds-knowledge/pull/545)) `chat-with-ai-steward`
-  initialised its context-chip label to *"Dataset Customer Orders"* instead of guarding the element
+  initialised its context-chip label to _"Dataset Customer Orders"_ instead of guarding the element
   on the prop, so the chip rendered whether or not the caller scoped the session to anything. It
   survived the #544 sweep because it wears a different shape: a variable initialised to the literal
   rather than the `props.X ? el : ""` conditional the other twelve used. The consumer had already
   recorded it: the plugin's `stewardAnswered` golden supplies `Title`, `Insight`, `Source` and
-  `Confidence` and deliberately no `Context`, and its rendered text gained *"Dataset Customer
-  Orders"* between v0.34.132 and v0.34.134. The initialiser goes back to `""` and the string moves
+  `Confidence` and deliberately no `Context`, and its rendered text gained _"Dataset Customer
+  Orders"_ between v0.34.132 and v0.34.134. The initialiser goes back to `""` and the string moves
   to `SPECIMEN_PROPS` with its provenance, so the gallery keeps the chip and a caller can render a
   steward panel without one. Both accepted `Context` forms are unchanged: the object `{type, name}`
   and the bare string.
@@ -3254,8 +3258,8 @@ no entry defers its link to a placeholder.
 - **#543 filled twelve empty gallery slots by giving the renderer a literal fallback for each, and
   in doing so removed the ability to render those components without their optional parts.** The
   fill turned `props.Description ? '<p class="ds-page-header__desc">' + ... : ""` into a paragraph
-  that always renders, so every generated page-header grew a *"Support text"*, every toggle and
-  radio a *"Description"*, every date input a *"Use MM/DD/YYYY."*, with no way to turn them off.
+  that always renders, so every generated page-header grew a _"Support text"_, every toggle and
+  radio a _"Description"_, every date input a _"Use MM/DD/YYYY."_, with no way to turn them off.
   The gallery looked right and the capability was gone. The plugin's suite said so within a day:
   1997 passing at v0.34.132, 13 failures at v0.34.133, three of them behavioural rather than stale
   snapshots, and all three of the same shape as
@@ -3283,8 +3287,8 @@ no entry defers its link to a placeholder.
   falls back to for the dialog's `aria-label`, in place of `"Interaction guide"`. That is not a loss
   of information but a correction of it: a `default` on an optional prop claimed a value the caller
   would not get. The gallery's content is unchanged, and the popover fragment improves in passing,
-  since its `aria-label` now reads the same *"Interaction guide"* the title element shows instead of
-  a generic *"Popover"*. Repo-wide empty text slots stay at 1 (`alert-banner.Title`, exempted), and
+  since its `aria-label` now reads the same _"Interaction guide"_ the title element shows instead of
+  a generic _"Popover"_. Repo-wide empty text slots stay at 1 (`alert-banner.Title`, exempted), and
   oracle coverage is unchanged at 17.8%.
 
   **The gate that would have caught it** is `tests/render/optional-slot-omission.test.js`: for every
@@ -3299,8 +3303,8 @@ no entry defers its link to a placeholder.
   `components/dist/categories/<that>.md` to append the category's inherited design and behavior
   guidance. That is a **third** independent copy of the same slug, after the registry's
   `categorySlug` and the defaults file's own `slug`. The Form components kept
-  `form-input-selection`, so their usage notes lost the entire *"Category guidance (inherited: design,
-  behavior)"* section: real published paragraphs, gone from 16 files and shipped in v0.34.131 to both
+  `form-input-selection`, so their usage notes lost the entire _"Category guidance (inherited: design,
+  behavior)"_ section: real published paragraphs, gone from 16 files and shipped in v0.34.131 to both
   consumers, with every gate green because the gate added in #541 checks only the registry join.
 
   The 15 sources are swept and the notes regenerate **byte-identical to v0.34.129**, the last version
@@ -3368,7 +3372,6 @@ no entry defers its link to a placeholder.
   the slug still is what left 19 components resolving to nothing in both consumers. Reversed with the
   measurement attached, below.
 
-
   **Verified against the category mass-loss tripwire**, which was the real risk of a rename: it keys
   on components ABSENT by stable identity, not on a category emptying, so an 11-component rebucket
   passes while a genuine loss still throws. Confirmed with a positive control rather than by reading
@@ -3397,7 +3400,7 @@ no entry defers its link to a placeholder.
   **The mapping is derived, not configured.** Each wrapper's `.local - section header` instance names
   what it documents, so a component is matched to the wrapper whose title carries its name. Matching
   compares **significant words as a set**, because neither ordering is trustworthy: the Text page's
-  first wrapper documents Text *input*, and the registry says `Tag, Interactive` where Figma says
+  first wrapper documents Text _input_, and the registry says `Tag, Interactive` where Figma says
   "Interactive Tag". A wrapper may legitimately serve several members, so a title containing all of a
   component's words also matches, which is how `tag-item-type` resolves to "Read-Only and Item Type
   Tag" and gains five images it never had. No hand-maintained slug-to-wrapper list is introduced:
@@ -3430,8 +3433,8 @@ no entry defers its link to a placeholder.
   artwork. Ticking "Clip content" on the icon's Figma frame makes the export wrap the glyph in
   `<g clip-path="url(#id)">` plus a `<defs>` clipPath whose rect is 24x24 at `scale(2)`, exactly the
   48x48 viewBox, so it crops nothing at all. `normalize-svg.js` degraded on `/url\(#/i`, and that
-  guard's own comment says it exists because *"gradients / pattern / image / url(#...) **paints**
-  can't become currentColor"*. A `clip-path` reference is not a paint, so the regex was broader than
+  guard's own comment says it exists because _"gradients / pattern / image / url(#...) **paints**
+  can't become currentColor"_. A `clip-path` reference is not a paint, so the regex was broader than
   the rule it enforces.
 
   **The fix is narrow on purpose.** SVGO normalizes any clip shape to an axis-aligned rect path, so
@@ -3476,7 +3479,7 @@ no entry defers its link to a placeholder.
   remains the single source, because a tag cut on a PR branch is orphaned when the PR squash-merges.
 
   Two consequences worth naming. The freshness guard lives in the required check rather than in
-  `npm test` on purpose: the sibling derives run the suite *before* their auto-commit step, so an
+  `npm test` on purpose: the sibling derives run the suite _before_ their auto-commit step, so an
   assertion there would fail mid-cascade on an index that is legitimately stale for another few
   seconds and block those workflows from committing the dist they exist to produce, which would cost
   the "authors need no local toolchain" guarantee. And the derive's trigger list now mirrors the
@@ -3492,14 +3495,14 @@ no entry defers its link to a placeholder.
   `.ds-tag--<type>` hue, and none for this one. It only restated what the `.ds-tag__icon` span beside it
   already says. `ds-html-map.js` states the doctrine against exactly this shape elsewhere in the same
   file, where `search-result-card`'s `App=Studio` renders the base card with no root modifier because
-  *"there is no built CSS delta for it, and a modifier class must not be emitted without one (no no-op
-  namespace-hook markers)"*, and the same 2026-08-12 fold-in dropped `.ds-tag--gray` on that reasoning.
+  _"there is no built CSS delta for it, and a modifier class must not be emitted without one (no no-op
+  namespace-hook markers)"_, and the same 2026-08-12 fold-in dropped `.ds-tag--gray` on that reasoning.
   It is distinct from the deliberately ruleless `.ds-tag--default` and `.ds-tag--stage-1`, which name
   real published `Type` values and so each carry a capture fact; this one named no axis value at all.
 
   What turned a style nit into a real defect is that the class was not free. A consumer's exact-match
   test is what surfaced it: the plugin's renderer test asserts the adjacency `indexOf("ds-tag
-  ds-tag--with-icon") !== -1`, and the fold-in began appending the `Type` modifier first, so the output
+ds-tag--with-icon") !== -1`, and the fold-in began appending the `Type` modifier first, so the output
   became `ds-tag ds-tag--default ds-tag--with-icon` and the match failed on a class that had never
   painted anything. The icon span itself is untouched, since it is the capture fact and the modifier was
   only ever a marker for it. The fidelity gate cannot see this change and should not: verified 75,
@@ -3533,7 +3536,7 @@ no entry defers its link to a placeholder.
 
 - **The coverage gate reported the wrong direction when a slug lost coverage but the repo gained it.**
   ([#522](https://github.com/volivarii/actian-ds-knowledge/pull/522)) Its headline read `ORACLE COVERAGE REGRESSED: 49 -> 78 (11.8% ->
-  17.8%)`, a loss framing on a 60% gain. The message now states the two facts independently: which
+17.8%)`, a loss framing on a 60% gain. The message now states the two facts independently: which
   slugs lost, which still blocks whichever way the total moved, and separately whether the repo-wide
   total rose, fell or held level. A gate that misstates direction teaches its readers to discount it,
   and the next time it says "regressed" about something real, nobody believes it.
@@ -3594,7 +3597,7 @@ no entry defers its link to a placeholder.
   carry no body marker, so the new dedupe will not adopt them; they want closing by hand.
 
 - **A failing editor test could take the whole machine down, and did, four times.** With the rich
-  editor opt-in, a test asked for the source pane by *clearing* storage. That encoded the default
+  editor opt-in, a test asked for the source pane by _clearing_ storage. That encoded the default
   rather than stating a choice, so the moment the default moved the same line began requesting the
   opposite surface and the assertion failed with a live DOM element as `actual`. `node:assert`
   renders `actual` with `{ depth: 1000, sorted: true, getters: true }`, which on a DOM node walks a
@@ -3663,7 +3666,7 @@ no entry defers its link to a placeholder.
 
 - **The rich text editor is the default authoring surface; raw markdown is now the opt-out.** The
   Sidebar switch reads "Rich text editor" rather than "WYSIWYG editor (alpha)", and an author who
-  has never touched it lands on the rich surface. Turning it off *writes* the opt-out rather than
+  has never touched it lands on the rich surface. Turning it off _writes_ the opt-out rather than
   removing the key, because an absent key means "never chose", which is on: removing it would have
   quietly undone the choice on the next reload. Being on by default is only safe because it is not
   the only gate. `shouldUseWysiwyg` still intersects the flag with the CI-derived rich-safe set, so
@@ -3836,6 +3839,7 @@ no entry defers its link to a placeholder.
   somewhere to start. ([#497](https://github.com/volivarii/actian-ds-knowledge/pull/497))
 
 ### Removed
+
 - **The 35 frozen seed renders and the all-35 oracle** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
   `components/render/src/` (15 MB) is gone. The gallery derives entirely from the relocated renderer,
   so the seeds' only remaining jobs were mechanical: the slug list and the card group, both now
@@ -3858,6 +3862,7 @@ no entry defers its link to a placeholder.
   ever had, and the file documents that the exclusion was deliberate rather than lost.
 
 ### Changed
+
 - **Merging the breaking sync with the render fidelity gate found five more wrong colors.**
   ([#475](https://github.com/volivarii/actian-ds-knowledge/pull/475))
   The sync predates the gate that now blocks on a wrong color ([#487](https://github.com/volivarii/actian-ds-knowledge/pull/487)),
@@ -3965,6 +3970,7 @@ no entry defers its link to a placeholder.
   unchanged.
 
 ### Added
+
 - **`appearance-render.js` gets the icon injection seam `ds-html-map.js` already had (`setIcons`, `setShadowedSlugs`)** (renderer-relocation phase 3). ([#451](https://github.com/volivarii/actian-ds-knowledge/pull/451))
   Phase 1a gave `ds-html-map.js` this seam and missed `appearance-render.js`, which resolves icons
   independently through the same dual-source idiom (a browser global, or a Node branch that requires
@@ -3997,7 +4003,7 @@ no entry defers its link to a placeholder.
   such rather than repeating the "fix your pattern" advice.
 - **`vendored-source-bump.yml`: a change to `clients/` or `schemas/` now bumps the version, so it can reach consumers.** ([#449](https://github.com/volivarii/actian-ds-knowledge/pull/449))
   Consumers pull this repo **by tag**, and `tag-on-merge.yml` only emits a tag when
-  `package.json#version` changes. Every bump lived inside a *derive* workflow, gated on whether the
+  `package.json#version` changes. Every bump lived inside a _derive_ workflow, gated on whether the
   regenerated `dist/` changed. That covers `src/` to `dist/` domains, but not the two directories
   that ship to consumers as **source** and have no derive at all: `clients/` (the reference readers
   consumers `require` directly, including the plugin's `scripts/lib/paths.js`) and `schemas/`. Both
@@ -4010,6 +4016,7 @@ no entry defers its link to a placeholder.
   derive on the same PR.
 
 ### Fixed
+
 - **`clients/resolve-paths.js`: `{name}` collections now resolve instead of returning `null`.** ([#448](https://github.com/volivarii/actian-ds-knowledge/pull/448))
   A `{name}` collection addresses a member by its path relative to the collection directory
   (`ds-base.css`, `html-renderers/ds-html-map.js`) rather than by a slug with an extension
@@ -4036,6 +4043,7 @@ no entry defers its link to a placeholder.
   breakage went unnoticed.
 
 ### Changed
+
 - **Breaking Figma sync (2026-07-19).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#447](https://github.com/volivarii/actian-ds-knowledge/pull/447))
 - **Render: the whole 35-slug canonical render gallery now derives from the relocated generic renderer, not from frozen seeds (renderer-relocation phase 1b-beta).** ([#444](https://github.com/volivarii/actian-ds-knowledge/pull/444))
   The derive is wired straight to `deriveFragment`, so every slug renders through the one
@@ -4083,12 +4091,12 @@ no entry defers its link to a placeholder.
   The shared stylesheet was previously a concatenated snapshot of the plugin's `ds-base.css`
   baked into the frozen seeds; it is now built from
   `components/render/renderer/{ds-base,ds-fonts}.css` directly (as `tokens.css` + `ds-fonts.css`
-  + `ds-base.css`, the render read path's order), guarded byte-identical against the deduped seed
-  stylesheet so a drift between the assets and the seeds fails the derive loudly. The assets are
-  exposed as the `components.render.renderer` manifest collection, so they are covered and travel
-  with the render surface into the vendor snapshot; the plugin will vendor them back and drop its
-  own copies. First step of moving the one renderer into the substrate so there is a single owner
-  instead of two divergent renderers.
+  - `ds-base.css`, the render read path's order), guarded byte-identical against the deduped seed
+    stylesheet so a drift between the assets and the seeds fails the derive loudly. The assets are
+    exposed as the `components.render.renderer` manifest collection, so they are covered and travel
+    with the render surface into the vendor snapshot; the plugin will vendor them back and drop its
+    own copies. First step of moving the one renderer into the substrate so there is a single owner
+    instead of two divergent renderers.
 - **Render: tag-default and checkbox are now derived from the resolved-appearance facts, not
   captured verbatim (North Star slice 2).** ([#440](https://github.com/volivarii/actian-ds-knowledge/pull/440))
   A per-component template layer (`scripts/render/templates/`) generates these two renders from
@@ -4103,6 +4111,7 @@ no entry defers its link to a placeholder.
   neutrals.
 
 ### Added
+
 - **A two-tooth render fidelity gate (North Star slice 2).** ([#440](https://github.com/volivarii/actian-ds-knowledge/pull/440))
   `scripts/render/fidelity-check.js` is a data-invariant CI check, chained into `derive:render`: for
   every `derived` render, each emitted color must equal a resolved-appearance fact and each emitted
@@ -4212,6 +4221,7 @@ no entry defers its link to a placeholder.
   slice 1b.
 
 ### Fixed
+
 - **The test glob skipped `tests/render/`, so the render tests never gated CI.** `npm test` ran
   `node --test tests/*.test.js`, which matches only the top level of `tests/`, so the slice-1 and slice-2
   render tests under `tests/render/` never ran in CI (they merged green because CI never executed them).
@@ -4250,7 +4260,7 @@ no entry defers its link to a placeholder.
   this test is actually about. The island is projected from authored app-context sources,
   not from Figma, so it moves only when someone edits app-context, which is the change the
   test exists to catch. The losslessness assertion beside it (`@graph.length === nodes +
-  edges`) is data-derived and already held at any graph size. Verified both ways: the
+edges`) is data-derived and already held at any graph size. Verified both ways: the
   suite is green on `main` **and** on the #422 sync branch with no restamp, and adding a
   single app-context term still fails the check by name.
 - **Ten components showed no guidance at all, and the plugin was inventing it for them.**
@@ -4258,11 +4268,11 @@ no entry defers its link to a placeholder.
   authored under. The Card and Tag guidance is written as **family-level** documentation
   (`"This guideline covers the tag family: default, status, stage, catalog, ..."`), but
   only `tag-default` was ever bridged to the family doc. So `Tag, Status`, `Tag,
-  Interactive`, `Card for items` and 7 more resolved to **nothing**.
+Interactive`, `Card for items` and 7 more resolved to **nothing**.
   Two things followed from that, both silent. The docs site rendered those 10 component
   pages with no guidance. Worse, the plugin's `component-brief` treats a missing guideline
   as a cue to **generate replacement content inline** (`_source: "generated"`), so a
-  designer asking for a brief on *Card for items* got **LLM-improvised guidance** instead
+  designer asking for a brief on _Card for items_ got **LLM-improvised guidance** instead
   of the approved document sitting one directory over, with no warning. Content silently
   replaced by plausible fiction is worse than content missing.
   Fixed by 10 `registryAliases` entries, which put ~1,300 words of already-approved
@@ -4270,6 +4280,7 @@ no entry defers its link to a placeholder.
   already there.
 
 ### Added
+
 - **A gate: authored guidance must actually reach a consumer.**
   Nothing checked that a guideline's slug existed in the registry, so a document could be
   authored, derived, bundled, advertised in `llms.txt`, and reported **`approved`** in
@@ -4314,6 +4325,7 @@ no entry defers its link to a placeholder.
   still a loss and still shouts. ([#418])
 
 ### Fixed
+
 - **A component that resolves to NO category is now named, instead of vanishing
   quietly.** A category-less component falls out of `categories.json`, the docs
   site's page tree, and the graph's `in_category` edges — the docs site does not
@@ -4336,13 +4348,13 @@ no entry defers its link to a placeholder.
   The tripwire's first real run found **ten** collisions — and only **two** were
   losses. Rendering them alike is exactly how a real alarm becomes wallpaper, so
   they now report as two separate sections:
-  - 🚨 **LOST from the design system** — two *different* components want one slug,
+  - 🚨 **LOST from the design system** — two _different_ components want one slug,
     so the loser disappears. Real, and there are two: **`calendar`** and
-    **`search`**. A component *set* (`Calendar`, `Search`) owns each slug, so the
+    **`search`**. A component _set_ (`Calendar`, `Search`) owns each slug, so the
     **icon** of the same name is dropped and the DS has **no calendar or search
     glyph at all**. That is why the plugin's `renderIcon("calendar-2")` had
     nothing to resolve.
-  - ⚠️ **Duplicate master** — the *same* component published from two nodes
+  - ⚠️ **Duplicate master** — the _same_ component published from two nodes
     (`add`, `directory`, `export`, `glossary`, `logout`, `process`, `snowflake`).
     The slug still resolves to the survivor, so **nothing is missing**. Expected
     while the icon masters live on two pages during the 2026-07 refactor; Figma
@@ -4351,17 +4363,18 @@ no entry defers its link to a placeholder.
   Discriminator: same name **and** same `importMethod` means one component
   published twice; anything else means two different components want one slug and
   the loser is genuinely gone. ([#413])
+
 - **The sync no longer loses a published component in silence (slug collisions
   are named).** `registry.components` is keyed by **slug**, and when a standalone
   and a component set slugify to the same string the set wins and the standalone
-  is dropped. That policy is fine; doing it *silently* was the bug. The loser did
+  is dropped. That policy is fine; doing it _silently_ was the bug. The loser did
   not lose a name, it **disappeared from the design system** — no error, no diff
   line, nothing in the sync PR, nothing in the run log.
   Nothing downstream could catch it either: `detectSlugCollisions` reads the
   already-slug-keyed `components` map, so by the time it runs the loser is gone.
   It can only ever see **cross-kit** collisions. The transform is the only place
   the loss is knowable, so it now reports it.
-  This is what ate the **`calendar` icon**: the Calendar *component* (a set,
+  This is what ate the **`calendar` icon**: the Calendar _component_ (a set,
   category Action) already owned the slug, and the 2026-07 icon rework renamed the
   glyph from `calendar-2` straight onto that collision — which is almost certainly
   why the old name existed. The plugin's `renderIcon("calendar-2")` (the
@@ -4374,6 +4387,7 @@ no entry defers its link to a placeholder.
   dead syncs. ([#412])
 
 ### Added
+
 - **Usage guidelines: wave 2 completes the domain (38 remaining components).**
   Every component now carries authored Usage guidance: the second wave covers
   navigation and chrome (breadcrumbs, global header, side nav, toolbar,
@@ -4565,7 +4579,7 @@ no entry defers its link to a placeholder.
   `layout.gapToken` (beside `layout.gap`) and `layout.paddingTokens` (per bound side, beside
   `layout.padding`), so consumers can emit `gap:var(--zen-spacing-xs, 8px)`. Length-gated (a spacing
   slot only ever carries a length-valued token, mirroring the color gate). This also **fixes a latent
-  bare-name hazard**: `spacingValue` previously returned the token *name in place of* the px value
+  bare-name hazard**: `spacingValue` previously returned the token _name in place of_ the px value
   when a variable resolved, which would have written a bare `--zen-*` name into `layout.gap`/`padding`
   (invalid CSS) the moment the variable-id export populated `varNameById`. Layout values are now
   always px, with the token riding in parallel. Additive schema (`gapToken`/`paddingTokens` optional;
@@ -4578,6 +4592,7 @@ no entry defers its link to a placeholder.
   consumers that ignore it behave as before. Real data lands on the next nightly sync. ([#354])
 
 ### Changed
+
 - **Breaking Figma sync (2026-07-17).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#439](https://github.com/volivarii/actian-ds-knowledge/pull/439))
 - **Breaking Figma sync (2026-07-14).** Component or variant changes the nightly sync classified as breaking; the PR body carries the per-component diff summary. ([#422](https://github.com/volivarii/actian-ds-knowledge/pull/422))
 - **Breaking: two component slugs renamed to match Figma (`checkbox-with-label`
@@ -4589,7 +4604,7 @@ no entry defers its link to a placeholder.
   carries a registry that disagrees with the guidelines it points at. On the
   knowledge side: `components/src/breadcrumbs/` becomes
   `components/src/breadcrumb/`; the `checkbox-with-label` → `checkbox` entry in
-  `registryAliases` is **deleted**, because this rename *is* the naming
+  `registryAliases` is **deleted**, because this rename _is_ the naming
   convergence that alias existed to paper over; and eight curated
   `icons-svg.json` overrides are dropped now that the icon rework deleted the
   components behind them. The rework's dropped glyphs shrink the graph to 814
@@ -4645,6 +4660,7 @@ no entry defers its link to a placeholder.
   checks re-run on its auto-commits without a manual empty commit. ([#351])
 
 ### Removed
+
 - **`--zen-color-text-link-{default,reverse,visited}` tokens retired.** The text-link family is
   deleted from `foundations/src/tokens.md` (and so from `tokens/tokens.json` / `tokens.css`);
   interactive/link text is `--zen-color-text-primary` (primary-500, same resolved value as the old
@@ -4659,12 +4675,13 @@ no entry defers its link to a placeholder.
   appearance path; the plugin-side consumer (path-b) was retired first, so no reader remains.
 
 ### Fixed
+
 - The Figma sync now resolves page-level category overrides on each component's own reported page name (`containing_frame.pageName`), not only the Pages-panel canvas name, so an override still applies when the two diverge (the icons page shows `DS Icons` in the panel while icon components report `Icons`). Unblocks the first post-#375 sync, which the mass-loss tripwire correctly halted with the icon category unrestored. ([#377])
 - `transform-registry` no longer emits `categorySlug: "null"` for a
   null-category component (`slugify(null)` guard). ([#375])
 - Restored the `Icons` and `Alert (banner)` categories that a Figma page reorg
   had stripped (root cause of the breaking sync PR #374). ([#375])
-- The Figma sync no longer hard-fails when a single icon is renamed, removed, or recategorized in Figma. The icons-svg derive previously warn-skipped only a dangling *curated* icon override; an auto-exported icon whose registry category drifted from "Icons" still threw and blocked the entire multi-domain sync (anatomy, registry, tokens, everything). It now warn-skips any invalid icon slug in the sync path (dropping it from `icons.json` with a provenance-tagged warning that says whether to fix Figma or the curated source), while the bare `deriveIcons` call stays strict for direct callers. One stray recategorized icon can no longer block unrelated content. ([#373])
+- The Figma sync no longer hard-fails when a single icon is renamed, removed, or recategorized in Figma. The icons-svg derive previously warn-skipped only a dangling _curated_ icon override; an auto-exported icon whose registry category drifted from "Icons" still threw and blocked the entire multi-domain sync (anatomy, registry, tokens, everything). It now warn-skips any invalid icon slug in the sync path (dropping it from `icons.json` with a provenance-tagged warning that says whether to fix Figma or the curated source), while the bare `deriveIcons` call stays strict for direct callers. One stray recategorized icon can no longer block unrelated content. ([#373])
 - **Anatomy prune guard.** A transient per-slug Figma fetch miss or normalization failure no longer
   lets the nightly sync delete that component's existing anatomy file or drop its entry from
   `anatomy.bundle.json` (failed slugs are re-seeded from the existing dist, so even a total outage
@@ -4676,14 +4693,14 @@ no entry defers its link to a placeholder.
   deleting every `<role>-*.webp` across the library; the refusal is surfaced as a warning in the
   sync PR changelog. Single-slug removals and shrink prunes behave as before. ([#351])
 - **Losing imagery is now a breaking sync too, and the remaining blind spots are named.** ([#409])
-  After the icon incident, every sync phase was audited against one question: *what does loss look like
-  here, and would we notice?* The icons bug was not a one-off. It was the house style: three phases
+  After the icon incident, every sync phase was audited against one question: _what does loss look like
+  here, and would we notice?_ The icons bug was not a one-off. It was the house style: three phases
   decided their verdict from "did I write any bytes" rather than from a diff, with **no code path to
   `breaking`** at all.
 
   `components/dist/media/_index.json` is the sidecar consumers actually resolve imagery through, and it
   is a pure directory listing with **no memory**: 60 slugs disappearing and 60 appearing produced an
-  identical verdict. A prune-only night reported *"byte-level maintenance writes only"* on a pull
+  identical verdict. A prune-only night reported _"byte-level maintenance writes only"_ on a pull
   request that had deleted images, and auto-merged.
 
   It is now classified, and classified at the **read surface**, which is the leverage: a loss from any
@@ -4737,6 +4754,7 @@ no entry defers its link to a placeholder.
   lost glyph with the reason it dropped out (`node-missing`, `render-failed`, `multicolor`,
   `gradient-or-image-fill`). A redrawn glyph stays additive (it still resolves), and a brand-new
   icon that lands degraded does not gate the sync (nothing regressed for consumers).
+
 - **Ghost components are detected, and verified rather than assumed.** The root defect behind the
   icon loss: the registry is built from Figma's **published-library** endpoint
   (`/v1/files/:key/components`), which keeps advertising a component after its canvas node has been
@@ -4760,6 +4778,7 @@ no entry defers its link to a placeholder.
   Status's "Fail" variant, so a shipping DS component currently references an icon that no longer
   exists. That is also why the plugin's vendor PRs have been red since 2026-07-07. Restoring the
   glyphs is a Figma-side fix; this change only makes sure the next loss cannot ship in silence.
+
 - **`getImages()` no longer discards Figma's `err` field.** It returned `{ images: merged }`, so an
   HTTP-200 response carrying an error contributed no URLs and was indistinguishable from a batch of
   deleted nodes. It now returns `{ images, errors }` and the icon export **throws** rather than
@@ -4845,6 +4864,7 @@ no entry defers its link to a placeholder.
 ## [0.34.69] - 2026-07-03
 
 ### Added
+
 - **Per-variant resolved appearance (Phase 1A-ii).** The nightly anatomy sync now captures how a
   component's resolved appearance (fill, border, radius, text) changes across variant values, inline
   on the anatomy tree as `appearance.variants[]` deltas relative to `variantDefaults`. Root-anchored
@@ -4854,11 +4874,13 @@ no entry defers its link to a placeholder.
   per-variant deltas. ([#347], [#344])
 
 ### Changed
+
 - `schemas/anatomy.json`: additive `appearance.variants[]`, file-level `variantDefaults`, and
   `quality.structuralVariants` / `quality.uncapturedValues`. Variant `border`/`text` deltas are
   shape-constrained via shared `$defs`. All existing dist anatomy files remain valid. ([#347])
 
 ### Fixed
+
 - Anatomy appearance capture now reads the correct Figma **REST** field names
   (`individualStrokeWeights`, `rectangleCornerRadii`) rather than Plugin-API names, and no longer
   emits a color occluded beneath a visible non-solid paint. ([#347])
@@ -4866,6 +4888,7 @@ no entry defers its link to a placeholder.
 ## [0.34.68] - 2026-07-03
 
 ### Added
+
 - **Resolved appearance capture (Phase 1A).** Anatomy nodes now carry a resolved `appearance`
   (fill/border/radius/text) captured from Figma's REST paint data, the render-fidelity substrate:
   consumers emit the resolved value with the token name added later for theming. ([#345])
@@ -4873,6 +4896,7 @@ no entry defers its link to a placeholder.
   (`variant:{prop,values}` + `variantDefaults`), 9 sidecars. ([#338])
 
 ### Fixed
+
 - **Editor: single submission path.** Every edit now routes through the batch/cart; the direct
   "Submit as PR" paths were removed, and batch submit is hardened with a synchronous re-entry guard
   and a `try/finally` guard reset. ([#346])
@@ -4932,5 +4956,4 @@ history and pull-request record.
 [#340]: https://github.com/volivarii/actian-ds-knowledge/pull/340
 [#339]: https://github.com/volivarii/actian-ds-knowledge/pull/339
 [#338]: https://github.com/volivarii/actian-ds-knowledge/pull/338
-
 [#418]: https://github.com/volivarii/actian-ds-knowledge/pull/418
