@@ -616,6 +616,12 @@
       "generator": "scripts/sync/sync-from-figma.js",
       "description": "DS Kit text + effect styles (Figma REST sync)"
     },
+    "components.render.bundleExternal": {
+      "path": "components/render/bundle-external.json",
+      "type": "json",
+      "origin": "human",
+      "description": "The cards a Claude Design design-system project carries that build-bundle.js cannot produce, because the slug has no `case \"<slug>\":` branch in ds-html-map.js and so is not in RENDER_SLUGS. A rebuild omits them and a push never deletes, so without this declaration they survive unexplained; ten were found in the dogfood project on 2026-09-23. Each entry carries a status (keep, author, retire, undecided) and a reason. scripts/render/bundle-reconcile.js reads it to tell declared absence from drift, and tests/render/bundle-external.test.js keeps every entry honest."
+    },
     "components.render.cem": {
       "path": "components/render/dist/custom-elements.json",
       "type": "json",
