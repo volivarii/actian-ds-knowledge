@@ -116,6 +116,31 @@ if (require.main === module) {
     fs.readFileSync(path.resolve(process.argv[i + 1]), "utf8"),
   );
   if (livePaths && Array.isArray(livePaths.paths)) livePaths = livePaths.paths;
+  if (!Array.isArray(livePaths)) {
+    process.stderr.write(
+      "RECONCILE ABORTED: --live must hold a JSON array of paths, or the " +
+        "{ paths: [...] } object list_files returns; got " +
+        typeof livePaths +
+        ".\n",
+    );
+    process.exit(2);
+  }
+  // A listing that yields no cards is almost always a failed or truncated
+  // list_files, not an empty project, and it would otherwise sail through:
+  // nothing live means nothing undeclared means ok. Absence must not read as a
+  // pass. --allow-empty is for the genuinely empty project.
+  if (
+    !livePaths.filter(isCard).length &&
+    process.argv.indexOf("--allow-empty") < 0
+  ) {
+    process.stderr.write(
+      "RECONCILE ABORTED: the --live listing holds no card paths (" +
+        livePaths.length +
+        " entries read). That reads as a pass while proving nothing. Re-take " +
+        "the listing, or pass --allow-empty if the project really is empty.\n",
+    );
+    process.exit(2);
+  }
   var result = reconcile({
     produced: producedPaths(),
     live: livePaths,

@@ -67,20 +67,30 @@ test("every entry carries slug, path, status and a reason", function () {
   });
 });
 
-test("no entry claims a slug the substrate actually produces", function () {
-  var doc = load();
+// The real check, as a function, so the probe below can drive THIS code rather
+// than a hand-copied lookalike of it. A probe that restates the assertion only
+// proves that assert works.
+function falselyExternal(cards) {
   var produced = {};
   M.RENDER_SLUGS.forEach(function (s) {
     produced[s] = 1;
   });
-  doc.cards.forEach(function (c) {
-    assert.ok(
-      !produced[c.slug],
-      c.slug +
-        " has a `case` branch in ds-html-map.js, so build-bundle DOES emit it. " +
-        "Listing it as external is a false statement: remove the entry.",
-    );
-  });
+  return cards
+    .filter(function (c) {
+      return produced[c.slug];
+    })
+    .map(function (c) {
+      return c.slug;
+    });
+}
+
+test("no entry claims a slug the substrate actually produces", function () {
+  assert.deepEqual(
+    falselyExternal(load().cards),
+    [],
+    "a listed slug that has a `case` branch in ds-html-map.js IS emitted by " +
+      "build-bundle, so declaring it external is a false statement: remove it.",
+  );
 });
 
 test("slugs are unique", function () {
@@ -92,19 +102,17 @@ test("slugs are unique", function () {
   });
 });
 
-// The check above only means something if it can fail. A slug the substrate
-// really does produce must be rejected, or the guard is decorative.
+// The check above only means something if it can fail, and the probe has to
+// drive the same function to show that.
 test("the produced-slug guard can fail", function () {
-  var produced = {};
-  M.RENDER_SLUGS.forEach(function (s) {
-    produced[s] = 1;
-  });
   assert.ok(
-    produced.button,
-    "button is a produced slug (fixture for this probe)",
+    M.RENDER_SLUGS.indexOf("button") >= 0,
+    "button is a produced slug (the fixture this probe relies on)",
   );
-  var planted = { slug: "button" };
-  assert.throws(function () {
-    assert.ok(!produced[planted.slug], "planted entry must be rejected");
-  }, "listing a produced slug as external is caught");
+  assert.deepEqual(
+    falselyExternal([{ slug: "button" }, { slug: "card-for-items" }]),
+    ["button"],
+    "a produced slug planted in the list is caught, and a genuinely external " +
+      "one beside it is not",
+  );
 });
