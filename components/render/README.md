@@ -71,9 +71,12 @@ stylesheet, then with this bundle, read back from the compiled `_ds_manifest.jso
   block. The index lists the 231, then each override again with a `scope` naming its
   theme block, and records Studio and Explorer as `themes`. Its fonts are Roboto (400,
   500, 700) and Inter (400, 500, 600).
-- The same read shows a gap in the tokens themselves: `--zen-font-family-brand` names
-  AllRpungGothic and `--zen-font-family-mono` names Roboto Mono, and neither has a
-  `@font-face` in the render dist, so the index marks both `no-face`.
+- The same read showed a gap in the tokens themselves: `--zen-font-family-brand` named
+  `AllRpungGothic` (a misspelling of AllRoundGothic, hard-coded in the derive) and
+  `--zen-font-family-mono` named Roboto Mono, neither with a `@font-face` in the render
+  dist, so the index marked both `no-face`. The brand token has since been set to
+  Roboto, the apps' font, which the render dist embeds; mono stays Roboto Mono, still
+  without a face.
 
 ## Pushing to Claude Design
 

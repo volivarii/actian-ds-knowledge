@@ -112,6 +112,7 @@ no entry defers its link to a placeholder.
 
 ### Fixed
 
+- **The brand font token is Roboto, the apps' font.** ([#726](https://github.com/volivarii/actian-ds-knowledge/pull/726)) `--zen-font-family-brand` read `AllRpungGothic`: a misspelling of AllRoundGothic, hard-coded in `scripts/tokens/derive-tokens.js` as a figma-only carry-forward that overwrote the Font Family table's own brand row (`HCLTech Roobert`), with a test asserting the misspelling. The face never shipped in the render dist, and Claude Design's index flagged it on 2026-09-24. Decided the same day: brand resolves to Roboto, the apps' font, so `foundations/src/tokens.md` sets it beside text, the derive no longer overrides the table, and `design-guidelines.md` says so (Roobert stays the typeface of marketing and communication materials). `--zen-font-family-mono` stays Roboto Mono for code; it still has no face in the render dist. A test derives the real table and requires text and brand to be Roboto, mono Roboto Mono, and none a carry-forward; restoring the old override fails it.
 - **Four parsers, four disagreements about what a heading is, and one shared fenced-code rule**
   ([#703](https://github.com/volivarii/actian-ds-knowledge/pull/703)).
   Three modules in the editor parse headings and a fourth decides what text can define or reference
