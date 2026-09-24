@@ -40,11 +40,32 @@ test("letterspacing-wide nests; icon sizes land under top-level icon", () => {
   assert.equal(t.font.letterspacing.wide["1"].$value, "0.1px");
   assert.equal(t.icon.md.$value, "20px");
 });
-test("figma-only carry-forwards present (legacy size scale + brand font)", () => {
+test("figma-only carry-forwards present (legacy size scale)", () => {
   const t = deriveNumericTree({ tokensMd: MD });
   assert.equal(t.size.lg.$value, "24px");
   assert.equal(t.size.lg.$extensions["com.actian.status"], "figma-only");
-  assert.equal(t.font.family.brand.$value, "AllRpungGothic");
+});
+
+// The brand family was once overwritten in the derive with a hard-coded
+// "AllRpungGothic" that the table never said, and this file asserted it. Every
+// family now comes from the table, and the apps use one face.
+test("every font family token derives from the table, and all are Roboto", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const tokensMd = fs.readFileSync(
+    path.join(__dirname, "..", "foundations", "src", "tokens.md"),
+    "utf8",
+  );
+  const fam = deriveNumericTree({ tokensMd }).font.family;
+  assert.deepEqual(Object.keys(fam).sort(), ["brand", "mono", "text"]);
+  for (const k of Object.keys(fam)) {
+    assert.equal(fam[k].$value, "Roboto", "font.family." + k);
+    assert.notEqual(
+      fam[k].$extensions["com.actian.status"],
+      "figma-only",
+      "font.family." + k + " is read from the table, not carried forward",
+    );
+  }
 });
 
 test("covers breakpoint, focus-ring offset, lineheight, letterspacing-normal, size-height, size-trigger routes", () => {

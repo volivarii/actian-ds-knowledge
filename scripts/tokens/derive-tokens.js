@@ -344,12 +344,10 @@ function deriveNumericTree({ tokensMd }) {
     });
   }
 
-  // figma-only carry-forward — brand font
-  setPath(tree, "font.family.brand", {
-    $type: "fontFamily",
-    $value: "AllRpungGothic",
-    $extensions: { "com.actian.status": "figma-only" },
-  });
+  // font.family.brand comes from the Font Family table like text and mono. It
+  // used to be overwritten here with a hard-coded "AllRpungGothic" (a
+  // misspelling of AllRoundGothic), so the table's brand row never reached the
+  // tokens.
 
   return tree;
 }
