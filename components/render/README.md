@@ -64,7 +64,10 @@ stylesheet, read back from the compiled `_ds_manifest.json`:
 - A stylesheet at the project root is recorded in `globalCssPaths`, its custom
   properties become the system's `tokens` (typed, e.g. `color`, `spacing`) and its
   `@font-face` rules its `fonts`. Before `styles.css` the index held no tokens and no
-  fonts, although every card carries both inline.
+  fonts, although every card carries both inline. The probe declared its properties in
+  one plain `:root` block; `styles.css` declares 231 in `:root, [data-theme="actian"]`
+  and 46 each in a `studio` and an `explorer` override block, so what the index makes
+  of it is read from the manifest after a push, not assumed from the probe.
 
 ## Pushing to Claude Design
 

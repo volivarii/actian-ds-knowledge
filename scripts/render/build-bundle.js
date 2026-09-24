@@ -18,14 +18,17 @@
 // Two things Claude Design's self-check reads, verified against the dogfood
 // project on 2026-09-24 with a probe card and a probe stylesheet:
 //   - The marker's name and subtitle. The compiled index keeps `name`,
-//     `subtitle` and `viewport` from `<!-- @dsCard group=".." name=".." ... -->`,
-//     and the pane shows them. register_assets changed nothing on this project
-//     (its manifest is `source: "spa"`), so without them every card showed its
-//     file name.
+//     `subtitle` and `viewport` from `<!-- @dsCard group=".." name=".." ... -->`.
+//     register_assets changed nothing on this project (its manifest is
+//     `source: "spa"`), so without them the index held file names only.
 //   - A stylesheet at the project root. The index records it in
 //     globalCssPaths and extracts its custom properties as the system's tokens
 //     and its @font-face rules as its fonts. With none, the index held no
 //     tokens and no fonts, although every card carries both inline.
+// The probe's stylesheet declared its properties in one plain `:root` block.
+// This one declares them in `:root, [data-theme="actian"]` plus a studio and an
+// explorer override block; how the index reads that is known only from a
+// manifest read after pushing it.
 
 var fs = require("node:fs");
 var path = require("node:path");
