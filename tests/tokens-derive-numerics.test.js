@@ -48,8 +48,9 @@ test("figma-only carry-forwards present (legacy size scale)", () => {
 
 // The brand family was once overwritten in the derive with a hard-coded
 // "AllRpungGothic" that the table never said, and this file asserted it. Every
-// family now comes from the table, and the apps use one face.
-test("every font family token derives from the table, and all are Roboto", () => {
+// family now comes from the table: the apps' Roboto for text and brand, and
+// Roboto Mono for code.
+test("every font family token derives from the table: Roboto, and Roboto Mono for code", () => {
   const fs = require("node:fs");
   const path = require("node:path");
   const tokensMd = fs.readFileSync(
@@ -59,7 +60,11 @@ test("every font family token derives from the table, and all are Roboto", () =>
   const fam = deriveNumericTree({ tokensMd }).font.family;
   assert.deepEqual(Object.keys(fam).sort(), ["brand", "mono", "text"]);
   for (const k of Object.keys(fam)) {
-    assert.equal(fam[k].$value, "Roboto", "font.family." + k);
+    assert.equal(
+      fam[k].$value,
+      k === "mono" ? "Roboto Mono" : "Roboto",
+      "font.family." + k,
+    );
     assert.notEqual(
       fam[k].$extensions["com.actian.status"],
       "figma-only",

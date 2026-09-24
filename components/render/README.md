@@ -74,8 +74,9 @@ stylesheet, then with this bundle, read back from the compiled `_ds_manifest.jso
 - The same read showed a gap in the tokens themselves: `--zen-font-family-brand` named
   `AllRpungGothic` (a misspelling of AllRoundGothic, hard-coded in the derive) and
   `--zen-font-family-mono` named Roboto Mono, neither with a `@font-face` in the render
-  dist, so the index marked both `no-face`. Every font family token has since been set
-  to Roboto, the apps' font, which the render dist does embed.
+  dist, so the index marked both `no-face`. The brand token has since been set to
+  Roboto, the apps' font, which the render dist embeds; mono stays Roboto Mono, still
+  without a face.
 
 ## Pushing to Claude Design
 
