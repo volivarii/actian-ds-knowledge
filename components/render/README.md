@@ -50,13 +50,15 @@ card, `{name, path, group, subtitle}`, for `DesignSync`'s legacy `register_asset
 
 Each card's first line is its marker, and it carries the card's name and subtitle:
 `<!-- @dsCard group="Action" name="Buttons" subtitle="..." -->`. `name` comes from the
-guideline doc's `component` field (falling back to a humanized slug, e.g.
-`account-dropdown` -> `Account Dropdown`, for the few rendered components with no
-guideline doc); `subtitle` is the usage note's first sentence, capped to a short label,
-and is left out when there is no note. Both are derived, not separately authored.
+guideline doc's `component` field, which names a family: when several rendered
+components share one (`card`, `card-for-grouped-content` and `card-for-perimeter` all
+read "Cards"), each takes a humanized slug instead (`Card For Perimeter`), as does a
+component with no guideline doc (`account-dropdown` -> `Account Dropdown`). `subtitle`
+is the usage note's first sentence, capped to a short label, and is left out when there
+is no note. Both are derived, not separately authored.
 
-Checked against the dogfood project on 2026-09-24 with a probe card and a probe
-stylesheet, read back from the compiled `_ds_manifest.json`:
+Checked against the dogfood project on 2026-09-24, first with a probe card and a probe
+stylesheet, then with this bundle, read back from the compiled `_ds_manifest.json`:
 
 - The index keeps a marker's `name`, `subtitle` and `viewport`. A card whose marker has
   only a group is listed by its file name. `register_assets` changed nothing on this
@@ -64,10 +66,14 @@ stylesheet, read back from the compiled `_ds_manifest.json`:
 - A stylesheet at the project root is recorded in `globalCssPaths`, its custom
   properties become the system's `tokens` (typed, e.g. `color`, `spacing`) and its
   `@font-face` rules its `fonts`. Before `styles.css` the index held no tokens and no
-  fonts, although every card carries both inline. The probe declared its properties in
-  one plain `:root` block; `styles.css` declares 231 in `:root, [data-theme="actian"]`
-  and 46 each in a `studio` and an `explorer` override block, so what the index makes
-  of it is read from the manifest after a push, not assumed from the probe.
+  fonts, although every card carries both inline. `styles.css` declares 231 tokens in
+  `:root, [data-theme="actian"]` and 46 each in a `studio` and an `explorer` override
+  block. The index lists the 231, then each override again with a `scope` naming its
+  theme block, and records Studio and Explorer as `themes`. Its fonts are Roboto (400,
+  500, 700) and Inter (400, 500, 600).
+- The same read shows a gap in the tokens themselves: `--zen-font-family-brand` names
+  AllRpungGothic and `--zen-font-family-mono` names Roboto Mono, and neither has a
+  `@font-face` in the render dist, so the index marks both `no-face`.
 
 ## Pushing to Claude Design
 

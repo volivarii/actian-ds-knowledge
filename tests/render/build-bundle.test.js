@@ -328,3 +328,24 @@ test("selfContainedCard: a five-argument caller still gets a group-only marker",
   var card = selfContainedCard("", "", "", "<p>x</p>", "Action");
   assert.equal(card.split("\n")[0], '<!-- @dsCard group="Action" -->');
 });
+
+test("buildBundle: no two cards share a name, so a shared family name gives way to the slug", function () {
+  // The first push to the dogfood listed card, card-for-grouped-content and
+  // card-for-perimeter as three "Cards", and three tag components as "Tags",
+  // because a guideline doc names its family.
+  var dir = freshDir();
+  var result = buildBundle(dir);
+  var seen = Object.create(null);
+  result.assets.forEach(function (a) {
+    assert.ok(!seen[a.name], a.name + " is shared by " + seen[a.name] + " and " + a.path);
+    seen[a.name] = a.path;
+  });
+  var perim = result.assets.find(function (a) {
+    return a.path === findCard(result.written, "card-for-perimeter");
+  });
+  assert.equal(perim.name, "Card For Perimeter");
+  var btn = result.assets.find(function (a) {
+    return a.path === findCard(result.written, "button");
+  });
+  assert.equal(btn.name, "Buttons", "a family name used once is kept");
+});

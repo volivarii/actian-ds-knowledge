@@ -25,10 +25,10 @@
 //     globalCssPaths and extracts its custom properties as the system's tokens
 //     and its @font-face rules as its fonts. With none, the index held no
 //     tokens and no fonts, although every card carries both inline.
-// The probe's stylesheet declared its properties in one plain `:root` block.
-// This one declares them in `:root, [data-theme="actian"]` plus a studio and an
-// explorer override block; how the index reads that is known only from a
-// manifest read after pushing it.
+// This stylesheet declares its tokens in `:root, [data-theme="actian"]` plus a
+// studio and an explorer override block. Pushed and read back the same day, the
+// index listed the base tokens, then each override with a `scope` naming its
+// block, and recorded Studio and Explorer as themes.
 
 var fs = require("node:fs");
 var path = require("node:path");
@@ -264,6 +264,20 @@ function typeCard(dtcg) {
   return page("Type", "Type", TYPE_SUBTITLE, body);
 }
 
+// The `component` field of a slug's guideline doc, or null when it has none.
+// Only the count of shared family names is taken from here; the card loop reads
+// the doc again under its own catch, which #569 keeps narrow.
+function guidelineFamily(slug) {
+  try {
+    var doc = JSON.parse(
+      fs.readFileSync(path.join(GUIDELINES_DIR, slug + ".json"), "utf8"),
+    );
+    return (doc && doc.component) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
 function writeFile(outDir, rel, contents) {
   var full = path.join(outDir, rel);
   fs.mkdirSync(path.dirname(full), { recursive: true });
@@ -332,6 +346,17 @@ function buildBundle(outDir, opts) {
   // card's marker, which is what the index actually keeps (see the header).
   var assets = [];
 
+  // A guideline doc names its family, not always the component: card,
+  // card-for-grouped-content and card-for-perimeter all read "Cards", and three
+  // tag components read "Tags". The first push listed each of those three times
+  // under one name in Claude Design's index, so a family name shared by more
+  // than one rendered component gives way to each component's own slug.
+  var familyCount = Object.create(null);
+  canonical.manifest.renders.forEach(function (r) {
+    var family = guidelineFamily(r.slug);
+    if (family) familyCount[family] = (familyCount[family] || 0) + 1;
+  });
+
   canonical.manifest.renders.forEach(function (r) {
     var doc = null;
     try {
@@ -354,7 +379,9 @@ function buildBundle(outDir, opts) {
     // the guard goes red.
     var note = doc ? buildNote(doc) : "";
     var htmlRel = path.join(r.group, r.slug + ".html");
-    var name = (doc && doc.component) || titleCaseSlug(r.slug);
+    var family = doc && doc.component;
+    var name =
+      family && familyCount[family] === 1 ? family : titleCaseSlug(r.slug);
     var subtitle = subtitleFromNote(note);
     var card = selfContainedCard(
       canonical.css,
