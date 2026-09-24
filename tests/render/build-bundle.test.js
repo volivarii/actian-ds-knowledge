@@ -252,3 +252,100 @@ test("buildBundle: a missing guideline doc is still a legitimate state, not a fa
     "positive control: a card with no guideline doc still ships",
   );
 });
+
+// The marker is what Claude Design's index keeps: checked against the dogfood
+// project on 2026-09-24, a marker's name/subtitle/viewport land in
+// _ds_manifest.json and a register_assets call does not.
+test("buildBundle: a component card's marker carries its name and subtitle", function () {
+  var dir = freshDir();
+  var result = buildBundle(dir);
+  var btnRel = findCard(result.written, "button");
+  var asset = result.assets.find(function (a) {
+    return a.path === btnRel;
+  });
+  var first = fs
+    .readFileSync(path.join(dir, btnRel), "utf8")
+    .split("\n")[0];
+  assert.match(first, /^<!-- @dsCard group="Action" name="Buttons" subtitle="[^"]+" -->$/);
+  assert.ok(
+    first.indexOf('subtitle="' + asset.subtitle.replace(/"/g, "'") + '"') >= 0,
+    "the marker subtitle is the asset subtitle: " + first,
+  );
+});
+
+test("buildBundle: a card with no guideline doc gets a name and no subtitle attribute", function () {
+  var dir = freshDir();
+  var result = buildBundle(dir);
+  var rel = findCard(result.written, "global-header-account-dropdown");
+  var first = fs.readFileSync(path.join(dir, rel), "utf8").split("\n")[0];
+  assert.match(first, /name="Global Header Account Dropdown"/);
+  assert.doesNotMatch(first, /subtitle=/, "an empty subtitle is left out, not written empty");
+});
+
+test("buildBundle: the foundations cards' markers carry their names", function () {
+  var dir = freshDir();
+  buildBundle(dir);
+  [
+    ["Colors/palette.html", "Colors"],
+    ["Type/type.html", "Type"],
+    ["Spacing/spacing.html", "Spacing"],
+  ].forEach(function (pair) {
+    var first = fs.readFileSync(path.join(dir, pair[0]), "utf8").split("\n")[0];
+    assert.match(
+      first,
+      new RegExp('^<!-- @dsCard group="' + pair[1] + '" name="' + pair[1] + '" subtitle="[^"]+" -->$'),
+      pair[0] + ": " + first,
+    );
+  });
+});
+
+test("buildBundle: writes styles.css at the root, the fonts and render.css every card inlines", function () {
+  var dir = freshDir();
+  var result = buildBundle(dir);
+  assert.ok(result.written.indexOf("styles.css") >= 0, "styles.css is reported as written");
+  var css = fs.readFileSync(path.join(dir, "styles.css"), "utf8");
+  var D = require("../../scripts/render/derive-canonical.js").deriveCanonical();
+  assert.equal(css, D.fontsCss + "\n" + D.css + "\n", "exactly the fonts then render.css");
+  assert.match(css, /@font-face/, "fonts present, so the index can record them");
+  assert.match(css, /:root,\s*\[data-theme="actian"\]\s*\{/, "the base tokens apply at :root");
+  assert.match(css, /--zen-color-bg-emphasis:/, "tokens present");
+  // It adds nothing a card does not already carry.
+  var btn = fs.readFileSync(path.join(dir, findCard(result.written, "button")), "utf8");
+  assert.ok(btn.indexOf(D.css) >= 0 && btn.indexOf(D.fontsCss) >= 0);
+  assert.doesNotMatch(css, /(^|\})\s*(html|body)\s*\{/, "no page chrome to frame a design that links it");
+});
+
+test("dsCardMarker: one line, no double quote, no comment terminator, empty values left out", function () {
+  var { dsCardMarker } = require("../../scripts/render/build-bundle.js");
+  assert.equal(dsCardMarker("Form", "", ""), '<!-- @dsCard group="Form" -->\n');
+  var m = dsCardMarker("Form", 'Say "hi"', "a -- b\nc --> d");
+  assert.equal(m, "<!-- @dsCard group=\"Form\" name=\"Say 'hi'\" subtitle=\"a - b c -> d\" -->\n");
+  assert.equal(m.indexOf("-->"), m.length - 4, "the only comment terminator is the marker's own");
+});
+
+test("selfContainedCard: a five-argument caller still gets a group-only marker", function () {
+  var { selfContainedCard } = require("../../scripts/render/build-bundle.js");
+  var card = selfContainedCard("", "", "", "<p>x</p>", "Action");
+  assert.equal(card.split("\n")[0], '<!-- @dsCard group="Action" -->');
+});
+
+test("buildBundle: no two cards share a name, so a shared family name gives way to the slug", function () {
+  // The first push to the dogfood listed card, card-for-grouped-content and
+  // card-for-perimeter as three "Cards", and three tag components as "Tags",
+  // because a guideline doc names its family.
+  var dir = freshDir();
+  var result = buildBundle(dir);
+  var seen = Object.create(null);
+  result.assets.forEach(function (a) {
+    assert.ok(!seen[a.name], a.name + " is shared by " + seen[a.name] + " and " + a.path);
+    seen[a.name] = a.path;
+  });
+  var perim = result.assets.find(function (a) {
+    return a.path === findCard(result.written, "card-for-perimeter");
+  });
+  assert.equal(perim.name, "Card For Perimeter");
+  var btn = result.assets.find(function (a) {
+    return a.path === findCard(result.written, "button");
+  });
+  assert.equal(btn.name, "Buttons", "a family name used once is kept");
+});
