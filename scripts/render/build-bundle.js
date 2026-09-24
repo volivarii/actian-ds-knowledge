@@ -4,16 +4,28 @@
 // render dist + the DTCG tokens.
 //
 // buildBundle(outDir) writes, one self-contained @dsCard HTML document per file:
-//   Components/<slug>.html  — the canonical component render (marker intact).
+//   <Group>/<slug>.html     — the canonical component render (marker intact).
 //   Colors/palette.html     — a swatch grid of the resolved color tokens.
 //   Type/type.html          — the type scale and families.
 //   Spacing/spacing.html    — the spacing scale as labeled bars.
+//   styles.css              — the fonts and render.css, the system's stylesheet.
 // Returns { written, assets }: written is the list of relative paths written
 // (DesignSync compiles the @dsCard markers into _ds_manifest.json and reads the
 // files from disk, so the bundle is exactly this directory of grouped cards);
-// assets is the {name, path, group, subtitle} list for DesignSync's
-// register_assets call, which is the only way to give a card a human-readable
-// name and subtitle in Claude Design's own Design System pane.
+// assets is the {name, path, group, subtitle} list for DesignSync's legacy
+// register_assets call.
+//
+// Two things Claude Design's self-check reads, verified against the dogfood
+// project on 2026-09-24 with a probe card and a probe stylesheet:
+//   - The marker's name and subtitle. The compiled index keeps `name`,
+//     `subtitle` and `viewport` from `<!-- @dsCard group=".." name=".." ... -->`,
+//     and the pane shows them. register_assets changed nothing on this project
+//     (its manifest is `source: "spa"`), so without them every card showed its
+//     file name.
+//   - A stylesheet at the project root. The index records it in
+//     globalCssPaths and extracts its custom properties as the system's tokens
+//     and its @font-face rules as its fonts. With none, the index held no
+//     tokens and no fonts, although every card carries both inline.
 
 var fs = require("node:fs");
 var path = require("node:path");
@@ -118,11 +130,28 @@ var COLORS_SUBTITLE =
 var SPACING_SUBTITLE = "The spacing scale, each bar drawn at its token value.";
 var TYPE_SUBTITLE = "The type families, weights, and size scale.";
 
+// A marker attribute value: one line, no double quote (it would end the
+// attribute) and no "--" (it would end the HTML comment the marker lives in).
+function markerValue(s) {
+  return String(s)
+    .replace(/\s+/g, " ")
+    .replace(/"/g, "'")
+    .replace(/-{2,}/g, "-")
+    .trim();
+}
+
+// The first line of every card. name and subtitle are optional: an empty one is
+// left out rather than written as an empty attribute.
+function dsCardMarker(group, name, subtitle) {
+  var attrs = ' group="' + markerValue(group) + '"';
+  if (name) attrs += ' name="' + markerValue(name) + '"';
+  if (subtitle) attrs += ' subtitle="' + markerValue(subtitle) + '"';
+  return "<!-- @dsCard" + attrs + " -->\n";
+}
+
 function page(group, title, subtitle, body) {
   return (
-    '<!-- @dsCard group="' +
-    group +
-    '" -->\n' +
+    dsCardMarker(group, title, subtitle) +
     '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
     "<style>" +
@@ -251,7 +280,10 @@ function writeFile(outDir, rel, contents) {
 // font pipeline should download to show one component. A standalone card is
 // exactly the consumer that still needs it, so it inlines both and the
 // offline contract ("NO network font loads") is unchanged here.
-function selfContainedCard(css, fontsCss, pageCss, fragment, group) {
+// meta ({name, subtitle}) is an optional sixth argument, so a five-argument
+// caller such as build-contact-sheet.js still gets a card with a group-only
+// marker.
+function selfContainedCard(css, fontsCss, pageCss, fragment, group, meta) {
   // Arity guard. Inserting a parameter into a 4-argument call shifts every
   // later one silently, and it already happened once: build-contact-sheet.js
   // kept the old call, so pageCss landed here, the fragment landed in pageCss,
@@ -266,10 +298,9 @@ function selfContainedCard(css, fontsCss, pageCss, fragment, group) {
         ". A 4-argument call is the pre-split signature and its arguments are shifted.",
     );
   }
+  meta = meta || {};
   return (
-    '<!-- @dsCard group="' +
-    group +
-    '" -->\n' +
+    dsCardMarker(group, meta.name, meta.subtitle) +
     '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
     "<style>" +
@@ -293,11 +324,9 @@ function buildBundle(outDir, opts) {
   var canonical = deriveCanonical();
   var dtcg = deriveFromFile(tokensPath);
   var written = [];
-  // register_assets metadata (DesignSync's richer, "legacy" explicit path):
-  // {name, path, group, subtitle}. The @dsCard-marker auto-compile that builds
-  // _ds_manifest.json only carries {path, group}, so this is the one way to get
-  // a human-readable name and a one-line subtitle into Claude Design's own
-  // Design System pane instead of a bare slug.
+  // register_assets metadata (DesignSync's "legacy" explicit path):
+  // {name, path, group, subtitle}. The same name and subtitle also go in each
+  // card's marker, which is what the index actually keeps (see the header).
   var assets = [];
 
   canonical.manifest.renders.forEach(function (r) {
@@ -322,12 +351,15 @@ function buildBundle(outDir, opts) {
     // the guard goes red.
     var note = doc ? buildNote(doc) : "";
     var htmlRel = path.join(r.group, r.slug + ".html");
+    var name = (doc && doc.component) || titleCaseSlug(r.slug);
+    var subtitle = subtitleFromNote(note);
     var card = selfContainedCard(
       canonical.css,
       canonical.fontsCss,
       canonical.pageCss,
       canonical.fragments[r.slug],
       r.group,
+      { name: name, subtitle: subtitle },
     );
     written.push(writeFile(outDir, htmlRel, card));
     // Claude Design reads a "<slug>.prompt.md" file beside "<slug>.html" as that
@@ -344,12 +376,25 @@ function buildBundle(outDir, opts) {
       );
     }
     assets.push({
-      name: (doc && doc.component) || titleCaseSlug(r.slug),
+      name: name,
       path: htmlRel,
       group: r.group,
-      subtitle: subtitleFromNote(note),
+      subtitle: subtitle,
     });
   });
+  // The system's own stylesheet, at the project root: the same fonts and
+  // render.css every card already inlines, concatenated in the same order. It
+  // adds nothing a card does not carry. It is what lets Claude Design's index
+  // record the tokens and fonts, and what a new design can link instead of
+  // copying styles out of a card. render.css carries no page chrome by design,
+  // so linking it frames nothing.
+  written.push(
+    writeFile(
+      outDir,
+      "styles.css",
+      canonical.fontsCss + "\n" + canonical.css + "\n",
+    ),
+  );
   written.push(
     writeFile(outDir, path.join("Colors", "palette.html"), colorsCard(dtcg)),
   );
@@ -398,6 +443,7 @@ module.exports = {
   resolveValue: resolveValue,
   collectLeaves: collectLeaves,
   selfContainedCard: selfContainedCard,
+  dsCardMarker: dsCardMarker,
   titleCaseSlug: titleCaseSlug,
   subtitleFromNote: subtitleFromNote,
 };
