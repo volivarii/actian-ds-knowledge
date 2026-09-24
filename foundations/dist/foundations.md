@@ -632,7 +632,7 @@ is two values. Default (un-suffixed) theme is Actian.
 | ------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
 | `--zen-font-family-text`  | `Roboto`          | Default — headings and body                                                                                                                                                                                      | 🟢 Shipped  |
 | `--zen-font-family-brand` | `Roboto`          | Brand accent in the apps: high-impact moments such as the Explorer landing, hero and display headers, occasional accent headings. Never body copy, UI controls or data. Resolves to Roboto, the apps' font; brand typefaces are for marketing and communication materials. | 🟡 Proposed |
-| `--zen-font-family-mono`  | `Roboto`          | Code and data. Resolves to Roboto, the apps' font                                                                                                                                                                                                  | 🟢 Shipped  |
+| `--zen-font-family-mono`  | `"Roboto Mono"`   | Code and data                                                                                                                                                                                                    | 🟢 Shipped  |
 
 #### Font Weight
 
@@ -994,7 +994,7 @@ The cascading effect guides the eye naturally downward and prevents the screen f
 
 #### Typeface
 
-Use `--zen-font-family-text` (Roboto) as the default for all UI text. Use `--zen-font-family-mono` for code snippets, data tables with identifiers, and technical strings, and `--zen-font-family-brand` for the brand accents the tokens table lists: both resolve to Roboto, the apps' font, and naming the role keeps a later change of typeface in one place. Roobert is the brand typeface only for marketing and communication materials like website, PPTs, and flyers.
+Use `--zen-font-family-text` (Roboto) as the default for all UI text. Use `--zen-font-family-mono` (Roboto Mono) for code snippets, data tables with identifiers, and technical strings. `--zen-font-family-brand`, for the brand accents the tokens table lists, resolves to Roboto, the apps' font. Roobert is the brand typeface only for marketing and communication materials like website, PPTs, and flyers.
 
 #### Language Support
 

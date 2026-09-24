@@ -463,7 +463,7 @@ Total tokens: 463. Groups: 8.
 |-------|--------------|-------|
 | `font.family.text` | `--zen-font-family-text` | `Roboto` |
 | `font.family.brand` | `--zen-font-family-brand` | `Roboto` |
-| `font.family.mono` | `--zen-font-family-mono` | `Roboto` |
+| `font.family.mono` | `--zen-font-family-mono` | `Roboto Mono` |
 
 ## FontWeight Tokens
 

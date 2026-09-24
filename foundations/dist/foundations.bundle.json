@@ -3370,8 +3370,8 @@
               },
               {
                 "Token": "--zen-font-family-mono",
-                "Value": "Roboto",
-                "Usage": "Code and data. Resolves to Roboto, the apps' font",
+                "Value": "&quot;Roboto Mono&quot;",
+                "Usage": "Code and data",
                 "status_note": "Shipped",
                 "status": "shipped"
               }
@@ -5572,7 +5572,7 @@
           "source": "foundations/src/",
           "do_not_edit": "Edit the per-section src/ files; CI regenerates this file."
         },
-        "body": "Use --zen-font-family-text (Roboto) as the default for all UI text. Use --zen-font-family-mono for code snippets, data tables with identifiers, and technical strings, and --zen-font-family-brand for the brand accents the tokens table lists: both resolve to Roboto, the apps&#39; font, and naming the role keeps a later change of typeface in one place. Roobert is the brand typeface only for marketing and communication materials like website, PPTs, and flyers."
+        "body": "Use --zen-font-family-text (Roboto) as the default for all UI text. Use --zen-font-family-mono (Roboto Mono) for code snippets, data tables with identifiers, and technical strings. --zen-font-family-brand, for the brand accents the tokens table lists, resolves to Roboto, the apps&#39; font. Roobert is the brand typeface only for marketing and communication materials like website, PPTs, and flyers."
       },
       "language-support": {
         "_schema_version": 1,

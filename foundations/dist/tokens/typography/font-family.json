@@ -47,8 +47,8 @@
         },
         {
           "Token": "--zen-font-family-mono",
-          "Value": "Roboto",
-          "Usage": "Code and data. Resolves to Roboto, the apps' font",
+          "Value": "&quot;Roboto Mono&quot;",
+          "Usage": "Code and data",
           "status_note": "Shipped",
           "status": "shipped"
         }
