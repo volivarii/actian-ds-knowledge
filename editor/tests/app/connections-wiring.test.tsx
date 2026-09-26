@@ -244,3 +244,14 @@ test("on a category page, a note edited in the panel goes into the form data", a
     assert.equal((screen.getByRole("textbox", { name: "Note" }) as HTMLTextAreaElement).value, "Focus is trapped while modal."),
   );
 });
+
+test("on the pattern page, turning a mention into a link rewrites the body as a standard link", async () => {
+  renderPattern();
+  await screen.findByRole("heading", { name: "Connections" }, { timeout: 5000 });
+  fireEvent.click(screen.getByRole("button", { name: /^Faceted browse/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Turn it into a link" }));
+  await waitFor(() => {
+    const doc = document.querySelector(".cm-content")?.textContent ?? "";
+    assert.ok(doc.includes("[faceted browse](faceted-browse)"), "the body has no standard link");
+  });
+});

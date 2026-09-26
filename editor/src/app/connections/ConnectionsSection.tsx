@@ -3,6 +3,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ConnectionEdit, ConnectionGroup, ConnectionItem, ConnectionsModel } from "../../lib/connections/types";
 import { countConnections } from "../../lib/connections/build";
+import { VERBS, VERB_LABEL } from "../../lib/connections/vocabulary";
 import { ConnectionsList } from "./ConnectionsList";
 import { ConnectionsMap } from "./ConnectionsMap";
 import { ConnectionPanel } from "./ConnectionPanel";
@@ -105,7 +106,41 @@ export function ConnectionsSection(props: ConnectionsSectionProps) {
   };
   // Undo reverses a pending item: an addition is removed, a removal added back.
   const undo = (g: ConnectionGroup, i: ConnectionItem) => edit(g, i, i.state === "added" ? "remove" : "add");
-  const actions =
+  // An entity relation moves between verbs in one edit, and the panel follows it.
+  const verb = selected?.group.key.startsWith("rel:") ? selected.group.key.slice(4) : null;
+  const changeVerb = (to: string) => {
+    if (!selected || !verb || to === verb) return;
+    const f = fieldFor(selected.group, selected.item);
+    props.onEdit!([
+      { op: "remove", field: f.field, slug: selected.item.slug, shape: f.shape },
+      { op: "add", field: ["relationships", to], slug: selected.item.slug, shape: f.shape },
+    ]);
+    setSel(`rel:${to}|${selected.item.slug}`);
+  };
+  const verbSelect =
+    selected && canEdit && verb && selected.item.state === "saved" ? (
+      <label className="cx-actions">
+        <span className="cx-hint">Change to</span>
+        <select className="cx-select" aria-label="Change to" value={verb} onChange={(e) => changeVerb(e.target.value)}>
+          {VERBS.map((v) => (
+            <option key={v} value={v}>
+              {VERB_LABEL[v]}
+            </option>
+          ))}
+        </select>
+      </label>
+    ) : null;
+  const linkIt =
+    selected?.item.unlinked && canEdit && props.onLinkMention ? (
+      <button
+        type="button"
+        className="cx-btn"
+        onClick={() => props.onLinkMention!(selected.item.slug, selected.item.title.toLowerCase())}
+      >
+        Turn it into a link
+      </button>
+    ) : null;
+  const editActions =
     selected && canEdit && selected.group.editable ? (
       selected.item.state === "added" || selected.item.state === "removed" ? (
         <button type="button" className="cx-btn cx-ghost" onClick={() => undo(selected.group, selected.item)}>
@@ -116,6 +151,14 @@ export function ConnectionsSection(props: ConnectionsSectionProps) {
           Remove
         </button>
       )
+    ) : null;
+  const actions =
+    editActions || verbSelect || linkIt ? (
+      <>
+        {editActions}
+        {verbSelect}
+        {linkIt}
+      </>
     ) : null;
   const viewProps = {
     groups: model.groups,
