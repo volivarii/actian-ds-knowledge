@@ -1,11 +1,13 @@
 // A record's connections: one count, a Map / List toggle, the selected link's
 // panel. Styles live in styles/connections.css.
-import React, { useMemo, useState } from "react";
+import React, { useId, useMemo, useState } from "react";
 import type { ConnectionEdit, ConnectionGroup, ConnectionItem, ConnectionsModel } from "../../lib/connections/types";
 import { countConnections } from "../../lib/connections/build";
 import { ConnectionsList } from "./ConnectionsList";
 import { ConnectionsMap } from "./ConnectionsMap";
 import { ConnectionPanel } from "./ConnectionPanel";
+import { ConnectPicker } from "./ConnectPicker";
+import { DraftBar } from "./DraftBar";
 
 export interface ConnectionsSectionProps {
   model: ConnectionsModel;
@@ -37,8 +39,10 @@ function readView(): View {
 
 export function ConnectionsSection(props: ConnectionsSectionProps) {
   const { model } = props;
+  const titleId = useId();
   const [view, setView] = useState<View>(readView);
   const [sel, setSel] = useState<string | null>(null);
+  const [picking, setPicking] = useState<{ start?: string } | null>(null);
   const selected = useMemo(() => {
     for (const g of model.groups) for (const i of g.items) if (i.key === sel) return { group: g, item: i };
     return null;
@@ -51,18 +55,56 @@ export function ConnectionsSection(props: ConnectionsSectionProps) {
       /* storage blocked: the choice lasts for this page only */
     }
   };
-  const onSelect = (_g: ConnectionGroup, i: ConnectionItem) => setSel(sel === i.key ? null : i.key);
+  const onSelect = (_g: ConnectionGroup, i: ConnectionItem) => {
+    setPicking(null);
+    setSel(sel === i.key ? null : i.key);
+  };
   const total = countConnections(model);
+
+  const canEdit = !!props.onEdit && !props.readOnlyReason;
+  // "Must follow" writes one of three fields; the item's type picks it.
+  const fieldFor = (g: ConnectionGroup, i: ConnectionItem) => g.owned.find((o) => o.type === i.type) ?? g.owned[0]!;
+  const edit = (g: ConnectionGroup, i: ConnectionItem, op: "add" | "remove") => {
+    const f = fieldFor(g, i);
+    props.onEdit!([{ op, field: f.field, slug: i.slug, shape: f.shape }]);
+  };
+  const remove = (g: ConnectionGroup, i: ConnectionItem) => edit(g, i, "remove");
+  // Undo reverses a pending item: an addition is removed, a removal added back.
+  const undo = (g: ConnectionGroup, i: ConnectionItem) => edit(g, i, i.state === "added" ? "remove" : "add");
+  const actions =
+    selected && canEdit && selected.group.editable ? (
+      selected.item.state === "added" || selected.item.state === "removed" ? (
+        <button type="button" className="cx-btn cx-ghost" onClick={() => undo(selected.group, selected.item)}>
+          Undo
+        </button>
+      ) : (
+        <button type="button" className="cx-btn cx-danger" onClick={() => remove(selected.group, selected.item)}>
+          Remove
+        </button>
+      )
+    ) : null;
+  const viewProps = {
+    groups: model.groups,
+    selectedKey: sel,
+    onSelect,
+    onRemove: canEdit ? remove : undefined,
+    onAdd: canEdit ? (g: ConnectionGroup) => setPicking({ start: g.key }) : undefined,
+  };
+  const connect = canEdit && model.connect.length > 0 ? () => setPicking({}) : undefined;
+
   return (
     <section
       className="cx"
-      aria-labelledby="cx-title"
+      aria-labelledby={titleId}
       onKeyDown={(e) => {
-        if (e.key === "Escape" && !e.defaultPrevented) setSel(null);
+        if (e.key === "Escape" && !e.defaultPrevented) {
+          setSel(null);
+          setPicking(null);
+        }
       }}
     >
       <div className="cx-head">
-        <h2 id="cx-title" className="cx-h">
+        <h2 id={titleId} className="cx-h">
           Connections
         </h2>
         <span className="cx-sum">
@@ -76,21 +118,40 @@ export function ConnectionsSection(props: ConnectionsSectionProps) {
             List
           </button>
         </div>
+        {connect && view === "list" && (
+          <button type="button" className="cx-btn" onClick={connect}>
+            + Connect
+          </button>
+        )}
       </div>
+      {props.readOnlyReason && <span className="cx-hint">{props.readOnlyReason}</span>}
       {view === "map" ? (
-        <ConnectionsMap model={model} groups={model.groups} selectedKey={sel} onSelect={onSelect} />
+        <ConnectionsMap model={model} {...viewProps} onConnect={connect} />
       ) : (
-        <ConnectionsList groups={model.groups} selectedKey={sel} onSelect={onSelect} />
+        <ConnectionsList {...viewProps} />
       )}
-      <ConnectionPanel
-        model={model}
-        file={props.file}
-        selected={selected}
-        figma={props.figma}
-        onOpen={props.onOpen}
-        canOpen={props.canOpen}
-        readOnlyReason={props.readOnlyReason}
-      />
+      {picking ? (
+        <ConnectPicker
+          model={model}
+          start={picking.start}
+          onPick={(e) => {
+            props.onEdit!([e]);
+            setPicking(null);
+          }}
+          onCancel={() => setPicking(null)}
+        />
+      ) : (
+        <ConnectionPanel
+          model={model}
+          file={props.file}
+          selected={selected}
+          figma={props.figma}
+          onOpen={props.onOpen}
+          canOpen={props.canOpen}
+          actions={actions}
+        />
+      )}
+      <DraftBar model={model} file={props.file} onDiscard={canEdit ? props.onDiscard : undefined} />
     </section>
   );
 }
