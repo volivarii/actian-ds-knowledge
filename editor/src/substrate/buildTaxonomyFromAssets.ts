@@ -46,8 +46,7 @@ export function buildTaxonomyFromAssets(): Taxonomy {
 
   // Foundation sections from the graph corpus. New node types get
   // tier:null, body:null — we deliberately preserve the a11y tier/body
-  // values (consumed by A11yRefsWidget/TopicResultRow) while adding graph
-  // nodes alongside.
+  // values while adding graph nodes alongside.
   const foundationsBySlug = new Map<
     string,
     { title: string; body: string | null; tier: Tier | null }

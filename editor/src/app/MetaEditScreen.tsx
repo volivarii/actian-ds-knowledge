@@ -30,7 +30,6 @@ import { guidelineMetaUiSchema } from "../uiSchemas/guidelineMeta";
 import { parseYaml, stringifyYaml } from "../form-engine/yamlSerializer";
 import { CategorySelectWidget } from "../form-engine/widgets/CategorySelectWidget";
 import { RelatedMultiSelectWidget } from "../form-engine/widgets/RelatedMultiSelectWidget";
-import { A11yRefsWidget } from "../form-engine/widgets/A11yRefsWidget";
 import { metaFormTemplates } from "../form-engine/templates";
 import { TierBanner } from "./TierBanner";
 
@@ -39,7 +38,6 @@ import { TierBanner } from "./TierBanner";
 const META_WIDGETS = {
   CategorySelect: CategorySelectWidget,
   RelatedMultiSelect: RelatedMultiSelectWidget,
-  A11yRefsPicker: A11yRefsWidget,
 };
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";

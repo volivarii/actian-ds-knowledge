@@ -39,7 +39,6 @@ import { submissionCartSingleton } from "../drafts/store-instance";
 import { getTextFile, getTextFileWithSha } from "./githubApi";
 import { TierBanner } from "./TierBanner";
 import { MarkdownEditScreen } from "./MarkdownEditScreen";
-import { RefArrayWidget } from "../form-engine/widgets/RefArrayWidget";
 import { TagInputWidget } from "../form-engine/widgets/TagInputWidget";
 import { RelationshipsField } from "../form-engine/fields/RelationshipsField";
 import { HiddenField } from "../form-engine/fields/HiddenField";
@@ -77,7 +76,7 @@ const RichBodyEditor = lazy(() =>
   })),
 );
 
-const WIDGETS = { RefArray: RefArrayWidget, TagInput: TagInputWidget };
+const WIDGETS = { TagInput: TagInputWidget };
 // Named "Relationships" because that is what the entity uiSchema asks for by
 // `ui:field`. Registered for every record this screen serves; only the entity
 // schema has a `relationships` property, so the others never reach it.

@@ -62,10 +62,6 @@ no entry defers its link to a placeholder.
   `schemas/app-context.json` rejects the `personas` key and the new schema requires it; the schema
   and the dist ship together in each tag.
 
-### Removed
-
-- **Editor: the rail's link lists, the Manage popover and the neighborhood panel.** ([#732](https://github.com/volivarii/actian-ds-knowledge/pull/732)) The rail beside the body editor is the document's outline and nothing else: its References, Referenced by and In the graph lists, their per-section count pills, the compact map, the section inspector and the Manage connections popover are gone, with the code only they used (the grouping, the incoming-references feed and the two frontmatter ref writers). The Connections section is now the one place that counts and edits a record's links. The three lists counted different things and disagreed on the same screen (0 and 45 for one record), and the popover wrote `a11y_refs` into guidance files, where the graph never reads them. Editor-only, version-neutral.
-
 - **Section recipes.** ([#711](https://github.com/volivarii/actian-ds-knowledge/pull/711)) Six captured
   sub-page compositions under `app-context/src/sections/`
   (`item-header`, `facet-tabs`, `properties-panel`, `control-bar`, `drawer-header`, `action-footer`),
@@ -123,6 +119,10 @@ no entry defers its link to a placeholder.
   instances of an unpublished component that records no dot colour, and `tokens.css` publishes no
   categorical colour scale to bind them to. The published `data-viz-legend` takes a `Color` for
   exactly that reason, and it is the one inline style in this work.
+
+### Removed
+
+- **Editor: the rail's link lists, the Manage popover and the neighborhood panel.** ([#732](https://github.com/volivarii/actian-ds-knowledge/pull/732)) The rail beside the body editor is the document's outline and nothing else: its References, Referenced by and In the graph lists, their per-section count pills, the compact map, the section inspector and the Manage connections popover are gone, with the code only they used (the grouping, the incoming-references feed and the two frontmatter ref writers), and the ref widgets the forms no longer show (`RefArrayWidget`, `A11yRefsWidget`, `TopicResultRow`): refs and their notes are edited in the Connections panel. The Connections section is now the one place that counts and edits a record's links. The three lists counted different things and disagreed on the same screen (0 and 45 for one record), and the popover wrote `a11y_refs` into guidance files, where the graph never reads them. Editor-only, version-neutral.
 
 ### Fixed
 

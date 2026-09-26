@@ -24,6 +24,9 @@ test("the relations rail is the outline only; connections live in one section", 
     assert.ok(!src.includes(gone), `RelationsPanel still has ${gone}`);
   for (const f of ["ConnectionsPopover", "SectionInspector", "TopicPicker", "NeighborhoodPanel"])
     assert.ok(!existsSync(join(SRC, "app", `${f}.tsx`)), `${f}.tsx still exists`);
+  // The ref widgets left with the ref fields: Connections edits refs and notes.
+  for (const f of ["app/TopicResultRow", "form-engine/widgets/RefArrayWidget", "form-engine/widgets/A11yRefsWidget"])
+    assert.ok(!existsSync(join(SRC, `${f}.tsx`)), `${f}.tsx still exists`);
   for (const screenFile of ["MarkdownEditScreen.tsx", "FrontmatterBodyEditScreen.tsx"]) {
     const s = readFileSync(join(SRC, "app", screenFile), "utf8");
     for (const gone of ["ConnectionsPopover", "neighborhoodLayout", "graphNeighborsForFile"])

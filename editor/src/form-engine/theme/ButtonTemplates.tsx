@@ -1,7 +1,7 @@
 // Radix-themed RJSF button templates. Replaces @rjsf/core's Bootstrap
 // `btn`/`glyphicon` buttons (which render as empty gray boxes because the app
-// never loads Bootstrap/glyphicon CSS). Icons are text glyphs, matching the
-// existing RefArrayWidget idiom. Every icon button carries an aria-label so the
+// never loads Bootstrap/glyphicon CSS). Icons are text glyphs. Every icon
+// button carries an aria-label so the
 // controls are keyboard- and screen-reader-usable.
 import type { IconButtonProps } from "@rjsf/utils";
 import { Button, IconButton } from "@radix-ui/themes";
