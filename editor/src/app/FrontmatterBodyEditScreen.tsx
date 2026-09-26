@@ -63,7 +63,15 @@ import { bakedGraphIndex } from "../substrate/graphIndex";
 import { candidateNodeIdForFile } from "../substrate/nodeIdForFile";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
 import { buildConnections } from "../lib/connections/build";
-import { OWNED, applyConnectionEdit, ownedValues, recordKindOf, restoreOwned } from "../lib/connections/owned";
+import {
+  OWNED,
+  applyConnectionEdit,
+  ownedNotes,
+  ownedValues,
+  recordKindOf,
+  restoreOwned,
+  setRefNote,
+} from "../lib/connections/owned";
 
 // Lazy-loaded so the Milkdown/ProseMirror bundle (the largest editor dep) splits
 // into an async chunk fetched only when the WYSIWYG flag is on — it stays out of
@@ -508,6 +516,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
       name: typeof label === "string" ? label : undefined,
       original: ownedValues(connectionsKind, connectionsOriginal),
       live: ownedValues(connectionsKind, formData),
+      notes: ownedNotes(connectionsKind, formData),
       bodies: bodyless ? [] : [{ path, text: body }],
     });
   }, [state.kind, connectionsNodeId, connectionsKind, connectionsOriginal, formData, body, bodyless, path]);
@@ -758,7 +767,10 @@ export function FrontmatterBodyEditScreen(props: Props) {
               connectionsEditable
                 ? (edits) =>
                     applyFormData(
-                      edits.reduce(applyConnectionEdit, (formDataRef.current ?? {}) as Record<string, unknown>),
+                      edits.reduce(
+                        (d, e) => applyConnectionEdit(d, e, connectionsOriginal),
+                        (formDataRef.current ?? {}) as Record<string, unknown>,
+                      ),
                     )
                 : undefined
             }
@@ -772,6 +784,12 @@ export function FrontmatterBodyEditScreen(props: Props) {
                         connectionsOriginal,
                       ),
                     )
+                : undefined
+            }
+            onNote={
+              connectionsEditable
+                ? (field, slug, note) =>
+                    applyFormData(setRefNote((formDataRef.current ?? {}) as Record<string, unknown>, field, slug, note))
                 : undefined
             }
             readOnlyReason={yamlActive ? "Close the YAML source to edit connections." : undefined}

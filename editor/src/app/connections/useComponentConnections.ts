@@ -6,7 +6,7 @@ import type { Octokit } from "@octokit/rest";
 import { readMetaForConnections } from "../../lib/workspaceState";
 import { bakedGraphIndex } from "../../substrate/graphIndex";
 import { buildConnections } from "../../lib/connections/build";
-import { ownedValues } from "../../lib/connections/owned";
+import { ownedNotes, ownedValues } from "../../lib/connections/owned";
 import type { ConnectionsModel } from "../../lib/connections/types";
 
 export function useComponentConnections(
@@ -27,6 +27,7 @@ export function useComponentConnections(
             index: bakedGraphIndex(),
             original: ownedValues("component", r.original),
             live: ownedValues("component", r.live),
+            notes: ownedNotes("component", r.live),
             bodies: r.bodies,
           }),
         });

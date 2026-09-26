@@ -455,22 +455,40 @@ export async function setDomainInherited(
 // staged, mutate the parsed object, write it back byte-stable (flow-style
 // `domains.*`, header kept; see promoteDomainToDraft). A result identical to
 // main's file leaves the batch, so an edit that is undone stages nothing.
-export async function updateMetaInCart(
+// `mutate` also gets main's file parsed ({} for a new component), so a removed
+// entry can come back exactly as it was.
+//
+// Calls for one file run one after another. Each awaits GitHub between
+// reading the batch and writing it, so two edits made in quick succession
+// would otherwise both read the same content and the second would erase the
+// first. A failed call rejects and the next one still runs.
+const metaQueue = new Map<string, Promise<unknown>>();
+export function updateMetaInCart(
   gh: Octokit,
   slug: string,
-  mutate: (parsed: Record<string, unknown>) => Record<string, unknown>,
+  mutate: (parsed: Record<string, unknown>, original: Record<string, unknown>) => Record<string, unknown>,
   cart: SubmissionCart = submissionCartSingleton,
 ): Promise<void> {
   const metaPath = metaPathFor(slug);
-  const { content, basedOnSha } = await ensureMetaInCart(gh, slug, cart);
-  const mutated = mutate(safeParseMeta(content) as Record<string, unknown>);
-  // Compared by meaning, not bytes: the serializer may re-quote a scalar.
-  if (basedOnSha && isUnchangedFromSource(mutated, await tryGetText(gh, metaPath))) {
-    cart.remove(metaPath);
-    return;
-  }
-  const next = stringifyYaml(mutated, { originalText: content, flowAtDepth: 2 });
-  cart.add({ path: metaPath, content: next, basedOnSha, addedAt: Date.now() });
+  const run = async () => {
+    const { content, basedOnSha } = await ensureMetaInCart(gh, slug, cart);
+    const remote = basedOnSha ? await tryGetText(gh, metaPath) : null;
+    const original = remote ? (safeParseMeta(remote) as Record<string, unknown>) : {};
+    const mutated = mutate(safeParseMeta(content) as Record<string, unknown>, original);
+    // Compared by meaning, not bytes: the serializer may re-quote a scalar.
+    if (basedOnSha && isUnchangedFromSource(mutated, remote)) {
+      cart.remove(metaPath);
+      return;
+    }
+    const next = stringifyYaml(mutated, { originalText: content, flowAtDepth: 2 });
+    cart.add({ path: metaPath, content: next, basedOnSha, addedAt: Date.now() });
+  };
+  const result = (metaQueue.get(metaPath) ?? Promise.resolve()).then(run);
+  metaQueue.set(
+    metaPath,
+    result.catch(() => {}),
+  );
+  return result;
 }
 
 // Author flipped a domain's authored state between draft and approved from the

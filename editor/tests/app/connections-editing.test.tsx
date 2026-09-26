@@ -155,3 +155,92 @@ test("a pending link is never hidden behind +N more", () => {
   assert.ok(within(lane).getByRole("button", { name: /^Toggle.*new/ }));
   assert.ok(within(lane).getByRole("button", { name: "+1 more" }));
 });
+
+test("closing the picker gives focus back to the button that opened it", () => {
+  render(
+    <Theme>
+      <ConnectionsSection model={model()} file="p.md" onOpen={() => {}} onEdit={() => {}} />
+    </Theme>,
+  );
+  const lane = screen.getByRole("group", { name: "Built from" });
+  const add = within(lane).getByRole("button", { name: "+ Add" });
+  add.focus();
+  fireEvent.click(add);
+  fireEvent.keyDown(screen.getByRole("combobox", { name: /Find a component/ }), { key: "Escape" });
+  assert.ok(document.activeElement === add, `focus went to ${document.activeElement?.tagName}`);
+});
+
+test("removing an added chip with Delete keeps focus in the section", () => {
+  function Live() {
+    const [live, setLive] = React.useState<Record<string, string[]>>({ apps: ["studio"], components: ["tabs", "avatar"] });
+    return (
+      <ConnectionsSection
+        model={model(live)}
+        file="p.md"
+        onOpen={() => {}}
+        onEdit={(es) =>
+          setLive((l) => {
+            const next = { ...l };
+            for (const e of es)
+              next[e.field[0]!] =
+                e.op === "remove" ? next[e.field[0]!]!.filter((s) => s !== e.slug) : [...next[e.field[0]!]!, e.slug];
+            return next;
+          })
+        }
+      />
+    );
+  }
+  render(
+    <Theme>
+      <Live />
+    </Theme>,
+  );
+  const chip = screen.getByRole("button", { name: /^Avatar/ });
+  chip.focus();
+  fireEvent.keyDown(chip, { key: "Delete" });
+  assert.ok(!screen.queryByRole("button", { name: /^Avatar/ }), "the added chip is gone");
+  const section = screen.getByRole("region", { name: "Connections" });
+  assert.ok(section.contains(document.activeElement), `focus went to ${document.activeElement?.tagName}`);
+});
+
+test("Enter in the picker search never submits the form around the section", () => {
+  render(
+    <Theme>
+      <ConnectionsSection model={model()} file="p.md" onOpen={() => {}} onEdit={() => {}} />
+    </Theme>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "+ Connect" }));
+  fireEvent.click(within(screen.getByRole("region", { name: "Connect" })).getByRole("button", { name: /Built from/ }));
+  const box = screen.getByRole("combobox", { name: /Find a component/ });
+  fireEvent.change(box, { target: { value: "zzzz-no-match" } });
+  assert.equal(fireEvent.keyDown(box, { key: "Enter" }), false, "Enter was not prevented");
+});
+
+test("a ref's note is shown in the panel and saved when the box loses focus", () => {
+  const v = { a11y_refs: ["modals"] };
+  const m = buildConnections({
+    nodeId: "component:drawer",
+    index: bakedGraphIndex(),
+    original: v,
+    live: v,
+    notes: { "a11y_refs|modals": "non-modal variant does not trap focus" },
+  });
+  const notes: Array<[string[], string, string]> = [];
+  render(
+    <Theme>
+      <ConnectionsSection
+        model={m}
+        file="_meta.yml"
+        onOpen={() => {}}
+        onEdit={() => {}}
+        onNote={(f, s, n) => notes.push([f, s, n])}
+      />
+    </Theme>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: /^Modals/ }));
+  const box = screen.getByRole("textbox", { name: "Note" }) as HTMLTextAreaElement;
+  assert.equal(box.value, "non-modal variant does not trap focus");
+  fireEvent.change(box, { target: { value: "non-modal variant does not trap focus; Esc closes" } });
+  fireEvent.blur(box);
+  assert.deepEqual(notes, [[["a11y_refs"], "modals", "non-modal variant does not trap focus; Esc closes"]]);
+});

@@ -35,6 +35,9 @@
 .cx-facts dd { margin: 0; color: var(--gray-11); }
 .cx-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .cx-hint { font-size: var(--font-size-1); color: var(--gray-10); }
+.cx-note { display: grid; gap: 4px; margin: 6px 0; font-size: var(--font-size-1); color: var(--gray-11); }
+.cx-note textarea { font: inherit; font-size: var(--font-size-2); color: var(--gray-12); background: var(--color-surface); border: 1px solid var(--gray-7); border-radius: 6px; padding: 6px 8px; resize: vertical; }
+.cx-error { margin: 4px 0; font-size: var(--font-size-2); color: var(--red-11); }
 .cx-btn { border: 1px solid var(--accent-8); background: var(--accent-9); color: var(--accent-contrast); border-radius: 6px; padding: 3px 12px; font-size: var(--font-size-2); cursor: pointer; text-decoration: none; }
 .cx-ghost { background: none; color: var(--accent-11); }
 .cx-danger { background: none; border-color: var(--red-8); color: var(--red-11); }

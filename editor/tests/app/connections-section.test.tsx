@@ -88,3 +88,14 @@ test("a hub shows a filter box in the list", () => {
   fireEvent.click(screen.getByRole("button", { name: "List" }));
   assert.ok(screen.getByRole("textbox", { name: /Filter 90/ }));
 });
+
+test("Enter in the filter box never submits the form around the section", () => {
+  const m = buildConnections({ nodeId: "category:third-party-logos", index: bakedGraphIndex() });
+  render(
+    <Theme>
+      <ConnectionsSection model={m} file="x" onOpen={() => {}} />
+    </Theme>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "List" }));
+  assert.equal(fireEvent.keyDown(screen.getByRole("textbox", { name: /Filter 90/ }), { key: "Enter" }), false);
+});

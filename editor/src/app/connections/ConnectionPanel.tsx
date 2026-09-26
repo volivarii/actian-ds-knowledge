@@ -40,6 +40,8 @@ export function ConnectionPanel(props: {
   canOpen?: (nodeId: string) => boolean;
   actions?: React.ReactNode;
   readOnlyReason?: string;
+  /** Present when the selected link is a ref this record stores: saves its note. */
+  onNote?: (note: string) => void;
 }) {
   if (!props.selected)
     return (
@@ -65,7 +67,27 @@ export function ConnectionPanel(props: {
         <dd>
           {STORE_LABEL[g.store]}. {whereItLives(g, i, fileName)}
         </dd>
+        {!props.onNote && i.note && (
+          <>
+            <dt>Note</dt>
+            <dd>{i.note}</dd>
+          </>
+        )}
       </dl>
+      {props.onNote && (
+        <label className="cx-note">
+          <span>Note</span>
+          <textarea
+            key={i.key}
+            rows={2}
+            defaultValue={i.note ?? ""}
+            placeholder="Why this rule applies here (optional)"
+            onBlur={(e) => {
+              if (e.target.value.trim() !== (i.note ?? "")) props.onNote!(e.target.value);
+            }}
+          />
+        </label>
+      )}
       <div className="cx-actions">
         {props.actions}
         {i.reciprocal && <span className="cx-hint">The other record has it too: {i.reciprocal}</span>}

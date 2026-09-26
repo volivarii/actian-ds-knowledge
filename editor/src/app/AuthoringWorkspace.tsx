@@ -48,7 +48,7 @@ import { ConnectionsSection } from "./connections/ConnectionsSection";
 import { useComponentConnections } from "./connections/useComponentConnections";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
 import { loadFigmaUrls } from "../lib/connections/figma";
-import { applyConnectionEdit, restoreOwned } from "../lib/connections/owned";
+import { applyConnectionEdit, restoreOwned, setRefNote } from "../lib/connections/owned";
 
 export interface AuthoringWorkspaceProps {
   slug: string;
@@ -85,6 +85,22 @@ export function AuthoringWorkspace({
   >({ kind: "loading" });
   const cartEntries = useCart(submissionCartSingleton);
   const cx = useComponentConnections(octokit, slug, cartEntries);
+  // Connection edits write _meta.yml through the batch, which reads GitHub
+  // first; a failure is shown on the section rather than lost.
+  const [cxError, setCxError] = useState<string | null>(null);
+  const saveConnections = (
+    mutate: (
+      parsed: Record<string, unknown>,
+      original: Record<string, unknown>,
+    ) => Record<string, unknown>,
+  ) => {
+    setCxError(null);
+    updateMetaInCart(octokit, slug, mutate).catch((e: unknown) =>
+      setCxError(
+        `Change not saved: ${e instanceof Error ? e.message : String(e)}. Try again.`,
+      ),
+    );
+  };
   const [figmaUrls, setFigmaUrls] = useState<Map<string, string> | undefined>();
   useEffect(() => {
     let live = true;
@@ -204,8 +220,8 @@ export function AuthoringWorkspace({
         Render
       </Heading>
       <Text size="1" color="gray" as="p" mb="3">
-        The component as the design system draws it, beside the Figma capture
-        it is checked against.
+        The component as the design system draws it, beside the Figma capture it
+        is checked against.
       </Text>
       <CanonicalRenderPanel slug={slug} octokit={octokit} />
 
@@ -256,11 +272,17 @@ export function AuthoringWorkspace({
             canOpen={(id) => navTargetForNodeId(id) !== null}
             figma={figmaUrls}
             onEdit={(edits) =>
-              void updateMetaInCart(octokit, slug, (p) => edits.reduce(applyConnectionEdit, p))
+              saveConnections((p, original) =>
+                edits.reduce((d, e) => applyConnectionEdit(d, e, original), p),
+              )
             }
             onDiscard={() =>
-              void updateMetaInCart(octokit, slug, (p) => restoreOwned("component", p, cx.original))
+              saveConnections((p, original) =>
+                restoreOwned("component", p, original),
+              )
             }
+            onNote={(field, s, note) => saveConnections((p) => setRefNote(p, field, s, note))}
+            error={cxError ?? undefined}
           />
         </Box>
       )}

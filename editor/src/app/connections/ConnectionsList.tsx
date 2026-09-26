@@ -53,6 +53,11 @@ export function GroupItems(props: GroupViewProps & { group: ConnectionGroup; cap
             setQ(e.target.value);
             setOpen(true);
           }}
+          // The section can sit inside a form (record screens): Enter here
+          // filters, it never submits.
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.preventDefault();
+          }}
         />
       )}
       {shown.map((i) => (

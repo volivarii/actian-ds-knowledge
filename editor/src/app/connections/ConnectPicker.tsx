@@ -111,9 +111,10 @@ export function ConnectPicker(props: {
           } else if (e.key === "ArrowUp") {
             e.preventDefault();
             setActive(Math.max(active - 1, 0));
-          } else if (e.key === "Enter" && list[active]) {
+          } else if (e.key === "Enter") {
+            // Never submits the form the section may sit in, match or not.
             e.preventDefault();
-            pick(list[active]!);
+            if (list[active]) pick(list[active]!);
           } else if (e.key === "Escape") {
             e.preventDefault();
             props.onCancel();
