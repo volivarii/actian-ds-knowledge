@@ -117,12 +117,19 @@ export function ownedValues(kind: RecordKind, data: unknown): OwnedValues {
 
 /** Apply one edit to a record's data. Never mutates the input; returns the
  *  input itself when the edit changes nothing (add of a present slug, remove
- *  of an absent one). Removal removes every copy; an emptied nested list
- *  (relationships.<verb>) is deleted, and so is an emptied relationships
- *  block; an emptied top-level list stays as []. */
+ *  of an absent one). Removal removes every copy. An emptied nested list
+ *  (relationships.<verb>) is deleted but the relationships block stays, as {}
+ *  when empty, because the entity schema requires it. An emptied ref list is
+ *  deleted, since a present one must hold at least one ref; an emptied slug
+ *  list stays as [].
+ *
+ *  `original` is the record as loaded. Adding a slug it held puts its entries
+ *  back as they were, every copy, note included, at their old positions, so a
+ *  remove followed by an add (Undo, or picking it again) leaves no change. */
 export function applyConnectionEdit(
   data: Record<string, unknown>,
   edit: ConnectionEdit,
+  original?: Record<string, unknown>,
 ): Record<string, unknown> {
   const present = (getIn(data, edit.field) as unknown[] | undefined)?.some?.((e) => slugOfEntry(e) === edit.slug) ?? false;
   if (edit.op === "add" ? present : !present) return data;
@@ -139,38 +146,33 @@ export function applyConnectionEdit(
   const leaf = edit.field[edit.field.length - 1]!;
   const list = Array.isArray(parent[leaf]) ? [...(parent[leaf] as unknown[])] : [];
   if (edit.op === "add") {
-    list.push(edit.shape === "ref" ? { ref: edit.slug } : edit.slug);
+    const was = getIn(original, edit.field);
+    const back = Array.isArray(was)
+      ? was.flatMap((e, i) => (slugOfEntry(e) === edit.slug ? [{ e, i }] : []))
+      : [];
+    if (back.length === 0) list.push(edit.shape === "ref" ? { ref: edit.slug } : edit.slug);
+    for (const { e, i } of back) list.splice(Math.min(i, list.length), 0, structuredClone(e));
     parent[leaf] = list;
     return root;
   }
   const kept = list.filter((e) => slugOfEntry(e) !== edit.slug);
-  if (kept.length === 0 && edit.field.length > 1) {
-    delete parent[leaf];
-    if (edit.field.length === 2 && Object.keys(parent).length === 0) delete root[edit.field[0]!];
-  } else {
-    parent[leaf] = kept;
-  }
+  if (kept.length === 0 && (edit.field.length > 1 || edit.shape === "ref")) delete parent[leaf];
+  else parent[leaf] = kept;
   return root;
 }
 
-/** Put the owned fields back to their values in `original`, keeping every
- *  other field of `current`. Restores membership, not list order. */
+/** Put the owned fields back exactly as they are in `original` (entries,
+ *  notes, order), keeping every other field of `current`. A field the
+ *  original did not have is deleted. */
 export function restoreOwned(
   kind: RecordKind,
   current: Record<string, unknown>,
   original: Record<string, unknown>,
 ): Record<string, unknown> {
-  let next: Record<string, unknown> = { ...current };
-  const now = ownedValues(kind, current);
-  const was = ownedValues(kind, original);
-  for (const f of OWNED[kind] ?? []) {
-    const k = fieldKey(f.field);
-    for (const s of now[k] ?? [])
-      if (!(was[k] ?? []).includes(s))
-        next = applyConnectionEdit(next, { op: "remove", field: f.field, slug: s, shape: f.shape });
-    for (const s of was[k] ?? [])
-      if (!(now[k] ?? []).includes(s))
-        next = applyConnectionEdit(next, { op: "add", field: f.field, slug: s, shape: f.shape });
+  const next: Record<string, unknown> = { ...current };
+  for (const top of new Set((OWNED[kind] ?? []).map((f) => f.field[0]!))) {
+    if (Object.hasOwn(original, top)) next[top] = structuredClone(original[top]);
+    else delete next[top];
   }
   return next;
 }

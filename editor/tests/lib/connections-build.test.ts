@@ -113,3 +113,15 @@ test("read-only surfaces: no original and live means owned groups come from the 
   assert.equal(byKey(m, "must-follow")!.editable, false);
   assert.equal(byKey(m, "must-follow")!.items.length, 1);
 });
+
+test("two entities linked twice show both relations: data-process consumes and produces Dataset", () => {
+  const text = read("app-context/src/entities/dataset.md");
+  const v = ownedValues("entity", fm(text));
+  const m = buildConnections({ nodeId: "entity:dataset", index, original: v, live: v });
+  const labels = (slug: string) =>
+    m.groups.filter((g) => g.items.some((i) => i.slug === slug)).map((g) => g.label);
+  assert.deepEqual(labels("data-process").sort(), ["Consumed by", "Produced by"]);
+  const ro = buildConnections({ nodeId: "entity:data-process", index });
+  const out = (slug: string) => ro.groups.filter((g) => g.items.some((i) => i.slug === slug)).map((g) => g.label);
+  assert.deepEqual(out("dataset").sort(), ["Consumes", "Produces"]);
+});

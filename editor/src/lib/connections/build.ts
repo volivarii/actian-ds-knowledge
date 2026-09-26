@@ -120,7 +120,7 @@ export function buildConnections(input: BuildInput): ConnectionsModel {
       for (const s of was) if (!now.includes(s)) push(g, item(d.key, s, f.type, index, "removed", "here"));
     } else {
       for (const n of index.neighbors(nodeId, { direction: "out", edgeTypes: [f.edgeType] })) {
-        if (f.predicate && predicateOf(nodeId, n.id, f.edgeType) !== f.predicate) continue;
+        if (f.predicate && !predicatesOf(nodeId, n.id, f.edgeType).includes(f.predicate)) continue;
         if (!n.node) continue;
         push(g, item(d.key, slugOfId(n.id), n.node.type, index, "saved", "here"));
       }
@@ -131,13 +131,21 @@ export function buildConnections(input: BuildInput): ConnectionsModel {
   // 2. Every other neighbour.
   const outTargets = new Map<string, ConnectionItem>();
   for (const g of groups.values()) for (const i of g.items) if (i.nodeId) outTargets.set(i.nodeId, i);
+  // The index returns one neighbour per edge, so two entities linked twice
+  // (data-process consumes and produces Dataset) come back twice; each
+  // occurrence takes the next predicate of that pair.
+  const occurrence = new Map<string, number>();
   for (const n of index.neighbors(nodeId, { direction: "both" })) {
     if (n.direction === "out" && ownedEdgeTypes.has(n.edgeType)) continue;
-    const pred =
-      n.direction === "out" ? predicateOf(nodeId, n.id, n.edgeType) : predicateOf(n.id, nodeId, n.edgeType);
+    const preds =
+      n.direction === "out" ? predicatesOf(nodeId, n.id, n.edgeType) : predicatesOf(n.id, nodeId, n.edgeType);
+    const seen = `${n.direction}|${n.edgeType}|${n.id}`;
+    const k = occurrence.get(seen) ?? 0;
+    occurrence.set(seen, k + 1);
+    const pred = preds[k] ?? preds[0];
     if (n.edgeType === "entity_related" && n.direction === "in" && outTargets.has(n.id)) {
       const target = outTargets.get(n.id)!;
-      target.reciprocal = `${target.title} says it ${verbPhrase(pred ?? "relatesTo")} ${name}.`;
+      target.reciprocal ??= `${target.title} says it ${verbPhrase(pred ?? "relatesTo")} ${name}.`;
       continue;
     }
     const d = groupDef(n.edgeType, n.direction, pred);
@@ -195,17 +203,21 @@ export function countConnections(model: ConnectionsModel): number {
 
 // GraphIndex exposes neither the full node list nor edge predicates, so these
 // two read the baked arrays directly.
-let _pred: Map<string, string> | null = null;
-function edgePredicates(): Map<string, string> {
+let _pred: Map<string, string[]> | null = null;
+function edgePredicates(): Map<string, string[]> {
   if (_pred) return _pred;
   _pred = new Map();
-  for (const e of graphEdges)
-    if (e.type === "entity_related" && e.predicate) _pred.set(`${e.source}|${e.target}`, e.predicate);
+  for (const e of graphEdges) {
+    if (e.type !== "entity_related" || !e.predicate) continue;
+    const k = `${e.source}|${e.target}`;
+    _pred.set(k, [...(_pred.get(k) ?? []), e.predicate]);
+  }
   return _pred;
 }
-function predicateOf(source: string, target: string, edgeType: string): string | undefined {
-  if (edgeType !== "entity_related") return undefined;
-  return edgePredicates().get(`${source}|${target}`);
+/** Every predicate of the entity relations from source to target, in graph order. */
+function predicatesOf(source: string, target: string, edgeType: string): string[] {
+  if (edgeType !== "entity_related") return [];
+  return edgePredicates().get(`${source}|${target}`) ?? [];
 }
 function allSlugs(prefix: string): string[] {
   return graphNodes.filter((n) => n.id.startsWith(prefix)).map((n) => slugOfId(n.id));

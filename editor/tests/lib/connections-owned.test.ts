@@ -77,7 +77,77 @@ test("an emptied verb is deleted, an emptied top-level list stays", () => {
     { label: "A", relationships: { uses: ["x"] } },
     { op: "remove", field: ["relationships", "uses"], slug: "x", shape: "slug" },
   );
-  assert.deepEqual(d3, { label: "A" }, "an emptied relationships block goes too");
+  assert.deepEqual(d3, { label: "A", relationships: {} }, "the entity schema requires relationships, so {} stays");
+});
+
+test("an emptied ref list is dropped, since a present one must hold at least one ref", () => {
+  const d = applyConnectionEdit(
+    { component: "Button", a11y_refs: [{ ref: "buttons" }] },
+    { op: "remove", field: ["a11y_refs"], slug: "buttons", shape: "ref" },
+  );
+  assert.deepEqual(d, { component: "Button" });
+});
+
+const REF_FILES = [
+  ...readdirSync(join(REPO, "components/src"))
+    .filter((d) => !d.startsWith("_") && !d.includes("."))
+    .map((d) => `components/src/${d}/_meta.yml`)
+    .filter((f) => {
+      try {
+        readFileSync(join(REPO, f));
+        return true;
+      } catch {
+        return false;
+      }
+    }),
+  ...readdirSync(join(REPO, "components/src/categories"))
+    .filter((f) => f.endsWith(".md") && f !== "AUTHORING.md")
+    .map((f) => `components/src/categories/${f}`),
+];
+
+test("remove then add with the original puts every entry back as it was: note, position, every copy", () => {
+  let withNote = 0;
+  let checked = 0;
+  const cases: Array<[string, "component" | "category" | "pattern"]> = [
+    ...REF_FILES.map((f): [string, "component" | "category"] => [f, f.includes("/categories/") ? "category" : "component"]),
+    ["app-context/src/patterns/access-request-management.md", "pattern"],
+  ];
+  for (const [f, kind] of cases) {
+    const data = fm(f);
+    for (const of of OWNED[kind]!) {
+      const list = data[of.field[0]!] as unknown[] | undefined;
+      if (!Array.isArray(list)) continue;
+      for (const e of list) {
+        const slug = typeof e === "string" ? e : (e as { ref: string }).ref;
+        if (typeof e === "object" && (e as { note?: string }).note) withNote++;
+        const removed = applyConnectionEdit(data, { op: "remove", field: of.field, slug, shape: of.shape });
+        const back = applyConnectionEdit(removed, { op: "add", field: of.field, slug, shape: of.shape }, data);
+        assert.deepEqual(back, data, `${f} ${of.field.join(".")} ${slug}`);
+        checked++;
+      }
+    }
+  }
+  assert.ok(withNote > 20, `only ${withNote} refs with a note, the fixture no longer exercises notes`);
+  assert.ok(checked > 100, `checked ${checked}`);
+});
+
+test("restoreOwned gives back the original exactly, on real ref records with notes", () => {
+  for (const f of REF_FILES) {
+    const kind = f.includes("/categories/") ? "category" : "component";
+    const original = fm(f);
+    let current: Record<string, unknown> = { ...original };
+    for (const of of OWNED[kind]!) {
+      const first = (original[of.field[0]!] as Array<{ ref: string }> | undefined)?.[0]?.ref;
+      if (first) current = applyConnectionEdit(current, { op: "remove", field: of.field, slug: first, shape: of.shape });
+    }
+    current = applyConnectionEdit(current, { op: "add", field: ["motion_refs"], slug: "zz-new", shape: "ref" });
+    assert.deepEqual(restoreOwned(kind, current, original), original, f);
+  }
+});
+
+test("restoreOwned deletes an owned field the original did not have", () => {
+  const out = restoreOwned("component", { component: "X", a11y_refs: [{ ref: "buttons" }] }, { component: "X" });
+  assert.deepEqual(out, { component: "X" });
 });
 
 test("restoreOwned puts back only the owned fields", () => {
