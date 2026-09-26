@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import type { ConnectionEdit, ConnectionGroup, ConnectionItem, ConnectionsModel } from "../../lib/connections/types";
 import { countConnections } from "../../lib/connections/build";
 import { ConnectionsList } from "./ConnectionsList";
+import { ConnectionsMap } from "./ConnectionsMap";
 import { ConnectionPanel } from "./ConnectionPanel";
 
 export interface ConnectionsSectionProps {
@@ -65,7 +66,7 @@ export function ConnectionsSection(props: ConnectionsSectionProps) {
           Connections
         </h2>
         <span className="cx-sum">
-          {total} in {model.groups.length} kinds
+          {total} in {model.groups.length} {model.groups.length === 1 ? "kind" : "kinds"}
         </span>
         <div className="cx-seg" role="group" aria-label="View">
           <button type="button" aria-pressed={view === "map"} onClick={() => choose("map")}>
@@ -76,7 +77,11 @@ export function ConnectionsSection(props: ConnectionsSectionProps) {
           </button>
         </div>
       </div>
-      <ConnectionsList groups={model.groups} selectedKey={sel} onSelect={onSelect} />
+      {view === "map" ? (
+        <ConnectionsMap model={model} groups={model.groups} selectedKey={sel} onSelect={onSelect} />
+      ) : (
+        <ConnectionsList groups={model.groups} selectedKey={sel} onSelect={onSelect} />
+      )}
       <ConnectionPanel
         model={model}
         file={props.file}
