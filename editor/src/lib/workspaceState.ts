@@ -14,7 +14,7 @@
 
 import type { Octokit } from "@octokit/rest";
 import { parse as parseYaml } from "yaml";
-import { stringifyYaml } from "../form-engine/yamlSerializer";
+import { stringifyYaml, isUnchangedFromSource } from "../form-engine/yamlSerializer";
 import { getTextFile, getTextFileWithSha } from "../app/githubApi";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import type { SubmissionCart } from "../drafts/SubmissionCart";
@@ -439,20 +439,38 @@ export async function setDomainInherited(
   inherited: boolean,
   cart: SubmissionCart = submissionCartSingleton,
 ): Promise<void> {
+  await updateMetaInCart(
+    gh,
+    slug,
+    (parsed) => {
+      const domains = { ...((parsed.domains as ParsedMeta["domains"]) ?? {}) };
+      domains[domain] = { ...(domains[domain] ?? {}), status: inherited ? "inherited" : "not-started" };
+      return { ...parsed, domains };
+    },
+    cart,
+  );
+}
+
+// Apply one change to a component's _meta.yml through the batch: ensure it is
+// staged, mutate the parsed object, write it back byte-stable (flow-style
+// `domains.*`, header kept; see promoteDomainToDraft). A result identical to
+// main's file leaves the batch, so an edit that is undone stages nothing.
+export async function updateMetaInCart(
+  gh: Octokit,
+  slug: string,
+  mutate: (parsed: Record<string, unknown>) => Record<string, unknown>,
+  cart: SubmissionCart = submissionCartSingleton,
+): Promise<void> {
   const metaPath = metaPathFor(slug);
   const { content, basedOnSha } = await ensureMetaInCart(gh, slug, cart);
-  const parsed = safeParseMeta(content);
-  const domains = parsed.domains ?? {};
-  const targetStatus = inherited ? "inherited" : "not-started";
-  domains[domain] = { ...(domains[domain] ?? {}), status: targetStatus };
-  parsed.domains = domains;
-  cart.add({
-    path: metaPath,
-    // Flow-style + header preserved — see promoteDomainToDraft.
-    content: stringifyYaml(parsed, { originalText: content, flowAtDepth: 2 }),
-    basedOnSha, // preserve the base ensureMetaInCart established
-    addedAt: Date.now(),
-  });
+  const mutated = mutate(safeParseMeta(content) as Record<string, unknown>);
+  // Compared by meaning, not bytes: the serializer may re-quote a scalar.
+  if (basedOnSha && isUnchangedFromSource(mutated, await tryGetText(gh, metaPath))) {
+    cart.remove(metaPath);
+    return;
+  }
+  const next = stringifyYaml(mutated, { originalText: content, flowAtDepth: 2 });
+  cart.add({ path: metaPath, content: next, basedOnSha, addedAt: Date.now() });
 }
 
 // Author flipped a domain's authored state between draft and approved from the

@@ -32,6 +32,7 @@ import {
   DOMAIN_LABEL,
   domainPathFor,
   loadWorkspaceState,
+  updateMetaInCart,
   setDomainInherited,
   stageMetadataForEdit,
   type Domain,
@@ -47,6 +48,7 @@ import { ConnectionsSection } from "./connections/ConnectionsSection";
 import { useComponentConnections } from "./connections/useComponentConnections";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
 import { loadFigmaUrls } from "../lib/connections/figma";
+import { applyConnectionEdit, restoreOwned } from "../lib/connections/owned";
 
 export interface AuthoringWorkspaceProps {
   slug: string;
@@ -253,6 +255,12 @@ export function AuthoringWorkspace({
             }}
             canOpen={(id) => navTargetForNodeId(id) !== null}
             figma={figmaUrls}
+            onEdit={(edits) =>
+              void updateMetaInCart(octokit, slug, (p) => edits.reduce(applyConnectionEdit, p))
+            }
+            onDiscard={() =>
+              void updateMetaInCart(octokit, slug, (p) => restoreOwned("component", p, cx.original))
+            }
           />
         </Box>
       )}

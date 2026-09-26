@@ -137,3 +137,21 @@ test("the list view can connect too", () => {
   fireEvent.click(screen.getByRole("button", { name: "+ Connect" }));
   assert.ok(screen.getByRole("region", { name: "Connect" }));
 });
+
+test("a pending link is never hidden behind +N more", () => {
+  const many = ["tabs", "page-header", "breadcrumb", "side-nav", "drawer", "avatar", "checkbox", "button", "calendar"];
+  const m = buildConnections({
+    nodeId: "pattern:asset-detail-360",
+    index: bakedGraphIndex(),
+    original: { components: many },
+    live: { components: [...many, "toggle"] },
+  });
+  render(
+    <Theme>
+      <ConnectionsSection model={m} file="p.md" onOpen={() => {}} onEdit={() => {}} />
+    </Theme>,
+  );
+  const lane = screen.getByRole("group", { name: "Built from" });
+  assert.ok(within(lane).getByRole("button", { name: /^Toggle.*new/ }));
+  assert.ok(within(lane).getByRole("button", { name: "+1 more" }));
+});
