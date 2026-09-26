@@ -1,26 +1,8 @@
-// Read-only composition point for the relations experience: anchor-side
-// incoming references (live, from anchorIndex + its text cache) and
-// graph-side typed neighbors (baked at editor build; label as such in UI).
-import {
-  getCachedText,
-  findReferences,
-  scanFileForAnchors,
-} from "./anchorIndex";
-import { snippetsForSlug } from "./snippetExtract";
-import { bakedGraphIndex, type Neighbor } from "../substrate/graphIndex";
-import { nodeIdForFile } from "../substrate/nodeIdForFile";
+// Section anchors of a document and the [[ reference picker's feed. A
+// record's links live in its Connections section (app/connections).
 import { extractAnchor } from "../app/SectionFocusTracker";
 import { scanHeadings, type Heading } from "./headingScan";
 import { graphNodes } from "../substrate/taxonomyAssets";
-import { splitRawFrontmatter } from "../markdown-engine/rawFrontmatter";
-
-export type { Neighbor };
-
-export interface IncomingRef {
-  fromPath: string;
-  slug: string;
-  snippet: string;
-}
 
 export interface SectionAnchor {
   heading: Heading;
@@ -51,109 +33,11 @@ export function sectionAnchors(text: string): SectionAnchor[] {
     // requires trailing whitespace, so it never fires there and the slug is
     // "3", a perfectly good anchor.
     // The declared type is `string | null` and every caller guards on null, so
-    // an "" slipped through as a truthy-looking anchor that is falsy in use:
-    // countsBySection latched it as firstH2Anchor and then dropped the file's
-    // outgoing count entirely, and RelationsPanel scoped to it while showing
-    // everything. Normalise here, where the type is promised.
+    // an "" would slip through as a truthy-looking anchor that is falsy in
+    // use. Normalise here, where the type is promised.
     const anchor = extractAnchor(titleRaw);
     return { heading, anchor: anchor ? anchor : null };
   });
-}
-
-/** Files that reference any anchor DEFINED in this file, with the
- *  referencing paragraph as a contextual snippet. The slug set is the union
- *  of explicit {#anchor}/bold-paragraph definitions (scanFileForAnchors)
- *  and DERIVED H2/H3 section anchors (sectionAnchors): a section without an
- *  explicit anchor is still a valid reference target (its derived slug is
- *  exactly what countsBySection scopes incoming rows to), so omitting it
- *  here would show a pill count with an empty scoped Incoming list.
- *  Self-references and files whose text is not cached degrade gracefully
- *  (skipped / bare). */
-export function incomingForFile(path: string, text: string): IncomingRef[] {
-  const out: IncomingRef[] = [];
-  const { defines } = scanFileForAnchors(text);
-  const derivedAnchors = sectionAnchors(text)
-    .map((s) => s.anchor)
-    .filter((a): a is string => a !== null);
-  const slugs = new Set([...defines, ...derivedAnchors]);
-  for (const slug of slugs) {
-    for (const fromPath of findReferences(slug)) {
-      if (fromPath === path) continue;
-      const refText = getCachedText(fromPath);
-      // Snippets come from the referencing file's PROSE body: a reference
-      // living in its frontmatter (a11y_refs etc.) has no readable paragraph,
-      // and extracting from the raw file leaked YAML into the panel.
-      const refBody = refText ? splitRawFrontmatter(refText).body : null;
-      const snippets = refBody ? snippetsForSlug(refBody, slug) : [];
-      if (snippets.length === 0) {
-        out.push({ fromPath, slug, snippet: "" });
-      } else {
-        for (const snippet of snippets) out.push({ fromPath, slug, snippet });
-      }
-    }
-  }
-  return out;
-}
-
-/** Typed graph edges touching this file's node, both directions.
- *  Empty when the file resolves to no graph node. */
-export function graphNeighborsForFile(path: string): Neighbor[] {
-  const id = nodeIdForFile(path);
-  if (!id) return [];
-  return bakedGraphIndex().neighbors(id, { direction: "both" });
-}
-
-/** Per-section connection counts: incoming per defining anchor, plus the
- *  file's outgoing count attached to the first H2 (P8 Option A v1).
- *  Matches the inline memo this hoists out of MarkdownEditScreen, except
- *  this file's own references to an anchor are excluded (the same
- *  self-exclusion incomingForFile applies); its tests pin the parity.
- *  O(headings) via sectionAnchors' single scanHeadings pass, not the
- *  O(lines) x per-line resection walk this used to run. */
-export function countsBySection(
-  path: string,
-  text: string,
-  outgoingCount: number,
-): Map<string, number> {
-  const counts = new Map<string, number>();
-  const seenAnchors = new Set<string>();
-  let firstH2Anchor: string | null = null;
-  for (const { heading, anchor } of sectionAnchors(text)) {
-    if (anchor === null) continue;
-    // Latch BEFORE the dedup. An H3 deriving the same slug as the first H2
-    // ("### Tokens" above "## Tokens") used to consume it, so the H2 was
-    // skipped and file scope either walked to a later H2 — landing the
-    // outgoing count on a different section than `firstH2Anchor` reports — or,
-    // with no later H2, was never set at all and the file's outgoing
-    // references vanished from the outline. Both headings address the same
-    // single anchor, so latching here is the answer both modules give.
-    if (heading.level === 2 && firstH2Anchor === null) firstH2Anchor = anchor;
-    if (seenAnchors.has(anchor)) continue;
-    seenAnchors.add(anchor);
-    // Excludes only this file's own references to the anchor (e.g. a
-    // self-link from within the same section), matching incomingForFile's
-    // `fromPath === path` self-exclusion. A different file that also
-    // defines the same globally-keyed slug (a co-definer) still counts as
-    // a genuine incoming reference.
-    // Generated referrers ARE counted. The pill answers "how much depends on
-    // this section", and a `components/dist/guidelines/*.json` consuming an
-    // accessibility criterion is exactly that dependency — for nine of the
-    // sixteen anchors in `accessibility/src/components.md` it is the ONLY
-    // recorded one, because the index scans .md and dist JSON and never
-    // `_meta.yml`. Excluding them made those sections render with no badge,
-    // indistinguishable from a section nothing depends on, on the a11y
-    // author's main surface.
-    //
-    // The rail answers a different question — "where can I go from here" —
-    // and there a generated row is a dead end. The two numbers reconcile
-    // because the rail STATES what it withheld, not because they match.
-    const incoming = findReferences(anchor).filter((p) => p !== path).length;
-    if (incoming > 0) counts.set(anchor, incoming);
-  }
-  if (firstH2Anchor && outgoingCount > 0) {
-    counts.set(firstH2Anchor, (counts.get(firstH2Anchor) ?? 0) + outgoingCount);
-  }
-  return counts;
 }
 
 export interface ReferenceTarget {

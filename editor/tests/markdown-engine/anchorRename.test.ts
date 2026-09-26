@@ -114,9 +114,8 @@ test("crossFileReferrers: source referrers minus self and dist", async () => {
 
 // ── One definition of "generated", not two ──────────────────────────────────
 //
-// This filter listed three dist prefixes by hand — the exact pattern
-// `incomingFiles` was written to avoid, and which its own header comment
-// condemns. No live defect today, because those three are precisely the trees
+// This filter listed three dist prefixes by hand instead of using the shared
+// path-tier classification. No live defect today, because those three are precisely the trees
 // `collectJsonPaths` scans, but it drifts the moment a fourth is added. These
 // two cases fail against a hardcoded three-prefix list and pass against the
 // path-tier classification.

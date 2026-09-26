@@ -1,7 +1,7 @@
 // Build-once, browser-safe typed index over the baked knowledge graph
 // (graph/dist/graph.json) edges. Forward + reverse adjacency with O(1)/O(deg)
 // queries — the editor's first consumer of graph EDGES (nodes were already read
-// via taxonomyAssets). UI (NeighborhoodPanel) + live-overlay land in PR3b.
+// via taxonomyAssets). The Connections section (app/connections) reads it.
 //
 // Browser-safe: imports ONLY the static JSON via taxonomyAssets — never node:fs.
 import {

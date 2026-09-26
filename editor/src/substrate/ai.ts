@@ -1,7 +1,7 @@
 // Substrate AI surface — v1/v2 stub. v3 will call Anthropic with the
 // section body + condensed taxonomy snippets and return suggested refs.
-// Stable interface so the UI plumbing in SectionInspector is forward-
-// compatible (drop-in replacement when org clears API procurement).
+// No UI calls it yet: the interface stays stable so a future surface can
+// adopt it as a drop-in once the org clears API procurement.
 
 import type { Domain } from "./taxonomy";
 

@@ -42,10 +42,6 @@ import { Preview } from "../markdown-engine/Preview";
 import { installCrossSurfaceHighlight } from "../lib/crossSurfaceHighlight";
 import { installRefHoverCard } from "../lib/refHoverCard";
 import { useAttachController } from "../lib/attachController";
-import { layoutNeighborhood } from "../substrate/neighborhoodLayout";
-import { nodeIdForFile } from "../substrate/nodeIdForFile";
-import { bakedGraphIndex } from "../substrate/graphIndex";
-import { mapNodeNavTarget } from "../substrate/navTargetForNodeId";
 import {
   RelationsPanel,
   readRelationsPanelCollapsed,
@@ -62,24 +58,11 @@ import {
 import { installAnchorChipRename } from "../lib/anchorChipRename";
 import { scanAnchors } from "../markdown-engine/anchorScan";
 import { computeFocusedSection } from "./SectionFocusTracker";
-import {
-  countsBySection,
-  incomingForFile,
-  graphNeighborsForFile,
-} from "../lib/referenceIndex";
-import { ConnectionsPopover } from "./ConnectionsPopover";
 import type { FocusedSectionContext } from "./EditorShell";
 // Aliased: the local scope also has the Radix `Heading` component (JSX
 // heading element), so the headingScan type import needs a distinct name.
 import type { Heading as OutlineHeading } from "../lib/headingScan";
 import { scrollRichHeading } from "./richScroll";
-// NOTE: deep-imported (not via the substrate barrel) to keep the Node-only
-// loader (taxonomy.ts uses node:fs/promises, refGraph.ts uses node:path) out
-// of the browser bundle. Vite's tree-shaker can't see through the barrel's
-// re-exports of node:* modules and surfaces a "readFile is not exported"
-// error at build time if we go through ../substrate.
-import { buildTaxonomyFromAssets } from "../substrate/buildTaxonomyFromAssets";
-import { parseLocalFrontmatter } from "../substrate/parseLocalFrontmatter";
 import {
   draftStoreSingleton,
   submissionCartSingleton,
@@ -87,7 +70,7 @@ import {
 import { useDraft } from "../drafts/useDraft";
 import { useCart } from "../drafts/useCart";
 import { buildMarkdownStub } from "../lib/markdownStubs";
-import { loadAnchorIndex, findReferences } from "../lib/anchorIndex";
+import { loadAnchorIndex } from "../lib/anchorIndex";
 import { computeRenameWarnings } from "../markdown-engine/anchorLinter";
 import { Badge } from "@radix-ui/themes";
 import { TierBanner } from "./TierBanner";
@@ -174,23 +157,6 @@ export function MarkdownEditScreen({
     };
   });
 
-  // The current file's graph node (if any), and its neighborhood laid out
-  // compact for the rail map beside the note. Map nodes carry data-ref, so the
-  // map joins the cross-surface highlight. Undefined when the file has no graph
-  // node. currentNodeId also guards the map's own "you are here" node from
-  // navigating away (mapNodeNavTarget below).
-  const currentNodeId = useMemo(() => nodeIdForFile(path), [path]);
-  const neighborhoodLayout = useMemo(
-    () =>
-      currentNodeId
-        ? layoutNeighborhood(currentNodeId, bakedGraphIndex(), {
-            depth: 1,
-            width: 236,
-            height: 200,
-          })
-        : undefined,
-    [currentNodeId],
-  );
   preloadedRef.current = preloaded;
   const [anchorPopover, setAnchorPopover] = useState<{
     slug: string;
@@ -268,16 +234,12 @@ export function MarkdownEditScreen({
     [path, text],
   );
 
-  // Tick whenever anchorIndex finishes loading; drives recomputation of
-  // the incoming-refs counts that feed the Outline pills + popover.
-  const [anchorIndexTick, setAnchorIndexTick] = useState(0);
+  // Warm the anchor index the autocomplete reads.
   useEffect(() => {
     if (!gh) return;
-    void loadAnchorIndex(gh)
-      .then(() => setAnchorIndexTick((t) => t + 1))
-      .catch(() => {
-        /* swallow — autocomplete + pill incoming counts just won't fire */
-      });
+    void loadAnchorIndex(gh).catch(() => {
+      /* swallow: autocomplete just won't suggest anchors */
+    });
     setLoad({ kind: "loading" });
     (async () => {
       try {
@@ -428,18 +390,6 @@ export function MarkdownEditScreen({
     setCursorLine(0);
   }, [path]);
 
-  // Build the in-memory taxonomy once per mount. The static JSON imports
-  // are baked at build time (see substrate/taxonomyAssets.ts) so this is
-  // cheap and synchronous — no fetch, no async boundary.
-  const taxonomy = useMemo(() => buildTaxonomyFromAssets(), []);
-
-  // Outgoing connections derived from THIS file's frontmatter. Recomputes
-  // on edit so adding/removing a connection inline reflects immediately.
-  const outgoing = useMemo(
-    () => parseLocalFrontmatter(text, taxonomy),
-    [text, taxonomy],
-  );
-
   // RelationsPanel's collapsed state is owned here (not by the panel
   // itself) so the expensive incoming/counts memos below can be gated to a
   // no-op instead of recomputing on every keystroke while their DOM stays
@@ -460,64 +410,10 @@ export function MarkdownEditScreen({
   // line, so it renders with no active marker (see the panel prop below).
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
 
-  // Per-section connection counts feed the Outline pills. Each H2/H3 in
-  // the current file contributes:
-  //   - OUTGOING (this section's own a11y_refs/motion_refs in frontmatter)
-  //     attached to the file's top H2 per P8 Option A v1.
-  //   - INCOMING (other files that reference this section's anchor) via
-  //     anchorIndex.findReferences — re-runs when the index finishes
-  //     loading (anchorIndexTick).
-  // Pill displays the SUM so definition-only files (no frontmatter
-  // outgoing, just incoming refs from consumers) still surface a count.
-  // Skipped while the panel is collapsed: its DOM is hidden either way.
-  const connectionCounts = useMemo(() => {
-    return relationsCollapsed
-      ? new Map<string, number>()
-      : countsBySection(path, text, outgoing.length);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, outgoing, anchorIndexTick, relationsCollapsed]);
 
-  // Incoming references + graph neighbors feed the RelationsPanel's
-  // contextual sections (below the outline pills). Incoming is skipped
-  // while collapsed; graphNeighbors is a baked path-keyed lookup and stays
-  // cheap enough to leave unconditional.
-  const incoming = useMemo(
-    () => (relationsCollapsed ? [] : incomingForFile(path, text)),
-    // anchorIndexTick refreshes when the index finishes loading.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [path, text, anchorIndexTick, relationsCollapsed],
-  );
-  const graphNeighbors = useMemo(() => graphNeighborsForFile(path), [path]);
-
-  // Popover state — explicit, opens only on Outline pill click. The
-  // anchorEl is the pill DOM node; Radix Popover.Anchor positions to it.
-  const [connectionsPopover, setConnectionsPopover] = useState<{
-    section: FocusedSectionContext;
-    anchorEl: HTMLElement;
-  } | null>(null);
-
-  const openConnectionsForSection = useCallback(
-    (section: FocusedSectionContext, anchorEl: HTMLElement) => {
-      setConnectionsPopover({ section, anchorEl });
-    },
-    [],
-  );
-
-  // RelationsPanel's Manage button hands back just the section anchor (it
-  // doesn't track heading level/line), so resolve the full FocusedSectionContext
-  // the same way the old Outline pill did, then reuse the existing popover
-  // entry point. Write-back (add/disconnect/repoint) stays reachable.
-  const handleManageConnections = useCallback(
-    (sectionAnchor: string, anchorEl: HTMLElement) => {
-      const section = sectionContextForAnchor(text, path, sectionAnchor);
-      if (!section) return;
-      openConnectionsForSection(section, anchorEl);
-    },
-    [text, path, openConnectionsForSection],
-  );
 
   // Open another file in the editor: reuses the same navigate callback the
-  // AnchorReferencesPopover and ConnectionsPopover already use.
+  // AnchorReferencesPopover already uses.
   const handleOpenFile = useCallback(
     (p: string) => {
       onNavigate?.(p);
@@ -525,11 +421,6 @@ export function MarkdownEditScreen({
     [onNavigate],
   );
 
-  // Close the popover when the active file changes — the prior file's
-  // section context no longer applies.
-  useEffect(() => {
-    setConnectionsPopover(null);
-  }, [path]);
 
   const onRestore = () => {
     const draft = draftStoreSingleton.load(path);
@@ -729,22 +620,10 @@ export function MarkdownEditScreen({
       <Box style={{ flex: "1 1 0", minHeight: 0 }}>
         <RelationsPanel
           text={text}
-          file={path}
-          counts={connectionCounts}
-          incoming={incoming}
-          outgoing={outgoing}
-          graphNeighbors={graphNeighbors}
           onNavigate={handleOutlineNavigate}
-          onOpenFile={handleOpenFile}
-          onManageConnections={handleManageConnections}
           collapsed={relationsCollapsed}
           onToggleCollapsed={toggleRelationsCollapsed}
           activeAnchor={wysiwyg ? null : activeAnchor}
-          neighborhoodLayout={neighborhoodLayout}
-          onFocusNode={(id) => {
-            const target = mapNodeNavTarget(id, currentNodeId);
-            if (target) handleOpenFile(target);
-          }}
         />
       </Box>
     </Box>
@@ -905,46 +784,6 @@ export function MarkdownEditScreen({
             </Box>
           )}
         </Flex>
-      )}
-      {connectionsPopover && (
-        <ConnectionsPopover
-          sectionTitle={
-            extractHeadingText(text, connectionsPopover.section.line) ||
-            connectionsPopover.section.anchor
-          }
-          text={text}
-          filePath={path}
-          anchorEl={connectionsPopover.anchorEl}
-          // P8 Option A v1: only the file's top H2 owns the file-level
-          // outgoing refs. Sub-section inspectors are read-only incoming
-          // views; the picker + remove affordances surface only on the
-          // top H2. The outgoing prop is still the file-level set (the
-          // SectionInspector hides it when scope === "section"); passing
-          // it unconditionally means the file-scope inspector always sees
-          // the freshly-mutated state without us recomputing per pill.
-          scope={
-            connectionsPopover.section.anchor === firstH2Anchor(text)
-              ? "file"
-              : "section"
-          }
-          outgoing={outgoing}
-          incoming={findReferences(connectionsPopover.section.anchor).map(
-            (file) => ({
-              file,
-              // Incoming references come from anchorIndex which doesn't
-              // distinguish a11y_refs vs motion_refs vs heading-link refs.
-              // The UI treats all incoming uniformly — refType is plumbing.
-              refType: "a11y_refs" as const,
-              note: null,
-            }),
-          )}
-          taxonomy={taxonomy}
-          onTextChange={(next) =>
-            applyExternalTextChange(view, next, handleChange)
-          }
-          onClose={() => setConnectionsPopover(null)}
-          onNavigate={onNavigate}
-        />
       )}
       {renamePopover &&
         (() => {
@@ -1160,62 +999,4 @@ export function MarkdownEditScreen({
       </AlertDialog.Root>
     </Flex>
   );
-}
-
-// Resolve the file's top H2 anchor. Used to decide whether the section
-// the author opened is the bucket that owns the file-level outgoing refs
-// (P8 Option A) — sub-sections render as read-only incoming views.
-/** The file's first H2 that actually has an anchor. Pure (exported for tests).
- *
- *  Skips an H2 whose title derives to no slug ("## ---", "## 🎯"), matching
- *  `countsBySection`, which reads `sectionAnchors` and now sees `null` for
- *  those. Without the skip the two modules disagreed about which heading is
- *  first, and the file-scope outgoing management was hidden on exactly the
- *  section whose pill carries the outgoing count. `computeFocusedSection`
- *  returns "" rather than null here, so the emptiness is checked, not the
- *  nullness. */
-export function firstH2Anchor(source: string): string | null {
-  const lines = source.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const s = computeFocusedSection(source, i);
-    if (s && s.level === 2 && s.anchor) return s.anchor;
-  }
-  return null;
-}
-
-// Resolve a FocusedSectionContext for a given section anchor: the same
-// derivation the old Outline pill used (computeFocusedSection at the
-// heading's own line), just entered from an anchor string instead of a
-// heading line, since RelationsPanel's Manage button only carries the
-// anchor. Returns null when the anchor doesn't resolve to any section
-// (should not happen in practice: the anchor always comes from a heading
-// RelationsPanel itself rendered from this same text).
-function sectionContextForAnchor(
-  source: string,
-  filePath: string,
-  anchor: string,
-): FocusedSectionContext | null {
-  const lines = source.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const s = computeFocusedSection(source, i);
-    if (s && s.anchor === anchor) {
-      return { file: filePath, anchor: s.anchor, level: s.level, line: s.line };
-    }
-  }
-  return null;
-}
-
-// Pull the human-readable heading text from a markdown source line. Strips
-// the leading hashes, optional number prefix ("2.11 Motion"), and trailing
-// {#anchor} marker. Returns "" when the line doesn't look like a heading
-// (defensive — Outline pill clicks always pass a real heading line).
-function extractHeadingText(source: string, line: number): string {
-  const raw = source.split("\n")[line];
-  if (raw === undefined) return "";
-  const m = raw.match(/^#{2,3}\s+(.+?)\s*$/);
-  if (!m) return "";
-  return (m[1] ?? "")
-    .replace(/\s*\{#[a-z][a-z0-9-]*\}\s*$/, "")
-    .replace(/^\s*\d+(?:\.\d+)*\.?\s+/, "")
-    .trim();
 }

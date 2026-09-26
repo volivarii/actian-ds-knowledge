@@ -51,11 +51,6 @@ import {
 import { scrollRichHeading } from "./richScroll";
 import { computeFocusedSection } from "./SectionFocusTracker";
 import type { Heading } from "../lib/headingScan";
-import {
-  countsBySection,
-  incomingForFile,
-  graphNeighborsForFile,
-} from "../lib/referenceIndex";
 import { loadAnchorIndex } from "../lib/anchorIndex";
 import { parse as parseYaml } from "yaml";
 import { ConnectionsSection } from "./connections/ConnectionsSection";
@@ -284,16 +279,11 @@ export function FrontmatterBodyEditScreen(props: Props) {
     };
   }, []);
 
-  // Tick whenever anchorIndex finishes loading; drives recomputation of the
-  // incoming-refs counts + snippets that feed the RelationsPanel. Mirrors
-  // MarkdownEditScreen's anchorIndexTick pattern.
-  const [anchorIndexTick, setAnchorIndexTick] = useState(0);
+  // Warm the anchor index the body editors' link autocomplete reads.
   useEffect(() => {
-    void loadAnchorIndex(octokit)
-      .then(() => setAnchorIndexTick((t) => t + 1))
-      .catch(() => {
-        /* swallow (incoming counts just won't fire) */
-      });
+    void loadAnchorIndex(octokit).catch(() => {
+      /* swallow: autocomplete just won't suggest anchors */
+    });
   }, [octokit, path]);
 
   // Frontmatter form visibility: collapsed by default on body-carrying files
@@ -323,27 +313,6 @@ export function FrontmatterBodyEditScreen(props: Props) {
       return next;
     });
   }, []);
-
-  // RelationsPanel data for the prose body this screen edits. This screen's
-  // outgoing refs live in the FORM (a11y_refs/motion_refs fields), not the
-  // body, so outgoing stays empty and Manage is a no-op here (PR A).
-  // Incoming/counts are skipped while collapsed; graphNeighbors is a baked
-  // path-keyed lookup and stays cheap enough to leave unconditional.
-  const incoming = useMemo(
-    () => (relationsCollapsed ? [] : incomingForFile(path, body)),
-    // anchorIndexTick refreshes when the index finishes loading.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [path, body, anchorIndexTick, relationsCollapsed],
-  );
-  const graphNeighbors = useMemo(() => graphNeighborsForFile(path), [path]);
-  const counts = useMemo(
-    () =>
-      relationsCollapsed
-        ? new Map<string, number>()
-        : countsBySection(path, body, 0),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [path, body, anchorIndexTick, relationsCollapsed],
-  );
 
   // Open another file in the editor: reuses this screen's existing
   // navigation prop, the same way MarkdownEditScreen's handleOpenFile does.
@@ -729,15 +698,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
     >
       <RelationsPanel
         text={body}
-        file={path}
-        counts={counts}
-        incoming={incoming}
-        outgoing={[]}
-        graphNeighbors={graphNeighbors}
         onNavigate={onNavigate}
-        onOpenFile={handleOpenFile}
-        // onManageConnections omitted: this screen's refs are edited in the
-        // form, not the body; the manage flow arrives with a later slice.
         collapsed={relationsCollapsed}
         onToggleCollapsed={toggleRelationsCollapsed}
         activeAnchor={active}
