@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { linkedSlugs, codeMentions, linkMention } from "../../src/lib/connections/bodyLinks";
+import { linkedSlugs, codeMentions } from "../../src/lib/connections/bodyLinks";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -44,13 +44,4 @@ test("code-style mentions of known slugs", () => {
     "faceted-browse",
     "search-filtered-table",
   ]);
-});
-
-test("linkMention rewrites the first span to a standard link", () => {
-  const md = "From `faceted-browse` and `faceted-browse`.";
-  assert.equal(
-    linkMention(md, "faceted-browse", "faceted browse"),
-    "From [faceted browse](faceted-browse) and `faceted-browse`.",
-  );
-  assert.equal(linkMention("nothing here", "faceted-browse", "x"), "nothing here");
 });

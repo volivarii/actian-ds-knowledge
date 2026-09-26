@@ -23,11 +23,3 @@ export function codeMentions(markdown: string, known: Set<string>): string[] {
     if (known.has(m[1]!) && !out.includes(m[1]!)) out.push(m[1]!);
   return out;
 }
-
-/** Replace the first `` `slug` `` span with a standard link `[text](slug)`. */
-export function linkMention(markdown: string, slug: string, text: string): string {
-  const span = "`" + slug + "`";
-  const i = markdown.indexOf(span);
-  if (i < 0) return markdown;
-  return markdown.slice(0, i) + `[${text}](${slug})` + markdown.slice(i + span.length);
-}

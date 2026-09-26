@@ -72,8 +72,6 @@ import {
   restoreOwned,
   setRefNote,
 } from "../lib/connections/owned";
-import { linkMention } from "../lib/connections/bodyLinks";
-import { applyExternalTextChange } from "../lib/applyExternalTextChange";
 
 // Lazy-loaded so the Milkdown/ProseMirror bundle (the largest editor dep) splits
 // into an async chunk fetched only when the WYSIWYG flag is on — it stays out of
@@ -362,10 +360,6 @@ export function FrontmatterBodyEditScreen(props: Props) {
   // via scrollRichHeading and emits no cursor line, so its active marker stays
   // null until a rich-mode cursor observer lands (follow-up).
   const [cmView, setCmView] = useState<EditorView | null>(null);
-  // Bumped when the body is changed from outside the editor (Connections turns
-  // a mention into a link): the rich editor is uncontrolled, so it remounts on
-  // the new text.
-  const [bodyNonce, setBodyNonce] = useState(0);
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
   const handleCursorLineChange = useCallback((line: number) => {
     const section = computeFocusedSection(bodyRef.current, line);
@@ -647,23 +641,6 @@ export function FrontmatterBodyEditScreen(props: Props) {
   // and the Connections section both land here, so both stage through the
   // same debounced flush. The ref is updated now, not at the next render, so
   // two edits in one tick compose instead of the second reading stale data.
-  // A body change made outside the editor. Source mode dispatches through the
-  // CodeMirror view, which keeps undo and reaches the same onChange (setBody +
-  // scheduleFlush) as typing; rich mode sets the body and remounts the editor.
-  const applyExternalBody = useCallback(
-    (next: string) => {
-      if (!shouldUseWysiwyg(path) && cmView) {
-        applyExternalTextChange(cmView, next, () => {});
-        return;
-      }
-      bodyRef.current = next;
-      setBody(next);
-      scheduleFlush(formDataRef.current, next, fmTextRef.current);
-      setBodyNonce((n) => n + 1);
-    },
-    [path, cmView, scheduleFlush],
-  );
-
   const applyFormData = useCallback(
     (next: unknown) => {
       formDataRef.current = next;
@@ -815,9 +792,6 @@ export function FrontmatterBodyEditScreen(props: Props) {
                     applyFormData(setRefNote((formDataRef.current ?? {}) as Record<string, unknown>, field, slug, note))
                 : undefined
             }
-            onLinkMention={
-              bodyless ? undefined : (slug, text) => applyExternalBody(linkMention(bodyRef.current, slug, text))
-            }
             readOnlyReason={yamlActive ? "Close the YAML source to edit connections." : undefined}
           />
         </Box>
@@ -851,7 +825,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
                     }
                   >
                     <RichBodyEditor
-                      key={`${path}:${bodyNonce}`}
+                      key={path}
                       initialText={body}
                       onChange={(t) => {
                         // Milkdown drops a blank line at the top of the body;
