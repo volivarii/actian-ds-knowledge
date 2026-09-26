@@ -244,3 +244,61 @@ test("a ref's note is shown in the panel and saved when the box loses focus", ()
   fireEvent.blur(box);
   assert.deepEqual(notes, [[["a11y_refs"], "modals", "non-modal variant does not trap focus; Esc closes"]]);
 });
+
+function noteModel(note: string) {
+  const v = { a11y_refs: ["modals"] };
+  return buildConnections({
+    nodeId: "component:drawer",
+    index: bakedGraphIndex(),
+    original: v,
+    live: v,
+    notes: { "a11y_refs|modals": note },
+  });
+}
+
+test("the Note box follows a note restored by Discard, and leaving it does not write the old text back", () => {
+  const notes: string[] = [];
+  const ui = (note: string) => (
+    <Theme>
+      <ConnectionsSection model={noteModel(note)} file="_meta.yml" onOpen={() => {}} onEdit={() => {}} onNote={(_f, _s, n) => notes.push(n)} />
+    </Theme>
+  );
+  const { rerender } = render(ui("edited note"));
+  fireEvent.click(screen.getByRole("button", { name: /^Modals/ }));
+  rerender(ui("orig note"));
+  const box = screen.getByRole("textbox", { name: "Note" }) as HTMLTextAreaElement;
+  assert.equal(box.value, "orig note");
+  fireEvent.focus(box);
+  fireEvent.blur(box);
+  assert.deepEqual(notes, []);
+});
+
+test("Escape in the Note box keeps what was typed", () => {
+  const notes: string[] = [];
+  render(
+    <Theme>
+      <ConnectionsSection model={noteModel("orig note")} file="_meta.yml" onOpen={() => {}} onEdit={() => {}} onNote={(_f, _s, n) => notes.push(n)} />
+    </Theme>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: /^Modals/ }));
+  const box = screen.getByRole("textbox", { name: "Note" });
+  fireEvent.focus(box);
+  fireEvent.change(box, { target: { value: "typed then Escape" } });
+  fireEvent.keyDown(box, { key: "Escape" });
+  assert.deepEqual(notes, ["typed then Escape"]);
+});
+
+test("choosing a chip while the picker is open leaves focus on the chip", () => {
+  render(
+    <Theme>
+      <ConnectionsSection model={model()} file="p.md" onOpen={() => {}} onEdit={() => {}} />
+    </Theme>,
+  );
+  const add = within(screen.getByRole("group", { name: "Built from" })).getByRole("button", { name: "+ Add" });
+  add.focus();
+  fireEvent.click(add);
+  const chip = screen.getByRole("button", { name: /^Tabs/ });
+  chip.focus();
+  fireEvent.click(chip);
+  assert.ok(document.activeElement === chip, `focus went to ${document.activeElement?.textContent}`);
+});

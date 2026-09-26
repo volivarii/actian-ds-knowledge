@@ -81,6 +81,8 @@ export function ConnectionsSection(props: ConnectionsSectionProps) {
     }
   };
   const onSelect = (_g: ConnectionGroup, i: ConnectionItem) => {
+    // Choosing a chip closes the picker without sending focus back to its opener.
+    opener.current = null;
     setPicking(null);
     setSel(sel === i.key ? null : i.key);
   };

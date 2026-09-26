@@ -1,6 +1,6 @@
 // The one editing surface: the selected link in a plain sentence, where it is
 // stored, and the actions its store allows.
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { ConnectionGroup, ConnectionItem, ConnectionsModel } from "../../lib/connections/types";
 import { STORE_LABEL, fillOther } from "../../lib/connections/vocabulary";
 import { relationTypeLabel } from "../../lib/relationTypes";
@@ -74,20 +74,7 @@ export function ConnectionPanel(props: {
           </>
         )}
       </dl>
-      {props.onNote && (
-        <label className="cx-note">
-          <span>Note</span>
-          <textarea
-            key={i.key}
-            rows={2}
-            defaultValue={i.note ?? ""}
-            placeholder="Why this rule applies here (optional)"
-            onBlur={(e) => {
-              if (e.target.value.trim() !== (i.note ?? "")) props.onNote!(e.target.value);
-            }}
-          />
-        </label>
-      )}
+      {props.onNote && <NoteBox key={i.key} note={i.note ?? ""} onSave={props.onNote} />}
       <div className="cx-actions">
         {props.actions}
         {i.reciprocal && <span className="cx-hint">The other record has it too: {i.reciprocal}</span>}
@@ -103,5 +90,53 @@ export function ConnectionPanel(props: {
         )}
       </div>
     </div>
+  );
+}
+
+/** A ref's note. Follows the stored note whenever the author is not typing
+ *  in it (Discard restores it), and saves on leaving the box, on Escape
+ *  (which closes the panel) and if the box goes away while focused. */
+function NoteBox(props: { note: string; onSave: (note: string) => void }) {
+  const [text, setText] = useState(props.note);
+  const focused = useRef(false);
+  const latest = useRef({ text, note: props.note, onSave: props.onSave });
+  latest.current = { text, note: props.note, onSave: props.onSave };
+  const lastSaved = useRef<string | null>(null);
+  const save = () => {
+    const { text: t, note, onSave } = latest.current;
+    if (t.trim() === note || t === lastSaved.current) return;
+    lastSaved.current = t;
+    onSave(t);
+  };
+  useEffect(() => {
+    if (!focused.current) setText(props.note);
+  }, [props.note]);
+  useEffect(
+    () => () => {
+      if (focused.current) save();
+    },
+    [],
+  );
+  return (
+    <label className="cx-note">
+      <span>Note</span>
+      <textarea
+        rows={2}
+        value={text}
+        placeholder="Why this rule applies here (optional)"
+        onFocus={() => {
+          focused.current = true;
+          lastSaved.current = null;
+        }}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => {
+          focused.current = false;
+          save();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") save();
+        }}
+      />
+    </label>
   );
 }
