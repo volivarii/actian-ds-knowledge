@@ -37,6 +37,7 @@ export function ConnectionPanel(props: {
   selected: { group: ConnectionGroup; item: ConnectionItem } | null;
   figma?: Map<string, string>;
   onOpen: (nodeId: string) => void;
+  canOpen?: (nodeId: string) => boolean;
   actions?: React.ReactNode;
   readOnlyReason?: string;
 }) {
@@ -73,7 +74,7 @@ export function ConnectionPanel(props: {
             Open in Figma
           </a>
         )}
-        {i.nodeId && (
+        {i.nodeId && (props.canOpen?.(i.nodeId) ?? true) && (
           <button type="button" className="cx-btn cx-ghost" onClick={() => props.onOpen(i.nodeId!)}>
             Open {i.title}
           </button>

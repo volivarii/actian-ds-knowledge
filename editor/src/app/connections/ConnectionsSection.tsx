@@ -12,6 +12,8 @@ export interface ConnectionsSectionProps {
   file: string;
   /** Open another record by node id. */
   onOpen: (nodeId: string) => void;
+  /** Whether a record can be opened (some node kinds have no page). Default: yes. */
+  canOpen?: (nodeId: string) => boolean;
   /** Figma URLs by component slug. */
   figma?: Map<string, string>;
   /** Present on editable surfaces. */
@@ -81,6 +83,7 @@ export function ConnectionsSection(props: ConnectionsSectionProps) {
         selected={selected}
         figma={props.figma}
         onOpen={props.onOpen}
+        canOpen={props.canOpen}
         readOnlyReason={props.readOnlyReason}
       />
     </section>
