@@ -180,3 +180,22 @@ test("for every real record, remove then add of an owned value restores the same
   }
   assert.ok(checked > 60, `checked ${checked}`);
 });
+
+test("undoing two removals in either order restores the original order", () => {
+  const original = { a11y_refs: [{ ref: "a", note: "A" }, { ref: "b" }, { ref: "c", note: "C" }] };
+  const f = ["a11y_refs"];
+  const rm = (d: Record<string, unknown>, slug: string) =>
+    applyConnectionEdit(d, { op: "remove", field: f, slug, shape: "ref" });
+  const add = (d: Record<string, unknown>, slug: string) =>
+    applyConnectionEdit(d, { op: "add", field: f, slug, shape: "ref" }, original);
+  const both = rm(rm(original, "a"), "b");
+  assert.deepEqual(add(add(both, "b"), "a"), original, "undo b then a");
+  assert.deepEqual(add(add(both, "a"), "b"), original, "undo a then b");
+  const ends = rm(rm(original, "a"), "c");
+  assert.deepEqual(add(add(ends, "c"), "a"), original, "undo c then a");
+});
+
+test("restoreOwned keeps an entity's relationships block when the original had none (a new record)", () => {
+  const out = restoreOwned("entity", { label: "New", apps: [], relationships: { uses: ["x"] } }, {});
+  assert.deepEqual(out, { label: "New", relationships: {} });
+});

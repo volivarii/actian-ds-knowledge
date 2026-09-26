@@ -151,7 +151,24 @@ export function applyConnectionEdit(
       ? was.flatMap((e, i) => (slugOfEntry(e) === edit.slug ? [{ e, i }] : []))
       : [];
     if (back.length === 0) list.push(edit.shape === "ref" ? { ref: edit.slug } : edit.slug);
-    for (const { e, i } of back) list.splice(Math.min(i, list.length), 0, structuredClone(e));
+    // Each entry goes back after the last present entry that preceded it in
+    // the original, so undoing several removals in any order restores the
+    // original order (an index alone is off once an earlier entry is missing).
+    // The k-th copy of a slug in the list stands for its k-th copy in the
+    // original, so duplicates of other slugs keep their own positions.
+    const at = (i: number) => {
+      const seen = new Map<string | null, number>();
+      let pos = 0;
+      list.forEach((x, j) => {
+        const slug = slugOfEntry(x);
+        const k = seen.get(slug) ?? 0;
+        seen.set(slug, k + 1);
+        const oi = (was as unknown[]).map((w, n) => (slugOfEntry(w) === slug ? n : -1)).filter((n) => n >= 0)[k];
+        if (oi !== undefined && oi < i) pos = j + 1;
+      });
+      return pos;
+    };
+    for (const { e, i } of back) list.splice(at(i), 0, structuredClone(e));
     parent[leaf] = list;
     return root;
   }
@@ -163,7 +180,9 @@ export function applyConnectionEdit(
 
 /** Put the owned fields back exactly as they are in `original` (entries,
  *  notes, order), keeping every other field of `current`. A field the
- *  original did not have is deleted. */
+ *  original did not have is deleted, except a container of nested lists
+ *  (an entity's relationships), which stays as {} because the schema
+ *  requires it. */
 export function restoreOwned(
   kind: RecordKind,
   current: Record<string, unknown>,
@@ -172,6 +191,7 @@ export function restoreOwned(
   const next: Record<string, unknown> = { ...current };
   for (const top of new Set((OWNED[kind] ?? []).map((f) => f.field[0]!))) {
     if (Object.hasOwn(original, top)) next[top] = structuredClone(original[top]);
+    else if ((OWNED[kind] ?? []).some((f) => f.field[0] === top && f.field.length > 1)) next[top] = {};
     else delete next[top];
   }
   return next;
