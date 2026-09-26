@@ -42,6 +42,7 @@ import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { RefArrayWidget } from "../form-engine/widgets/RefArrayWidget";
 import { TagInputWidget } from "../form-engine/widgets/TagInputWidget";
 import { RelationshipsField } from "../form-engine/fields/RelationshipsField";
+import { HiddenField } from "../form-engine/fields/HiddenField";
 import {
   RelationsPanel,
   readRelationsPanelCollapsed,
@@ -77,7 +78,8 @@ const WIDGETS = { RefArray: RefArrayWidget, TagInput: TagInputWidget };
 // Named "Relationships" because that is what the entity uiSchema asks for by
 // `ui:field`. Registered for every record this screen serves; only the entity
 // schema has a `relationships` property, so the others never reach it.
-const FIELDS = { Relationships: RelationshipsField };
+// Hidden: link fields edited in the Connections section instead.
+const FIELDS = { Relationships: RelationshipsField, Hidden: HiddenField };
 
 /** Derive the component slug from a path under `components/src/<slug>/…`
  *  (excluding the `categories` pseudo-slug), else null. Mirrors the derivation

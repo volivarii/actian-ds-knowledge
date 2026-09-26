@@ -49,20 +49,8 @@ export const categoryDefaultsUiSchema: UiSchema = {
     "ui:options": { addable: false, removable: false, orderable: false },
   },
   confidence: { "ui:title": "Confidence", "ui:disabled": true },
-  a11y_refs: {
-    "ui:title": "Accessibility topics",
-    "ui:widget": "RefArray",
-    "ui:options": { refDomain: "accessibility" },
-  },
-  motion_refs: {
-    "ui:title": "Motion patterns",
-    "ui:widget": "RefArray",
-    "ui:options": { refDomain: "motion" },
-  },
-  foundations_refs: {
-    "ui:title": "Foundations",
-    "ui:widget": "RefArray",
-    "ui:options": { refDomain: "foundations" },
-  },
+  a11y_refs: { "ui:field": "Hidden" },
+  motion_refs: { "ui:field": "Hidden" },
+  foundations_refs: { "ui:field": "Hidden" },
   _extends: { "ui:widget": "hidden" },
 };

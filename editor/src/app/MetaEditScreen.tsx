@@ -43,6 +43,7 @@ const META_WIDGETS = {
 };
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
+import { HiddenField } from "../form-engine/fields/HiddenField";
 
 interface MetaEditScreenProps {
   path: string | null;
@@ -63,6 +64,9 @@ function slugFromPath(path: string): string | null {
   const m = path.match(/^components\/src\/([^/]+)\/_meta\.yml$/);
   return m && m[1] ? m[1] : null;
 }
+
+// Link fields are edited in the component page's Connections section.
+const META_FIELDS = { Hidden: HiddenField };
 
 export function MetaEditScreen({
   path,
@@ -351,6 +355,7 @@ export function MetaEditScreen({
           onChange={(next) => setFormData(next)}
           onSubmit={() => handleAddToBatch()}
           widgets={META_WIDGETS}
+          fields={META_FIELDS}
           templates={metaFormTemplates}
           formContext={{
             octokit: gh,

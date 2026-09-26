@@ -37,12 +37,7 @@ export const appContextPersonaUiSchema: UiSchema = {
   },
   // `apps` is the in_app edge seen from this record, so it takes the same word
   // the entity and pattern forms use.
-  apps: {
-    "ui:title": "Part of",
-    "ui:description":
-      "The products this persona works in. Each product's list of users is built from this.",
-    "ui:options": { addLabel: "product" },
-  },
+  apps: { "ui:field": "Hidden" },
   permissionGroup: {
     "ui:title": "Permission group",
     "ui:description":

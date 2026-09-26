@@ -66,7 +66,7 @@ test("guidelineMetaUiSchema — explicit prefix entries all exist in the schema"
   );
 });
 
-test("guidelineMetaUiSchema — verbose help trimmed; section retitled; a11y_refs help is a tooltip", () => {
+test("guidelineMetaUiSchema — verbose help trimmed; section retitled; refs left to Connections", () => {
   const ui = guidelineMetaUiSchema as Record<string, any>;
   assert.equal(
     ui.category?.["ui:help"],
@@ -75,16 +75,8 @@ test("guidelineMetaUiSchema — verbose help trimmed; section retitled; a11y_ref
   );
   assert.equal(ui.related?.["ui:help"], undefined, "related help removed");
   assert.equal(ui.section?.["ui:title"], "Figma section", "section retitled");
-  assert.equal(
-    ui.a11y_refs?.["ui:options"]?.helpAsTooltip,
-    true,
-    "a11y_refs help routed to tooltip",
-  );
-  assert.ok(
-    typeof ui.a11y_refs?.["ui:help"] === "string" &&
-      ui.a11y_refs["ui:help"].length > 0,
-    "a11y_refs keeps a (short) help string for the tooltip",
-  );
+  for (const k of ["a11y_refs", "foundations_refs", "motion_refs"])
+    assert.equal(ui[k]?.["ui:field"], "Hidden", `${k} is edited in Connections, not the form`);
   assert.equal(
     ui.domains?.["ui:title"],
     undefined,

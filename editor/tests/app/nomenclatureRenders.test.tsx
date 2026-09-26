@@ -173,14 +173,16 @@ test("no app-context form shows an author the schema's machine prose (#646)", as
     );
     const txt = container.textContent!;
 
-    // The author's words are what renders.
+    // The link fields are edited in the Connections section, so the form no
+    // longer shows them, or their help. "Part of" above is the Connections
+    // lane, which says the same thing in its own sentence.
     assert.ok(
-      txt.includes("The products where this page shape appears."),
-      "the authored help for Part of does not render",
+      !txt.includes("The products where this page shape appears."),
+      "the apps field still renders in the form",
     );
     assert.ok(
-      txt.includes("The design system components this page shape is built from."),
-      "the authored help for the components field does not render",
+      txt.includes("Products where 360-degree asset detail view appears."),
+      "the Connections lane for products does not render",
     );
 
     // And the machine prose does not. Matched on SHAPE as well as on the two
@@ -205,7 +207,7 @@ test("no app-context form shows an author the schema's machine prose (#646)", as
   }
 });
 
-test("an Entity's fields carry the same author-facing help (#646)", async () => {
+test("an Entity's form shows no machine prose either (#646)", async () => {
   cleanup();
   try {
     const { container } = await renderRecord(
@@ -219,8 +221,8 @@ test("an Entity's fields carry the same author-facing help (#646)", async () => 
     );
     const txt = container.textContent!;
     assert.ok(
-      txt.includes("The products where this thing is surfaced."),
-      "the authored help for Part of does not render on an Entity",
+      !txt.includes("The products where this thing is surfaced."),
+      "the apps field still renders in the Entity form",
     );
     assert.ok(
       !txt.includes("App slugs where this entity is surfaced"),
