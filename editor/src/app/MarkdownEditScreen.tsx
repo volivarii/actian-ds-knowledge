@@ -51,6 +51,7 @@ import {
   readRelationsPanelCollapsed,
   writeRelationsPanelCollapsed,
 } from "./RelationsPanel";
+import { ConnectionsSummary } from "./connections/ConnectionsSummary";
 import { AnchorReferencesPopover } from "./AnchorReferencesPopover";
 import { AnchorRenamePopover } from "./AnchorRenamePopover";
 import {
@@ -716,27 +717,36 @@ export function MarkdownEditScreen({
         border: "1px solid var(--gray-5)",
         borderRadius: 6,
         overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <RelationsPanel
-        text={text}
-        file={path}
-        counts={connectionCounts}
-        incoming={incoming}
-        outgoing={outgoing}
-        graphNeighbors={graphNeighbors}
-        onNavigate={handleOutlineNavigate}
-        onOpenFile={handleOpenFile}
-        onManageConnections={handleManageConnections}
-        collapsed={relationsCollapsed}
-        onToggleCollapsed={toggleRelationsCollapsed}
-        activeAnchor={wysiwyg ? null : activeAnchor}
-        neighborhoodLayout={neighborhoodLayout}
-        onFocusNode={(id) => {
-          const target = mapNodeNavTarget(id, currentNodeId);
-          if (target) handleOpenFile(target);
-        }}
-      />
+      {!relationsCollapsed && (
+        <Box px="3" pt="2" style={{ flexShrink: 0 }}>
+          <ConnectionsSummary path={path} text={text} onNavigate={handleOpenFile} />
+        </Box>
+      )}
+      <Box style={{ flex: "1 1 0", minHeight: 0 }}>
+        <RelationsPanel
+          text={text}
+          file={path}
+          counts={connectionCounts}
+          incoming={incoming}
+          outgoing={outgoing}
+          graphNeighbors={graphNeighbors}
+          onNavigate={handleOutlineNavigate}
+          onOpenFile={handleOpenFile}
+          onManageConnections={handleManageConnections}
+          collapsed={relationsCollapsed}
+          onToggleCollapsed={toggleRelationsCollapsed}
+          activeAnchor={wysiwyg ? null : activeAnchor}
+          neighborhoodLayout={neighborhoodLayout}
+          onFocusNode={(id) => {
+            const target = mapNodeNavTarget(id, currentNodeId);
+            if (target) handleOpenFile(target);
+          }}
+        />
+      </Box>
     </Box>
   );
 
