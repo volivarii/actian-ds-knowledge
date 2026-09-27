@@ -35,7 +35,11 @@ export function GroupItems(props: GroupViewProps & { group: ConnectionGroup; cap
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const all = q ? group.items.filter((i) => i.title.toLowerCase().includes(q.toLowerCase())) : group.items;
-  const shown = open ? all : all.slice(0, props.cap);
+  // A pending link (just added, or marked for removal) always shows: an edit
+  // the author cannot see behind "+N more" reads as an edit that did nothing.
+  const pending = (i: ConnectionItem) => i.state === "added" || i.state === "removed";
+  const shown = open ? all : [...all.slice(0, props.cap), ...all.slice(props.cap).filter(pending)];
+  const hidden = all.length - shown.length;
   const canEdit = group.editable && !!props.onRemove;
   return (
     <div className="cx-items">
@@ -49,6 +53,11 @@ export function GroupItems(props: GroupViewProps & { group: ConnectionGroup; cap
             setQ(e.target.value);
             setOpen(true);
           }}
+          // The section can sit inside a form (record screens): Enter here
+          // filters, it never submits.
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.preventDefault();
+          }}
         />
       )}
       {shown.map((i) => (
@@ -60,9 +69,9 @@ export function GroupItems(props: GroupViewProps & { group: ConnectionGroup; cap
           onRemove={canEdit && i.state !== "removed" ? () => props.onRemove!(group, i) : undefined}
         />
       ))}
-      {all.length > props.cap && (
+      {(open ? all.length > props.cap : hidden > 0) && (
         <button type="button" className="cx-more" onClick={() => setOpen(!open)}>
-          {open ? "Show fewer" : `+${all.length - props.cap} more`}
+          {open ? "Show fewer" : `+${hidden} more`}
         </button>
       )}
       {group.editable && props.onAdd && (

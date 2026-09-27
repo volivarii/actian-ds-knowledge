@@ -11,6 +11,8 @@ import {
   applyConnectionEdit,
   restoreOwned,
   nodeIdFor,
+  ownedNotes,
+  setRefNote,
 } from "../../src/lib/connections/owned";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -198,4 +200,15 @@ test("undoing two removals in either order restores the original order", () => {
 test("restoreOwned keeps an entity's relationships block when the original had none (a new record)", () => {
   const out = restoreOwned("entity", { label: "New", apps: [], relationships: { uses: ["x"] } }, {});
   assert.deepEqual(out, { label: "New", relationships: {} });
+});
+
+test("a ref's note is read, written on every copy, and cleared when emptied", () => {
+  const d0 = { a11y_refs: [{ ref: "dialogs", note: "Traps focus." }, { ref: "buttons" }] };
+  assert.deepEqual(ownedNotes("component", d0), { "a11y_refs|dialogs": "Traps focus." });
+  const d1 = setRefNote(d0, ["a11y_refs"], "buttons", "Primary action only.");
+  assert.deepEqual(d1.a11y_refs, [{ ref: "dialogs", note: "Traps focus." }, { ref: "buttons", note: "Primary action only." }]);
+  assert.deepEqual(d0.a11y_refs[1], { ref: "buttons" }, "input untouched");
+  const d2 = setRefNote(d1, ["a11y_refs"], "dialogs", "  ");
+  assert.deepEqual((d2.a11y_refs as unknown[])[0], { ref: "dialogs" });
+  assert.equal(setRefNote(d1, ["a11y_refs"], "buttons", "Primary action only."), d1, "same note: no change");
 });

@@ -115,6 +115,53 @@ export function ownedValues(kind: RecordKind, data: unknown): OwnedValues {
   return out;
 }
 
+/** The note on each ref the record stores, keyed `${fieldKey}|${slug}`. */
+export function ownedNotes(kind: RecordKind, data: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const f of OWNED[kind] ?? []) {
+    if (f.shape !== "ref") continue;
+    const v = getIn(data, f.field);
+    if (!Array.isArray(v)) continue;
+    for (const e of v) {
+      const slug = slugOfEntry(e);
+      const note = e && typeof e === "object" ? (e as { note?: unknown }).note : undefined;
+      const k = `${fieldKey(f.field)}|${slug}`;
+      if (slug && typeof note === "string" && note && !(k in out)) out[k] = note;
+    }
+  }
+  return out;
+}
+
+/** Set the note on a ref, on every copy; a blank note removes it. Returns the
+ *  input itself when nothing changes. */
+export function setRefNote(
+  data: Record<string, unknown>,
+  field: string[],
+  slug: string,
+  note: string,
+): Record<string, unknown> {
+  const list = getIn(data, field);
+  if (!Array.isArray(list)) return data;
+  const text = note.trim();
+  let changed = false;
+  const next = list.map((e) => {
+    if (slugOfEntry(e) !== slug || (typeof e !== "object" && !text)) return e;
+    const { note: was, ...rest } = (typeof e === "object" && e ? e : { ref: slug }) as { ref: string; note?: unknown };
+    if ((was ?? "") === text && typeof e === "object") return e;
+    changed = true;
+    return text ? { ...rest, note: text } : rest;
+  });
+  if (!changed) return data;
+  const root: Record<string, unknown> = { ...data };
+  let parent = root;
+  for (const k of field.slice(0, -1)) {
+    parent[k] = { ...(parent[k] as Record<string, unknown>) };
+    parent = parent[k] as Record<string, unknown>;
+  }
+  parent[field[field.length - 1]!] = next;
+  return root;
+}
+
 /** Apply one edit to a record's data. Never mutates the input; returns the
  *  input itself when the edit changes nothing (add of a present slug, remove
  *  of an absent one). Removal removes every copy. An emptied nested list

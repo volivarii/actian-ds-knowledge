@@ -62,13 +62,9 @@ export const guidelineMetaUiSchema: UiSchema = {
     "ui:title": "Related components",
     "ui:widget": "RelatedMultiSelect",
   },
-  a11y_refs: {
-    "ui:title": "Accessibility topics",
-    "ui:widget": "A11yRefsPicker",
-    "ui:help":
-      "Component-specific topics. Foundation topics like Color contrast are set on the category.",
-    "ui:options": { helpAsTooltip: true },
-  },
+  a11y_refs: { "ui:field": "Hidden" },
+  motion_refs: { "ui:field": "Hidden" },
+  foundations_refs: { "ui:field": "Hidden" },
   examples: {
     "ui:title": "Examples",
     items: {

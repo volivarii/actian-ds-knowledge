@@ -30,17 +30,8 @@ export const appContextPatternUiSchema: UiSchema = {
   // `apps` is the in_app edge seen from this record: it says which Products
   // this Pattern belongs to. "Part of" is the nomenclature's word for that
   // side, and it is the same word the relations rail uses.
-  apps: {
-    "ui:title": "Part of",
-    "ui:description": "The products where this page shape appears.",
-    "ui:options": { addLabel: "product" },
-  },
-  components: {
-    "ui:title": "Built from",
-    "ui:description":
-      "The design system components this page shape is built from.",
-    "ui:options": { addLabel: "component" },
-  },
+  apps: { "ui:field": "Hidden" },
+  components: { "ui:field": "Hidden" },
   // Found by looking at the rendered form, not by the guard below, which did
   // not exist yet: `when` was the one field with no `ui:title`, so RJSF fell
   // back to the YAML key and captioned it with a lowercase "when". The raw key

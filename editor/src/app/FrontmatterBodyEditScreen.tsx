@@ -42,6 +42,7 @@ import { MarkdownEditScreen } from "./MarkdownEditScreen";
 import { RefArrayWidget } from "../form-engine/widgets/RefArrayWidget";
 import { TagInputWidget } from "../form-engine/widgets/TagInputWidget";
 import { RelationshipsField } from "../form-engine/fields/RelationshipsField";
+import { HiddenField } from "../form-engine/fields/HiddenField";
 import {
   RelationsPanel,
   readRelationsPanelCollapsed,
@@ -62,7 +63,15 @@ import { bakedGraphIndex } from "../substrate/graphIndex";
 import { candidateNodeIdForFile } from "../substrate/nodeIdForFile";
 import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
 import { buildConnections } from "../lib/connections/build";
-import { ownedValues, recordKindOf } from "../lib/connections/owned";
+import {
+  OWNED,
+  applyConnectionEdit,
+  ownedNotes,
+  ownedValues,
+  recordKindOf,
+  restoreOwned,
+  setRefNote,
+} from "../lib/connections/owned";
 
 // Lazy-loaded so the Milkdown/ProseMirror bundle (the largest editor dep) splits
 // into an async chunk fetched only when the WYSIWYG flag is on — it stays out of
@@ -77,7 +86,8 @@ const WIDGETS = { RefArray: RefArrayWidget, TagInput: TagInputWidget };
 // Named "Relationships" because that is what the entity uiSchema asks for by
 // `ui:field`. Registered for every record this screen serves; only the entity
 // schema has a `relationships` property, so the others never reach it.
-const FIELDS = { Relationships: RelationshipsField };
+// Hidden: link fields edited in the Connections section instead.
+const FIELDS = { Relationships: RelationshipsField, Hidden: HiddenField };
 
 /** Derive the component slug from a path under `components/src/<slug>/…`
  *  (excluding the `categories` pseudo-slug), else null. Mirrors the derivation
@@ -486,6 +496,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
   // other graph neighbour and the links in the body.
   const connectionsNodeId = candidateNodeIdForFile(path);
   const connectionsKind = connectionsNodeId ? recordKindOf(connectionsNodeId) : null;
+  const connectionsEditable = !!connectionsKind && !!OWNED[connectionsKind];
   const connectionsOriginal = useMemo<Record<string, unknown>>(() => {
     if (state.kind !== "ready" || state.baseline === null) return {};
     try {
@@ -505,6 +516,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
       name: typeof label === "string" ? label : undefined,
       original: ownedValues(connectionsKind, connectionsOriginal),
       live: ownedValues(connectionsKind, formData),
+      notes: ownedNotes(connectionsKind, formData),
       bodies: bodyless ? [] : [{ path, text: body }],
     });
   }, [state.kind, connectionsNodeId, connectionsKind, connectionsOriginal, formData, body, bodyless, path]);
@@ -625,6 +637,19 @@ export function FrontmatterBodyEditScreen(props: Props) {
     [path, flushToCart],
   );
 
+  // The one way frontmatter data changes from the form surface: the RJSF form
+  // and the Connections section both land here, so both stage through the
+  // same debounced flush. The ref is updated now, not at the next render, so
+  // two edits in one tick compose instead of the second reading stale data.
+  const applyFormData = useCallback(
+    (next: unknown) => {
+      formDataRef.current = next;
+      setFormData(next);
+      scheduleFlush(next, bodyRef.current, fmTextRef.current);
+    },
+    [scheduleFlush],
+  );
+
   if (state.kind === "loading") return <Text>Loading…</Text>;
   if (state.kind === "error")
     return (
@@ -738,6 +763,36 @@ export function FrontmatterBodyEditScreen(props: Props) {
               if (t) handleOpenFile(t);
             }}
             canOpen={(id) => navTargetForNodeId(id) !== null}
+            onEdit={
+              connectionsEditable
+                ? (edits) =>
+                    applyFormData(
+                      edits.reduce(
+                        (d, e) => applyConnectionEdit(d, e, connectionsOriginal),
+                        (formDataRef.current ?? {}) as Record<string, unknown>,
+                      ),
+                    )
+                : undefined
+            }
+            onDiscard={
+              connectionsEditable
+                ? () =>
+                    applyFormData(
+                      restoreOwned(
+                        connectionsKind!,
+                        (formDataRef.current ?? {}) as Record<string, unknown>,
+                        connectionsOriginal,
+                      ),
+                    )
+                : undefined
+            }
+            onNote={
+              connectionsEditable
+                ? (field, slug, note) =>
+                    applyFormData(setRefNote((formDataRef.current ?? {}) as Record<string, unknown>, field, slug, note))
+                : undefined
+            }
+            readOnlyReason={yamlActive ? "Close the YAML source to edit connections." : undefined}
           />
         </Box>
       )}
@@ -977,10 +1032,7 @@ export function FrontmatterBodyEditScreen(props: Props) {
           widgets={WIDGETS}
           fields={FIELDS}
           templates={frontmatterTemplates}
-          onChange={(next) => {
-            setFormData(next);
-            scheduleFlush(next, bodyRef.current, fmTextRef.current);
-          }}
+          onChange={applyFormData}
           onSubmit={(next) =>
             flushToCart(next, bodyRef.current, fmTextRef.current, true)
           }

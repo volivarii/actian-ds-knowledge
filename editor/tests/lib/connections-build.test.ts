@@ -125,3 +125,16 @@ test("two entities linked twice show both relations: data-process consumes and p
   const out = (slug: string) => ro.groups.filter((g) => g.items.some((i) => i.slug === slug)).map((g) => g.label);
   assert.deepEqual(out("dataset").sort(), ["Consumes", "Produces"]);
 });
+
+test("an editable ref carries its note", () => {
+  const v = { a11y_refs: ["modals"] };
+  const m = buildConnections({
+    nodeId: "component:drawer",
+    index,
+    original: v,
+    live: v,
+    notes: { "a11y_refs|modals": "non-modal variant does not trap focus" },
+  });
+  const it = m.groups.flatMap((g) => g.items).find((i) => i.slug === "modals")!;
+  assert.equal(it.note, "non-modal variant does not trap focus");
+});

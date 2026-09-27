@@ -41,6 +41,8 @@ export interface BuildInput {
   bodies?: Array<{ path: string; text: string }>;
   /** Fallback name when the node is not in the graph yet (a new record). */
   name?: string;
+  /** Notes on the refs in the current draft, from `ownedNotes`. */
+  notes?: Record<string, string>;
 }
 
 const REF_EDGES = new Set(["a11y_ref", "foundations_ref", "motion_ref"]);
@@ -116,7 +118,11 @@ export function buildConnections(input: BuildInput): ConnectionsModel {
       const k = fieldKey(f.field);
       const was = input.original![k] ?? [];
       const now = input.live![k] ?? [];
-      for (const s of now) push(g, item(d.key, s, f.type, index, was.includes(s) ? "saved" : "added", "here"));
+      for (const s of now) {
+        const it = item(d.key, s, f.type, index, was.includes(s) ? "saved" : "added", "here");
+        const note = input.notes?.[`${k}|${s}`];
+        push(g, note ? { ...it, note } : it);
+      }
       for (const s of was) if (!now.includes(s)) push(g, item(d.key, s, f.type, index, "removed", "here"));
     } else {
       for (const n of index.neighbors(nodeId, { direction: "out", edgeTypes: [f.edgeType] })) {

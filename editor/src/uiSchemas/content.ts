@@ -8,10 +8,7 @@ import type { UiSchema } from "@rjsf/utils";
 export const contentUiSchema: UiSchema = {
   "ui:order": ["title", "relatedComponents", "*"],
   title: { "ui:title": "Title" },
-  relatedComponents: {
-    "ui:title": "Related components",
-    "ui:widget": "RefArray",
-  },
+  relatedComponents: { "ui:field": "Hidden" },
   nav_order: { "ui:widget": "hidden" },
   nav_exclude: { "ui:widget": "hidden" },
   search_exclude: { "ui:widget": "hidden" },

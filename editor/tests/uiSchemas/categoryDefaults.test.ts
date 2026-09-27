@@ -2,14 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { categoryDefaultsUiSchema as ui } from "../../src/uiSchemas/categoryDefaults";
 
-test("wires each refs field to RefArray with the right domain", () => {
-  assert.equal((ui.a11y_refs as any)["ui:widget"], "RefArray");
-  assert.equal((ui.a11y_refs as any)["ui:options"].refDomain, "accessibility");
-  assert.equal((ui.motion_refs as any)["ui:options"].refDomain, "motion");
-  assert.equal(
-    (ui.foundations_refs as any)["ui:options"].refDomain,
-    "foundations",
-  );
+test("the refs fields are left to the Connections section", () => {
+  for (const k of ["a11y_refs", "motion_refs", "foundations_refs"])
+    assert.equal((ui[k] as any)["ui:field"], "Hidden", k);
 });
 
 test("slug and _schema_version are read-only", () => {

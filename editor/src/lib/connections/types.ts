@@ -26,6 +26,8 @@ export interface ConnectionItem {
   reciprocal: string | null;
   /** A code-style mention in the text, not a link. Not counted. */
   unlinked: boolean;
+  /** The author's note on a ref stored in this record. */
+  note?: string;
   /** Per link, for a future curation layer; equals the group's store today. */
   source: StoreKind;
   status: "confirmed";
