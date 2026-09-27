@@ -1,10 +1,9 @@
-// RelationsPanel: the unified outline + contextual relations surface that
-// Tasks 5-6 mount in source mode, rich mode, and the frontmatter-form body
-// view. Tests target the component in isolation with fake props (the panel
-// never calls the reference/graph services itself, per the prop contract).
-// `collapsed` is a controlled prop owned by the parent screen (FIX 1): the
-// panel itself no longer reads/writes localStorage, so these tests drive
-// visibility via the prop and separately pin the exported storage util.
+// RelationsPanel: the rail beside the body editor, which is the document's
+// outline. A record's links moved to its Connections section; see
+// connections-retire.test.tsx for the guard that keeps them out of the rail.
+// `collapsed` is a controlled prop owned by the parent screen: the panel does
+// not read or write localStorage itself, so these tests drive visibility via
+// the prop and separately pin the exported storage util.
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import "../setup-dom";
@@ -16,11 +15,7 @@ import {
   readRelationsPanelCollapsed,
   writeRelationsPanelCollapsed,
 } from "../../src/app/RelationsPanel";
-import type { IncomingRef, Neighbor } from "../../src/lib/referenceIndex";
-import type { OutgoingConnection } from "../../src/substrate/refGraph";
 import type { Heading } from "../../src/lib/headingScan";
-import { layoutNeighborhood } from "../../src/substrate/neighborhoodLayout";
-import { buildGraphIndex } from "../../src/substrate/graphIndex";
 
 afterEach(() => {
   cleanup();
@@ -33,373 +28,53 @@ afterEach(() => {
 
 const TEXT = "## Usage {#usage}\n\nBody.\n\n## Style {#style}\n\nMore.\n";
 
-const H1_FIRST_TEXT = "# Title\n\n## Usage {#usage}\n\nBody.\n";
-
-const INCOMING: IncomingRef[] = [
-  {
-    fromPath: "content/src/patterns/forms.md",
-    slug: "usage",
-    snippet: "Use a button when the action is primary.",
-  },
-];
-
-const OUTGOING: OutgoingConnection[] = [];
-
-const GRAPH_NEIGHBORS: Neighbor[] = [
-  {
-    id: "category:action",
-    node: { id: "category:action", type: "category", title: "Action" },
-    edgeType: "in_category",
-    note: null,
-    direction: "out",
-  },
-];
-
-function renderPanel(
-  overrides: Partial<React.ComponentProps<typeof RelationsPanel>> = {},
-) {
+function renderPanel(overrides: Partial<React.ComponentProps<typeof RelationsPanel>> = {}) {
   const calls: string[] = [];
+  const navs: Array<{ heading: Heading; index: number }> = [];
   const utils = render(
     <Theme>
       <RelationsPanel
         text={TEXT}
-        file="components/src/button/content.md"
-        counts={new Map([["usage", 3]])}
-        incoming={INCOMING}
-        outgoing={OUTGOING}
-        graphNeighbors={GRAPH_NEIGHBORS}
-        onNavigate={() => calls.push("nav")}
-        onOpenFile={(p) => calls.push("open:" + p)}
-        onManageConnections={() => calls.push("manage")}
+        onNavigate={(heading, index) => navs.push({ heading, index })}
         collapsed={false}
         onToggleCollapsed={() => calls.push("toggle")}
         {...overrides}
       />
     </Theme>,
   );
-  return { ...utils, calls };
+  return { ...utils, calls, navs };
 }
 
-test("renders outline headings with count pills", () => {
+const rows = (container: HTMLElement) =>
+  Array.from(container.querySelectorAll("[data-testid='outline-row']")) as HTMLElement[];
+
+test("renders the outline headings", () => {
   const { container } = renderPanel();
-  assert.ok(container.textContent!.includes("Usage"));
-  assert.ok(container.textContent!.includes("Style"));
-  const usageRow = Array.from(
-    container.querySelectorAll("[data-testid='outline-row']"),
-  ).find((r) => r.textContent!.includes("Usage"))!;
-  const badge = usageRow.querySelector("[data-testid='outline-count']");
-  assert.ok(badge);
-  assert.equal(badge!.textContent, "3");
-});
-
-test("incoming rows show snippet and source file, click opens the file", () => {
-  const { container, calls } = renderPanel();
-  assert.ok(
-    container.textContent!.includes("Use a button when the action is primary."),
+  assert.deepEqual(
+    rows(container).map((r) => r.textContent),
+    ["Usage", "Style"],
   );
-  const row = container.querySelectorAll("[data-testid='incoming-row']")[0]!;
-  fireEvent.click(row);
-  assert.ok(calls.includes("open:content/src/patterns/forms.md"));
 });
 
-test("incoming row responds to an Enter keydown the same as a click", () => {
-  const { container, calls } = renderPanel();
-  const row = container.querySelectorAll("[data-testid='incoming-row']")[0]!;
-  fireEvent.keyDown(row, { key: "Enter" });
-  assert.ok(calls.includes("open:content/src/patterns/forms.md"));
+test("clicking an outline row navigates to that heading, passing its index", () => {
+  const { container, navs } = renderPanel();
+  fireEvent.click(rows(container).find((r) => r.textContent === "Style")!);
+  assert.equal(navs.length, 1);
+  assert.equal(navs[0]!.index, 1);
+  assert.equal(navs[0]!.heading.text, "Style");
 });
 
-test("graph section reads as a human relationship group and keeps the honest staleness note", () => {
+test("an outline row responds to Enter like a click", () => {
+  const { container, navs } = renderPanel();
+  fireEvent.keyDown(rows(container)[0]!, { key: "Enter" });
+  assert.equal(navs.length, 1);
+});
+
+test("the rail lists no links: no Referenced by, References or graph groups", () => {
   const { container } = renderPanel();
-  const txt = container.textContent!;
-  // in_category-out reads as "Part of" — the membership pair's outbound word,
-  // shared with in_app so a Component's Category and a Pattern's Products are
-  // the same question asked at two scales.
-  assert.ok(txt.includes("Part of"), "shows the Part of group label");
-  assert.ok(!txt.includes("in_category"), "raw edge key must not leak");
-  assert.ok(!txt.includes("in category"), "spaced edge key is gone too");
-  assert.ok(txt.includes("Action"), "neighbour title still shown");
-  assert.ok(
-    txt.toLowerCase().includes("as of last merge"),
-    "honest baked-staleness note stays",
-  );
-});
-
-test("graph row navigates via onOpenFile when navTargetForNodeId resolves; a node type mapping to null stays non-interactive", () => {
-  const neighbors: Neighbor[] = [
-    {
-      id: "category:action",
-      node: { id: "category:action", type: "category", title: "Action" },
-      edgeType: "in_category",
-      note: null,
-      direction: "out",
-    },
-    {
-      id: "content:loading",
-      node: { id: "content:loading", type: "content", title: "Loading" },
-      edgeType: "uses_pattern",
-      note: null,
-      direction: "out",
-    },
-  ];
-  const { container, calls } = renderPanel({ graphNeighbors: neighbors });
-  const rows = Array.from(
-    container.querySelectorAll("[data-testid='graph-row']"),
-  );
-  const categoryRow = rows.find((r) => r.textContent!.includes("Action"))!;
-  const contentRow = rows.find((r) => r.textContent!.includes("Loading"))!;
-
-  assert.equal(categoryRow.getAttribute("role"), "button");
-  fireEvent.click(categoryRow);
-  assert.ok(calls.includes("open:components/src/categories/action.md"));
-
-  assert.notEqual(contentRow.getAttribute("role"), "button");
-  fireEvent.click(contentRow);
-  assert.ok(!calls.some((c) => c.startsWith("open:") && c.includes("loading")));
-});
-
-test("graph neighbours group under human relationship labels with a typed dot per row, no raw edge keys", () => {
-  const neighbors: Neighbor[] = [
-    {
-      id: "category:action",
-      node: { id: "category:action", type: "category", title: "Action" },
-      edgeType: "in_category",
-      note: null,
-      direction: "out",
-    },
-    {
-      id: "component:modal",
-      node: { id: "component:modal", type: "component", title: "Modal" },
-      edgeType: "composed_of",
-      note: null,
-      direction: "in",
-    },
-    {
-      id: "pattern:import-wizard",
-      node: {
-        id: "pattern:import-wizard",
-        type: "ux_pattern",
-        title: "Import wizard",
-      },
-      edgeType: "uses_component",
-      note: null,
-      direction: "in",
-    },
-  ];
-  const { container } = renderPanel({ graphNeighbors: neighbors });
-  const txt = container.textContent!;
-  // human group labels — four reciprocal pairs, so composed_of:in and
-  // uses_component:in share one "Used in" group instead of splitting into
-  // "Appears in" and "Used in patterns".
-  assert.ok(txt.includes("Part of"), "shows Part of group");
-  assert.ok(txt.includes("Used in"), "shows Used in group");
-  // neighbour titles
-  assert.ok(txt.includes("Action") && txt.includes("Modal"));
-  assert.ok(txt.includes("Import wizard"));
-  // internal edge keys never leak
-  for (const banned of ["in_category", "composed_of", "uses_component"]) {
-    assert.ok(!txt.includes(banned), `graph section leaked "${banned}"`);
-  }
-  // each row carries its node type + a typed dot (coordinated-highlight ready)
-  const rows = Array.from(
-    container.querySelectorAll("[data-testid='graph-row']"),
-  );
-  assert.equal(rows.length, 3);
-  assert.ok(
-    rows.every((r) => r.getAttribute("data-node-type")),
-    "every graph row exposes its node type",
-  );
-  assert.ok(
-    rows.every((r) => r.querySelector("[data-testid='reldot']")),
-    "every graph row has a typed dot",
-  );
-});
-
-test("clicking an outline row scopes incoming to that section, and passes its index", () => {
-  const navCalls: Array<{ heading: Heading; index: number }> = [];
-  const { container } = renderPanel({
-    onNavigate: (heading, index) => navCalls.push({ heading, index }),
-  });
-  const styleRow = Array.from(
-    container.querySelectorAll("[data-testid='outline-row']"),
-  ).find((r) => r.textContent!.includes("Style"))!;
-  fireEvent.click(styleRow);
-  // "usage"-slugged incoming ref is hidden when the Style section is scoped.
-  assert.ok(
-    !container.textContent!.includes(
-      "Use a button when the action is primary.",
-    ),
-  );
-  assert.equal(navCalls.length, 1);
-  assert.equal(navCalls[0]!.heading.text, "Style");
-  // "Style" is the second heading (index 1) in TEXT's outline.
-  assert.equal(navCalls[0]!.index, 1);
-});
-
-test("H1 outline row click navigates without touching section scoping; Manage falls back to the first H2/H3 anchor", () => {
-  const navCalls: Array<{ heading: Heading; index: number }> = [];
-  const manageCalls: string[] = [];
-  const { container } = render(
-    <Theme>
-      <RelationsPanel
-        text={H1_FIRST_TEXT}
-        file="components/src/button/content.md"
-        counts={new Map()}
-        incoming={INCOMING}
-        outgoing={[]}
-        graphNeighbors={[]}
-        onNavigate={(heading, index) => navCalls.push({ heading, index })}
-        onOpenFile={() => {}}
-        onManageConnections={(anchor) => manageCalls.push(anchor)}
-        collapsed={false}
-        onToggleCollapsed={() => {}}
-      />
-    </Theme>,
-  );
-
-  const rows = () =>
-    Array.from(container.querySelectorAll("[data-testid='outline-row']"));
-  const titleRow = rows().find((r) => r.textContent!.includes("Title"))!;
-  const usageRow = rows().find((r) => r.textContent!.includes("Usage"))!;
-
-  // Scope to "usage" first, via a real H2 row.
-  fireEvent.click(usageRow);
-  assert.ok(container.textContent!.includes("Relations: usage"));
-
-  // Clicking the H1 row navigates, but H1 has no anchor, so scoping is
-  // left untouched (not cleared).
-  fireEvent.click(titleRow);
-  assert.equal(navCalls.length, 2);
-  assert.equal(navCalls[1]!.heading.text, "Title");
-  assert.equal(navCalls[1]!.heading.level, 1);
-  // "Title" is the first heading (index 0) in H1_FIRST_TEXT's outline.
-  assert.equal(navCalls[1]!.index, 0);
-  assert.ok(container.textContent!.includes("Relations: usage"));
-
-  // Unscope, then Manage falls back to the first H2/H3 heading's anchor
-  // ("usage"), not headings[0] (the H1, which resolves to a null anchor).
-  fireEvent.click(screen.getByText("All"));
-  fireEvent.click(screen.getByTestId("manage-connections"));
-  assert.equal(manageCalls.length, 1);
-  assert.equal(manageCalls[0], "usage");
-});
-
-test("outgoing rows show the domain badge and slug; broken refs (null domain) are flagged", () => {
-  const outgoing: OutgoingConnection[] = [
-    {
-      slug: "color-contrast",
-      refType: "a11y_refs",
-      note: null,
-      domain: "accessibility",
-    },
-    { slug: "ghost-topic", refType: "motion_refs", note: null, domain: null },
-  ];
-  const { container } = renderPanel({ outgoing });
-  assert.ok(container.textContent!.includes("accessibility"));
-  assert.ok(container.textContent!.includes("color-contrast"));
-  assert.ok(container.textContent!.includes("broken"));
-  assert.ok(container.textContent!.includes("ghost-topic"));
-});
-
-test("outgoing rows navigate by domain: component → workspace, accessibility → src path; broken and motion stay plain", () => {
-  const outgoing: OutgoingConnection[] = [
-    {
-      slug: "tag",
-      refType: "relatedComponents",
-      note: null,
-      domain: "component",
-    },
-    {
-      slug: "color-contrast",
-      refType: "a11y_refs",
-      note: null,
-      domain: "accessibility",
-    },
-    { slug: "fade-in", refType: "motion_refs", note: null, domain: "motion" },
-    { slug: "ghost-topic", refType: "a11y_refs", note: null, domain: null },
-  ];
-  const { container, calls } = renderPanel({ outgoing });
-  const rows = Array.from(
-    container.querySelectorAll("[data-testid='outgoing-row']"),
-  );
-  assert.equal(rows.length, 4);
-
-  const rowFor = (slug: string) =>
-    rows.find((r) => r.textContent!.includes(slug))!;
-
-  fireEvent.click(rowFor("tag"));
-  fireEvent.click(rowFor("color-contrast"));
-  assert.deepEqual(calls, [
-    "open:workspace/tag",
-    "open:accessibility/src/color-contrast.md",
-  ]);
-
-  // motion and broken rows are non-interactive (no role, click is a no-op)
-  assert.equal(rowFor("fade-in").getAttribute("role"), null);
-  assert.equal(rowFor("ghost-topic").getAttribute("role"), null);
-  fireEvent.click(rowFor("fade-in"));
-  fireEvent.click(rowFor("ghost-topic"));
-  assert.equal(calls.length, 2);
-});
-
-test("outgoing row responds to Enter like a click", () => {
-  const outgoing: OutgoingConnection[] = [
-    {
-      slug: "tag",
-      refType: "relatedComponents",
-      note: null,
-      domain: "component",
-    },
-  ];
-  const { container, calls } = renderPanel({ outgoing });
-  const row = container.querySelector("[data-testid='outgoing-row']")!;
-  fireEvent.keyDown(row, { key: "Enter" });
-  assert.deepEqual(calls, ["open:workspace/tag"]);
-});
-
-test("manage connections click passes the scoped (or first) section anchor and the anchor element", () => {
-  const calls: Array<{ anchor: string; el: HTMLElement }> = [];
-  render(
-    <Theme>
-      <RelationsPanel
-        text={TEXT}
-        file="components/src/button/content.md"
-        counts={new Map()}
-        incoming={[]}
-        outgoing={[]}
-        graphNeighbors={[]}
-        onNavigate={() => {}}
-        onOpenFile={() => {}}
-        onManageConnections={(anchor, el) => calls.push({ anchor, el })}
-        collapsed={false}
-        onToggleCollapsed={() => {}}
-      />
-    </Theme>,
-  );
-  fireEvent.click(screen.getByTestId("manage-connections"));
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0]!.anchor, "usage");
-  assert.ok(calls[0]!.el instanceof HTMLElement);
-});
-
-test("Manage button is absent when onManageConnections is omitted", () => {
-  render(
-    <Theme>
-      <RelationsPanel
-        text={TEXT}
-        file="components/src/button/content.md"
-        counts={new Map()}
-        incoming={[]}
-        outgoing={[]}
-        graphNeighbors={[]}
-        onNavigate={() => {}}
-        onOpenFile={() => {}}
-        collapsed={false}
-        onToggleCollapsed={() => {}}
-      />
-    </Theme>,
-  );
-  assert.equal(screen.queryByTestId("manage-connections"), null);
+  const txt = container.textContent ?? "";
+  for (const gone of ["Referenced by", "References", "In the graph", "Manage"])
+    assert.ok(!txt.includes(gone), `the rail still shows ${gone}`);
 });
 
 test("clicking the toggle button calls onToggleCollapsed (collapsed state is owned by the parent)", () => {
@@ -408,11 +83,10 @@ test("clicking the toggle button calls onToggleCollapsed (collapsed state is own
   assert.ok(calls.includes("toggle"));
 });
 
-test("collapsed=true hides the outline and contextual relations, keeps the header", () => {
+test("collapsed=true hides the outline, keeps the header", () => {
   const { container } = renderPanel({ collapsed: true });
-  assert.ok(container.textContent!.includes("Relations"));
+  assert.ok(container.textContent!.includes("Outline"));
   assert.ok(!container.textContent!.includes("Usage"));
-  assert.ok(!container.textContent!.includes("Incoming"));
 });
 
 test("readRelationsPanelCollapsed / writeRelationsPanelCollapsed round-trip through localStorage", () => {
@@ -427,285 +101,25 @@ test("readRelationsPanelCollapsed / writeRelationsPanelCollapsed round-trip thro
 
 test("outline renders nothing when text has no headings", () => {
   const { container } = renderPanel({ text: "just prose, no headings" });
-  // Empty outline renders without crashing; no heading rows present.
-  assert.equal(
-    container.querySelectorAll("[data-testid='outline-row']").length,
-    0,
-  );
+  assert.equal(rows(container).length, 0);
 });
 
 test("outline indentation: H2 deeper than H1, H3 deeper than H2", () => {
-  const md = "# Top\n## Section\n### Sub\n";
-  const { container } = renderPanel({ text: md });
-  const items = container.querySelectorAll("[data-testid='outline-row']");
-  assert.equal(items.length, 3);
-  const pads = Array.from(items).map((el) =>
-    parseFloat((el as HTMLElement).style.paddingLeft),
-  );
-  // H1 < H2 < H3 indent
+  const { container } = renderPanel({ text: "# Top\n## Section\n### Sub\n" });
+  const pads = rows(container).map((el) => parseFloat(el.style.paddingLeft));
+  assert.equal(pads.length, 3);
   assert.ok(pads[0]! < pads[1]!);
   assert.ok(pads[1]! < pads[2]!);
 });
 
-test("activeAnchor marks the matching outline row (data-active) without scoping the incoming list", () => {
+test("activeAnchor marks the matching outline row (data-active)", () => {
   const { container } = renderPanel({ activeAnchor: "style" });
-  const rows = Array.from(
-    container.querySelectorAll("[data-testid='outline-row']"),
-  ) as HTMLElement[];
-  const styleRow = rows.find((r) => r.textContent!.includes("Style"))!;
-  const usageRow = rows.find((r) => r.textContent!.includes("Usage"))!;
-  assert.equal(styleRow.getAttribute("data-active"), "true");
-  assert.equal(usageRow.getAttribute("data-active"), null);
-  // Active is a passive marker: the "usage"-slugged incoming ref stays visible
-  // (activeAnchor never filters Incoming the way a clicked row does).
-  assert.ok(
-    container.textContent!.includes("Use a button when the action is primary."),
-  );
+  const r = rows(container);
+  assert.equal(r.find((x) => x.textContent === "Style")!.getAttribute("data-active"), "true");
+  assert.equal(r.find((x) => x.textContent === "Usage")!.getAttribute("data-active"), null);
 });
 
 test("activeAnchor of null (rich mode) marks no outline row", () => {
   const { container } = renderPanel({ activeAnchor: null });
-  const active = container.querySelectorAll("[data-active='true']");
-  assert.equal(active.length, 0);
-});
-
-test("empty Referenced-by / References / graph groups render a zero-count affordance", () => {
-  const { container } = renderPanel({
-    incoming: [],
-    outgoing: [],
-    graphNeighbors: [],
-  });
-  assert.ok(container.querySelector("[data-testid='incoming-empty']"));
-  assert.ok(container.querySelector("[data-testid='outgoing-empty']"));
-  assert.ok(container.querySelector("[data-testid='graph-empty']"));
-  // Outgoing empty text nudges toward the Manage flow when it is wired.
-  assert.ok(container.textContent!.includes("Manage"));
-});
-
-test("outgoing empty affordance omits the Manage nudge when onManageConnections is absent", () => {
-  const { container } = render(
-    <Theme>
-      <RelationsPanel
-        text={TEXT}
-        file="components/src/button/content.md"
-        counts={new Map()}
-        incoming={[]}
-        outgoing={[]}
-        graphNeighbors={[]}
-        onNavigate={() => {}}
-        onOpenFile={() => {}}
-        collapsed={false}
-        onToggleCollapsed={() => {}}
-      />
-    </Theme>,
-  );
-  const empty = container.querySelector("[data-testid='outgoing-empty']")!;
-  assert.equal(empty.textContent, "No references yet.");
-});
-
-test("relation group labels use author-facing vocabulary (Referenced by / References)", () => {
-  const { container } = renderPanel();
-  assert.ok(container.textContent!.includes("Referenced by"));
-  assert.ok(container.textContent!.includes("References"));
-  assert.ok(!container.textContent!.includes("Incoming"));
-  assert.ok(!container.textContent!.includes("Outgoing"));
-});
-
-test("graph rows expose data-ref (the node slug) so an inline link can highlight the matching row", () => {
-  const neighbors: Neighbor[] = [
-    {
-      id: "component:table",
-      node: { id: "component:table", type: "component", title: "Table" },
-      edgeType: "composed_of",
-      note: null,
-      direction: "in",
-    },
-  ];
-  const { container } = renderPanel({ graphNeighbors: neighbors });
-  const row = container.querySelector("[data-testid='graph-row']")!;
-  // data-ref is the slug after the node-id prefix, matching the inline link's
-  // data-ref (resolveReference returns the bare component slug).
-  assert.equal(row.getAttribute("data-ref"), "table");
-});
-
-test("renders a compact neighborhood map with data-ref nodes when a layout is provided; none otherwise", () => {
-  const index = buildGraphIndex({
-    nodes: [
-      { id: "component:button", type: "component", title: "Button" },
-      { id: "component:table", type: "component", title: "Table" },
-    ],
-    edges: [
-      {
-        source: "component:table",
-        target: "component:button",
-        type: "composed_of",
-      },
-    ],
-  });
-  const layout = layoutNeighborhood("component:button", index, { depth: 1 });
-
-  const withMap = renderPanel({ neighborhoodLayout: layout });
-  assert.ok(withMap.container.querySelector("svg"), "the map renders");
-  assert.equal(
-    withMap.container.querySelector('[role="toolbar"]'),
-    null,
-    "compact map hides the filter toolbar",
-  );
-  const nodes = withMap.container.querySelectorAll(
-    "svg [role='button'][data-ref]",
-  );
-  assert.ok(nodes.length >= 1, "map nodes carry data-ref for the highlight");
-  cleanup();
-
-  // Without a layout, no map is shown.
-  const noMap = renderPanel();
-  assert.equal(noMap.container.querySelector("svg"), null);
-});
-
-// ── #684: the rail counts files, and never lists a target that refuses to open ──
-//
-// Shape taken from the real corpus on the deployed page: foundations/src/tokens.md
-// reported "Referenced by (37)" for ten distinct files, three of them generated.
-
-const INCOMING_REAL_SHAPE: IncomingRef[] = [
-  { fromPath: "components/src/categories/overlays.md", slug: "usage", snippet: "first overlays site" },
-  { fromPath: "components/src/categories/overlays.md", slug: "usage", snippet: "second overlays site" },
-  { fromPath: "components/src/categories/overlays.md", slug: "usage", snippet: "third overlays site" },
-  { fromPath: "components/src/categories/form.md", slug: "usage", snippet: "form site" },
-  { fromPath: "foundations/dist/foundations.bundle.json", slug: "usage", snippet: "bundle site" },
-  { fromPath: "components/dist/guidelines/badge.json", slug: "usage", snippet: "badge dist site" },
-];
-
-test("the Referenced by count is distinct files, not reference sites", () => {
-  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
-  // Two editable files behind six sites, three of which share one file. The
-  // header qualifies itself because this fixture also carries two generated
-  // referrers, which the rail lists nowhere.
-  assert.ok(
-    container.textContent!.includes("Referenced by (2 editable)"),
-    `expected a count of 2 distinct editable files, got: ${container.textContent!.slice(0, 400)}`,
-  );
-  assert.equal(
-    container.querySelectorAll("[data-testid='incoming-row']").length,
-    2,
-    "one row per distinct file",
-  );
-});
-
-test("a file referenced from several sites says so on its single row", () => {
-  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
-  const rows = Array.from(
-    container.querySelectorAll("[data-testid='incoming-row']"),
-  );
-  const overlays = rows.find((r) =>
-    r.textContent!.includes("components/src/categories/overlays.md"),
-  )!;
-  assert.ok(overlays, "the overlays row is present");
-  assert.ok(
-    /3 references/.test(overlays.textContent!),
-    `expected the site count on the row, got: ${overlays.textContent}`,
-  );
-});
-
-test("generated targets are not listed as rows, because following one refuses to open", () => {
-  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
-  assert.ok(
-    !container.textContent!.includes("foundations.bundle.json"),
-    "a dist bundle must not be offered as a destination",
-  );
-  assert.ok(
-    !container.textContent!.includes("guidelines/badge.json"),
-    "a dist guideline must not be offered as a destination",
-  );
-});
-
-test("the excluded generated files are stated, so the shorter list does not read as a loss", () => {
-  const { container } = renderPanel({ incoming: INCOMING_REAL_SHAPE });
-  assert.ok(
-    /2 generated files also reference this/.test(container.textContent!),
-    `expected the exclusion to be stated, got: ${container.textContent!.slice(0, 500)}`,
-  );
-});
-
-test("with nothing generated to exclude, the rail says nothing about exclusions", () => {
-  const { container } = renderPanel({ incoming: INCOMING });
-  assert.ok(
-    !/generated files? also reference/.test(container.textContent!),
-    "no exclusion line when nothing was excluded",
-  );
-});
-
-// ── Review finding: "nothing links here" beside "2 generated files reference
-// this" is a contradiction, and it is reachable today ──────────────────────
-//
-// The index scans .md sources and dist JSON, never `_meta.yml`. So for nine of
-// the sixteen anchors in accessibility/src/components.md, EVERY indexed
-// referrer is generated. Filtering them without changing the empty state turns
-// "10 rows you cannot click" into "there is nothing here", which is worse than
-// the dead end it replaced.
-
-const INCOMING_ALL_GENERATED: IncomingRef[] = [
-  { fromPath: "components/dist/guidelines/card.json", slug: "usage", snippet: "" },
-  { fromPath: "components/dist/guidelines/table.json", slug: "usage", snippet: "" },
-  { fromPath: "components/dist/guidelines/tag.json", slug: "usage", snippet: "" },
-];
-
-test("with every referrer generated, the rail does not claim nothing links here", () => {
-  const { container } = renderPanel({ incoming: INCOMING_ALL_GENERATED });
-  const txt = container.textContent!;
-  assert.equal(
-    /Nothing links here yet\.|Nothing links to this section yet\./.test(txt),
-    false,
-    `the rail must not say nothing links here while 3 files do: ${txt.slice(0, 500)}`,
-  );
-  assert.ok(
-    /3 generated files reference this/.test(txt),
-    `it must say what does link here, got: ${txt.slice(0, 500)}`,
-  );
-});
-
-test("with nothing at all, the rail still says nothing links here", () => {
-  const { container } = renderPanel({ incoming: [] });
-  assert.ok(
-    /Nothing links here yet\./.test(container.textContent!),
-    "a genuinely unreferenced file keeps its honest empty state",
-  );
-});
-
-test("a single generated referrer takes a singular verb, and the header does not disagree with the note", () => {
-  const { container } = renderPanel({
-    incoming: [
-      {
-        fromPath: "components/dist/guidelines/card.json",
-        slug: "usage",
-        snippet: "",
-      },
-    ],
-  });
-  const txt = container.textContent!;
-  // "1 generated file reference this" — the is/are half was inflected and the
-  // verb was not.
-  assert.equal(
-    /file reference this/.test(txt),
-    false,
-    `singular subject needs a singular verb: ${txt.slice(0, 400)}`,
-  );
-  assert.ok(/1 generated file references this/.test(txt), txt.slice(0, 400));
-});
-
-test("the Referenced by header does not report 0 above a note saying files reference this", () => {
-  const { container } = renderPanel({ incoming: INCOMING_ALL_GENERATED });
-  const txt = container.textContent!;
-  // A bare "(0)" directly above "3 generated files reference this" is the same
-  // contradiction as the empty state, carried by the number instead of a
-  // sentence.
-  assert.equal(
-    /Referenced by \(0\)/.test(txt),
-    false,
-    `the header must qualify what it counted: ${txt.slice(0, 400)}`,
-  );
-  assert.ok(
-    /Referenced by \(0 editable\)/.test(txt),
-    `expected a qualified header, got: ${txt.slice(0, 400)}`,
-  );
+  assert.equal(container.querySelectorAll("[data-active='true']").length, 0);
 });

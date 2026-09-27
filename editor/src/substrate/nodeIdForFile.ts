@@ -1,9 +1,8 @@
 // Map an open editor file path → its knowledge-graph node id (prefix:slug),
 // or null if the file does not correspond to a graph node. Browser-safe.
-// Mirrors the derive's node-id construction + the path conventions in
-// ConnectionsPopover.allowedDomainsFor. Resolution is validated against the
-// index, so slug drift / alias mismatches / non-node files degrade gracefully
-// (null → caller keeps the anchor-based incoming view) instead of showing a
+// Mirrors the derive's node-id construction and the domain path conventions.
+// Resolution is validated against the index, so slug drift / alias
+// mismatches / non-node files degrade gracefully (null) instead of showing a
 // ghost panel.
 import { bakedGraphIndex, type GraphIndex } from "./graphIndex";
 

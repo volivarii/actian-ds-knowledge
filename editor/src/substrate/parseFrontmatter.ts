@@ -14,7 +14,7 @@ import type { RefType } from "./refGraph";
 // Match a YAML frontmatter envelope at the very top of a markdown file.
 // Use `[ \t]*` around the `---` fences (NOT `\s*`) so the trailing
 // blank line that separates the envelope from the body stays in the
-// body. Round-trip safety with frontmatterRewriter.ts depends on this.
+// body.
 const FRONTMATTER_RE = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*\n/;
 
 // Match `a11y_refs:` / `motion_refs:` / `foundations_refs:` blocks with `- { ref: <slug> [, note: ...] }` entries.

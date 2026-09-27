@@ -18,9 +18,8 @@ import type { Taxonomy } from "./taxonomy";
 
 // Frontmatter envelope + inline relatedComponents matchers. parseFrontmatter
 // only models the object-ref blocks (a11y/motion/foundations); the flat-array
-// relatedComponents field is parsed here so content-file connections
-// round-trip in the inspector. Inline-only, mirroring the writer
-// (flatRefRewriter) and the documented authoring subset.
+// relatedComponents field is parsed here. Inline-only, the documented
+// authoring subset.
 const FRONTMATTER_RE = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*\n/;
 const RELATED_LINE_RE = /^relatedComponents:\s*\[([^\]]*)\]\s*$/m;
 
