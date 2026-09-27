@@ -244,3 +244,14 @@ test("on a category page, a note edited in the panel goes into the form data", a
     assert.equal((screen.getByRole("textbox", { name: "Note" }) as HTMLTextAreaElement).value, "Focus is trapped while modal."),
   );
 });
+
+test("on the pattern page, a code-style mention is read-only: it says why and offers no rewrite", async () => {
+  renderPattern();
+  await screen.findByRole("heading", { name: "Connections" }, { timeout: 5000 });
+  fireEvent.click(screen.getByRole("button", { name: /^Faceted browse/ }));
+  const panel = screen.getByRole("region", { name: "Selected connection" });
+  assert.match(panel.textContent ?? "", /isn't a link/);
+  // Pattern bodies have no link grammar yet (referenceIndex: only component
+  // nodes and the file's own sections), so nothing rewrites the text.
+  assert.ok(!screen.queryByRole("button", { name: "Turn it into a link" }));
+});
