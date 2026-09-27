@@ -43,6 +43,10 @@ import { STATE_FOR_STATUS, STATE_LABEL } from "../lib/nomenclature";
 import { COMPONENT_PARENT } from "./scopes";
 import { submissionCartSingleton } from "../drafts/store-instance";
 import { useCart } from "../drafts/useCart";
+import { ConnectionsSection } from "./connections/ConnectionsSection";
+import { useComponentConnections } from "./connections/useComponentConnections";
+import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
+import { loadFigmaUrls } from "../lib/connections/figma";
 
 export interface AuthoringWorkspaceProps {
   slug: string;
@@ -78,6 +82,15 @@ export function AuthoringWorkspace({
     | { kind: "error"; message: string }
   >({ kind: "loading" });
   const cartEntries = useCart(submissionCartSingleton);
+  const cx = useComponentConnections(octokit, slug, cartEntries);
+  const [figmaUrls, setFigmaUrls] = useState<Map<string, string> | undefined>();
+  useEffect(() => {
+    let live = true;
+    void loadFigmaUrls(octokit).then((m) => live && setFigmaUrls(m));
+    return () => {
+      live = false;
+    };
+  }, [octokit]);
 
   const refresh = useCallback(async () => {
     try {
@@ -228,6 +241,21 @@ export function AuthoringWorkspace({
           ))}
         </Flex>
       </Accordion.Root>
+
+      {cx && (
+        <Box mt="5">
+          <ConnectionsSection
+            model={cx.model}
+            file={`components/src/${slug}/_meta.yml`}
+            onOpen={(id) => {
+              const t = navTargetForNodeId(id);
+              if (t) onNavigate(t);
+            }}
+            canOpen={(id) => navTargetForNodeId(id) !== null}
+            figma={figmaUrls}
+          />
+        </Box>
+      )}
 
       <Heading as="h2" size="3" mt="5" mb="2">
         Metadata

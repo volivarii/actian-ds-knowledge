@@ -1,0 +1,42 @@
+/* Connections section (app/connections). Radix tokens only, so both themes work. */
+.cx { display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--gray-5); border-radius: 8px; padding: 14px 16px; }
+.cx-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; }
+.cx-h { margin: 0; font-size: var(--font-size-3); font-weight: 500; }
+.cx-sum { color: var(--gray-11); font-size: var(--font-size-2); }
+.cx-seg { margin-left: auto; display: inline-flex; border: 1px solid var(--gray-6); border-radius: 6px; overflow: hidden; }
+.cx-seg button { padding: 3px 12px; font-size: var(--font-size-2); color: var(--gray-11); background: none; border: 0; cursor: pointer; }
+.cx-seg button[aria-pressed="true"] { background: var(--accent-a4); color: var(--gray-12); }
+.cx-row { display: grid; grid-template-columns: minmax(170px, 240px) 1fr; gap: 6px 18px; padding: 10px 0; border-top: 1px solid var(--gray-4); }
+.cx-row:first-child { border-top: 0; }
+.cx-glabel { display: flex; flex-direction: column; gap: 3px; }
+.cx-glabel b { font-weight: 500; }
+.cx-count { color: var(--gray-10); font-weight: 400; margin-left: 4px; font-variant-numeric: tabular-nums; }
+.cx-sub { font-size: var(--font-size-1); color: var(--gray-11); }
+.cx-store { font-size: var(--font-size-1); color: var(--gray-11); }
+.cx-store.cx-here { color: var(--accent-11); }
+.cx-items { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.cx-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; border: 1px solid var(--gray-6); background: var(--gray-3); color: var(--gray-12); border-radius: 6px; padding: 2px 8px; font-size: var(--font-size-1); cursor: pointer; }
+.cx-chip:hover, .cx-chip[aria-pressed="true"] { border-color: var(--accent-8); background: var(--accent-a3); }
+.cx-chip:focus-visible, .cx-btn:focus-visible, .cx-add:focus-visible, .cx-more:focus-visible, .cx-seg button:focus-visible { outline: 2px solid var(--accent-8); outline-offset: 2px; }
+.cx-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cx-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.cx-flag { font-size: 11px; color: var(--gray-10); }
+.cx-added { border-style: dashed; border-color: var(--amber-8); background: var(--amber-a3); }
+.cx-removed { border-style: dashed; border-color: var(--red-8); text-decoration: line-through; opacity: 0.7; }
+.cx-notInGraph, .cx-unlinked { border-style: dashed; color: var(--gray-11); }
+.cx-more { color: var(--accent-11); font-size: var(--font-size-1); background: none; border: 0; cursor: pointer; }
+.cx-add { border: 1px dashed var(--gray-7); border-radius: 6px; padding: 2px 9px; color: var(--accent-11); background: none; font-size: var(--font-size-1); cursor: pointer; }
+.cx-filter { flex-basis: 100%; max-width: 280px; font: inherit; font-size: var(--font-size-1); padding: 3px 8px; border: 1px solid var(--gray-6); border-radius: 6px; background: var(--color-surface); color: var(--gray-12); }
+.cx-panel { border: 1px solid var(--gray-6); border-radius: 8px; background: var(--gray-2); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.cx-idle { border-style: dashed; background: none; color: var(--gray-11); font-size: var(--font-size-2); }
+.cx-sentence { margin: 0; font-size: var(--font-size-3); }
+.cx-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; font-size: var(--font-size-2); }
+.cx-facts dt { color: var(--gray-10); }
+.cx-facts dd { margin: 0; color: var(--gray-11); }
+.cx-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cx-hint { font-size: var(--font-size-1); color: var(--gray-10); }
+.cx-btn { border: 1px solid var(--accent-8); background: var(--accent-9); color: var(--accent-contrast); border-radius: 6px; padding: 3px 12px; font-size: var(--font-size-2); cursor: pointer; text-decoration: none; }
+.cx-ghost { background: none; color: var(--accent-11); }
+.cx-danger { background: none; border-color: var(--red-8); color: var(--red-11); }
+@media (max-width: 780px) { .cx-row { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: no-preference) { .cx-chip { transition: border-color 0.12s, background 0.12s; } }

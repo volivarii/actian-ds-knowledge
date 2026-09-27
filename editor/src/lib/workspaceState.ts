@@ -387,6 +387,35 @@ export async function promoteDomainToDraft(
   }
 }
 
+// The component's own fields and guidance text, for the Connections section.
+// `original` is main's _meta.yml (an empty object for a component with no
+// file yet); `live` is the batch copy when there is one. Guidance text is the
+// batch copy of each prose domain file when staged, else main's.
+export async function readMetaForConnections(
+  gh: Octokit,
+  slug: string,
+  cart: SubmissionCart = submissionCartSingleton,
+): Promise<{
+  original: Record<string, unknown>;
+  live: Record<string, unknown>;
+  bodies: Array<{ path: string; text: string }>;
+}> {
+  const metaPath = metaPathFor(slug);
+  const staged = new Map(cart.list().map((e) => [e.path, e.content]));
+  const remote = await tryGetText(gh, metaPath);
+  const original = remote ? (safeParseMeta(remote) as Record<string, unknown>) : {};
+  const stagedMeta = staged.get(metaPath);
+  const live = stagedMeta ? (safeParseMeta(stagedMeta) as Record<string, unknown>) : original;
+  const bodies: Array<{ path: string; text: string }> = [];
+  for (const d of DOMAINS) {
+    if (!PROSE_DOMAINS.has(d)) continue;
+    const p = domainPathFor(slug, d);
+    const text = staged.get(p) ?? (await tryGetText(gh, p));
+    if (text) bodies.push({ path: p, text });
+  }
+  return { original, live, bodies };
+}
+
 // User clicked "Edit metadata" on the workspace — stage the stub (if
 // not already staged) so MetaEditScreen's cart-wins load picks it up.
 // No status changes.

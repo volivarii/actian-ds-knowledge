@@ -56,6 +56,13 @@ import {
   graphNeighborsForFile,
 } from "../lib/referenceIndex";
 import { loadAnchorIndex } from "../lib/anchorIndex";
+import { parse as parseYaml } from "yaml";
+import { ConnectionsSection } from "./connections/ConnectionsSection";
+import { bakedGraphIndex } from "../substrate/graphIndex";
+import { candidateNodeIdForFile } from "../substrate/nodeIdForFile";
+import { navTargetForNodeId } from "../substrate/navTargetForNodeId";
+import { buildConnections } from "../lib/connections/build";
+import { ownedValues, recordKindOf } from "../lib/connections/owned";
 
 // Lazy-loaded so the Milkdown/ProseMirror bundle (the largest editor dep) splits
 // into an async chunk fetched only when the WYSIWYG flag is on — it stays out of
@@ -474,6 +481,34 @@ export function FrontmatterBodyEditScreen(props: Props) {
    *  screen, and a save must assemble from whichever one the author edited. */
   const yamlActive = surface === "yaml" && sourceOpen;
 
+  // Connections: the record's own link fields as loaded (main's bytes, or an
+  // empty record for a new file) against the current form data, plus every
+  // other graph neighbour and the links in the body.
+  const connectionsNodeId = candidateNodeIdForFile(path);
+  const connectionsKind = connectionsNodeId ? recordKindOf(connectionsNodeId) : null;
+  const connectionsOriginal = useMemo<Record<string, unknown>>(() => {
+    if (state.kind !== "ready" || state.baseline === null) return {};
+    try {
+      const fm = splitFrontmatter(state.baseline).frontmatterText;
+      const data = fm ? parseYaml(fm) : null;
+      return data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+    } catch {
+      return {};
+    }
+  }, [state]);
+  const connections = useMemo(() => {
+    if (state.kind !== "ready" || !connectionsNodeId || !connectionsKind) return null;
+    const label = (formData as { label?: unknown } | undefined)?.label;
+    return buildConnections({
+      nodeId: connectionsNodeId,
+      index: bakedGraphIndex(),
+      name: typeof label === "string" ? label : undefined,
+      original: ownedValues(connectionsKind, connectionsOriginal),
+      live: ownedValues(connectionsKind, formData),
+      bodies: bodyless ? [] : [{ path, text: body }],
+    });
+  }, [state.kind, connectionsNodeId, connectionsKind, connectionsOriginal, formData, body, bodyless, path]);
+
   /** The frontmatter text a comment-preserving save merges into. Starts as the
    *  bytes fetched at load and is refreshed when the author leaves the source
    *  view, so a comment they typed there is not rebuilt away by the next form
@@ -693,6 +728,19 @@ export function FrontmatterBodyEditScreen(props: Props) {
   // from the latest-ref mirrors.
   const editorBody = (
     <div className="fm-form-children">
+      {connections && (
+        <Box mt="4">
+          <ConnectionsSection
+            model={connections}
+            file={path}
+            onOpen={(id) => {
+              const t = navTargetForNodeId(id);
+              if (t) handleOpenFile(t);
+            }}
+            canOpen={(id) => navTargetForNodeId(id) !== null}
+          />
+        </Box>
+      )}
       {!bodyless && (
         <Box mt="4">
           <Text size="2" weight="bold" as="div" mb="1">
