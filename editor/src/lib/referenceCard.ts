@@ -22,7 +22,7 @@ export interface ReferenceCardData {
 /** Strip a leading Figma status marker (e.g. "✍️ Table" -> "Table"); any
  *  leading run of non-letter/non-number characters. Falls back to the trimmed
  *  original if stripping would empty it. */
-function cleanTitle(t: string): string {
+export function cleanTitle(t: string): string {
   const stripped = t.replace(/^[^\p{L}\p{N}]+/u, "").trim();
   return stripped || t.trim();
 }

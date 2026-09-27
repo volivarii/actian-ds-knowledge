@@ -68,6 +68,9 @@ export interface GraphEdgeRaw {
   note?: string | null;
   scope?: string;
   confidence?: string;
+  /** entity_related only: the verb as written in the source record (`contains`). */
+  predicate?: string;
+  provenance?: { source_file?: string; deriver?: string; method?: string };
 }
 
 export interface GraphFileRaw {
