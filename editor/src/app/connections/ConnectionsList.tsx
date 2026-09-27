@@ -21,6 +21,15 @@ export function countedItems(group: ConnectionGroup): number {
   return group.items.filter((i) => i.state !== "removed" && !i.unlinked).length;
 }
 
+/** The count beside a group's label. A group of mentions only (never counted)
+ *  shows none: a 0 beside two chips reads as a bug, and each chip already says
+ *  "not linked". */
+export function GroupCount({ group }: { group: ConnectionGroup }) {
+  const n = countedItems(group);
+  if (n === 0 && group.items.some((i) => i.unlinked)) return null;
+  return <span className="cx-count">{n}</span>;
+}
+
 export function GroupItems(props: GroupViewProps & { group: ConnectionGroup; cap: number; filterable: boolean }) {
   const { group } = props;
   const [open, setOpen] = useState(false);
@@ -69,10 +78,10 @@ export function ConnectionsList(props: GroupViewProps) {
   return (
     <div className="cx-list">
       {props.groups.map((g) => (
-        <div key={g.key} className="cx-row" role="group" aria-label={`${g.label}, ${countedItems(g)}`}>
+        <div key={g.key} className="cx-row" role="group" aria-label={g.items.every((i) => i.unlinked) ? g.label : `${g.label}, ${countedItems(g)}`}>
           <div className="cx-glabel">
             <b>
-              {g.label} <span className="cx-count">{countedItems(g)}</span>
+              {g.label} <GroupCount group={g} />
             </b>
             <span className="cx-sub">{g.sentence}</span>
             <StoreLine group={g} />
