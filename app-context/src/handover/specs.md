@@ -2,10 +2,10 @@
 _schema_version: 1
 kind: specs
 sections:
-  - { title: Screens / Flows Covered, owner: designer, required: true }
+  - { title: "Screens / Flows Covered", owner: designer, required: true }
   - { title: Components Used, owner: designer, required: true }
   - { title: States, owner: designer, required: true }
-  - { title: Interactions & Transitions, owner: designer, required: true }
+  - { title: "Interactions & Transitions", owner: designer, required: true }
   - { title: Copy, owner: designer, required: true }
   - { title: Accessibility Notes, owner: designer, required: true }
   - { title: Edge Cases, owner: designer, required: true }
@@ -14,15 +14,15 @@ sections:
 # Specs: [Project/Feature Name]
 
 **Owner (Designer):** [name]
-**Intent:** [link to intent.md in the repo]
+**Knowledge:** v[the knowledge version the specs were checked against]
 **Figma:** [link to the specific frame or page, not the whole file]
 **Prototype:** [link to the clickable prototype]
-**Knowledge:** v[the knowledge version the specs were checked against]
+**Intent:** [link to intent.md in the repo]
 
 Each section's first line names where it comes from: `Source: Figma`, `Source: Prototype`, `Source: Intent`, or several joined with ` + `.
 
 ## Screens / Flows Covered
-Source: [Figma + Prototype]
+Source: Figma + Prototype
 1. [Screen name]: [one-line description]
 
 ## Components Used
@@ -54,5 +54,5 @@ Source: Intent
 - [scenario] → [expected behaviour]
 
 ## Flagged concerns
-Source: [Figma + Intent]
+Source: Figma + Intent
 - [audit findings not fixed, open questions carried from intent.md, or None.]

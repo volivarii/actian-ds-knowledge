@@ -53,23 +53,43 @@ test("intent adds Design decisions and Open questions; specs adds Flagged concer
   assert.ok(titles("specs").includes("Flagged concerns"));
 });
 
-test("intent's header links the design proposal; specs' header names the knowledge version, Figma, prototype and intent", () => {
+test("intent's header links the design proposal; specs' header names the knowledge version, Figma, prototype and intent, in the contract's order", () => {
   assert.match(load("intent").body, /^\*\*Design proposal:\*\* /m);
-  const specs = load("specs").body;
-  for (const h of ["Knowledge", "Figma", "Prototype", "Intent"]) assert.match(specs, new RegExp("^\\*\\*" + h + ":\\*\\* ", "m"), h);
+  const order = [...load("specs").body.matchAll(/^\*\*(Knowledge|Figma|Prototype|Intent):\*\* /gm)].map((m) => m[1]);
+  assert.deepEqual(order, ["Knowledge", "Figma", "Prototype", "Intent"]);
 });
 
-test("specs: every section's first line names its source", () => {
+// The contract's grammar, exactly: a filled specs.md is checked against it, and
+// a filled file starts as a copy of this template.
+test("specs: every section's first line names its source in the contract's words", () => {
   const { body } = load("specs");
   const sections = body.split(/^## .+$/m).slice(1);
   assert.ok(sections.length > 0);
-  for (const s of sections) assert.match(s.trim().split("\n")[0], /^Source: /);
+  for (const s of sections) {
+    assert.match(s.trim().split("\n")[0], /^Source: (Figma|Prototype|Intent)( \+ (Figma|Prototype|Intent))*$/);
+  }
 });
 
 // app-context/src/handover ships to consumers as source with no derive, so only
 // the vendored-source bump can tag a change to it. Without the trigger, an edit
 // to a template reaches nobody.
 test("a change to the templates bumps the version", () => {
-  const wf = fs.readFileSync(path.join(ROOT, ".github/workflows/vendored-source-bump.yml"), "utf8");
-  assert.match(wf, /- 'app-context\/src\/handover\/\*\*'/);
+  const wf = YAML.parse(fs.readFileSync(path.join(ROOT, ".github/workflows/vendored-source-bump.yml"), "utf8"));
+  assert.ok(wf.on.pull_request.paths.includes("app-context/src/handover/**"));
+});
+
+// The appContext* manifest block is written by scripts/app-context/manifest-update.js
+// (run by every app-context derive), so the handover collection must come from
+// that generator: a hand-added entry is rewritten by the derive on the PR, which
+// then commits the manifest and bumps a second time. Run on a copy, compared byte
+// for byte, because the writer also orders keys.
+test("the committed manifest is what the app-context manifest generator writes", () => {
+  const os = require("os");
+  const { updatePathsManifest } = require("../scripts/app-context/manifest-update.js");
+  const file = path.join(ROOT, "paths-manifest.json");
+  const copy = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "manifest-")), "paths-manifest.json");
+  fs.copyFileSync(file, copy);
+  const { manifest } = updatePathsManifest(copy);
+  assert.ok(manifest.collections.appContextHandover, "the generator writes the handover collection");
+  assert.equal(fs.readFileSync(copy, "utf8"), fs.readFileSync(file, "utf8"));
 });

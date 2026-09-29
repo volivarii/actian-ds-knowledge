@@ -25,9 +25,17 @@ name: Bump on vendored-source change
 #              caller yet, produces no dist diff, so render-derive.yml
 #              never sees it and never bumps either.
 #
+# The knowledge-first simplification (2026-09-29) added a fourth:
+#
+#   app-context/src/handover/   the handover templates (intent.md,
+#              specs.md) the plugin's check-handover.js reads from its
+#              vendor copy. Authored markdown with no derive at all, like
+#              clients/ and schemas/.
+#
 # clients/ and schemas/ are listed in vendor-include.json in their own
 # right; components/render/renderer/ is covered only transitively, via
-# the components entry. All three ship either way, but a PR that
+# the components entry, and app-context/src/handover/ via the app-context
+# entry. All four ship either way, but a PR that
 # touches only these never bumped, never tagged, and therefore never
 # reached a single consumer. Historically such changes shipped only by
 # riding along on an unrelated bump, which is luck, not a pipeline.
