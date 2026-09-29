@@ -16,7 +16,7 @@ function project() {
   return g.build();
 }
 
-test("collectAppContext: node counts by type (3 app / 30 app_entity / 33 terminology_term / 31 ux_pattern / 6 persona)", function () {
+test("collectAppContext: node counts by type (3 app / 30 app_entity / 34 terminology_term / 31 ux_pattern / 6 persona)", function () {
   var out = project();
   var byType = {};
   out.nodes.forEach(function (n) {
@@ -24,10 +24,10 @@ test("collectAppContext: node counts by type (3 app / 30 app_entity / 33 termino
   });
   assert.equal(byType.app, 3);
   assert.equal(byType.app_entity, 30);
-  assert.equal(byType.terminology_term, 33);
+  assert.equal(byType.terminology_term, 34);
   assert.equal(byType.ux_pattern, 31);
   assert.equal(byType.persona, 6);
-  assert.equal(out.nodes.length, 103);
+  assert.equal(out.nodes.length, 104);
 });
 
 test("collectAppContext: app node carries title<-label and description<-purpose", function () {
@@ -76,7 +76,7 @@ test("collectAppContext: persona node carries title<-label and description", fun
   assert.equal(p.description, AC.personas["data-steward"].description);
 });
 
-test("derive(): emitted graph.json includes the app-context nodes (103 island nodes)", function () {
+test("derive(): emitted graph.json includes the app-context nodes (104 island nodes)", function () {
   D.derive();
   var g = JSON.parse(
     fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
@@ -89,7 +89,7 @@ test("derive(): emitted graph.json includes the app-context nodes (103 island no
   var islandNodes = g.nodes.filter(function (n) {
     return ISLAND_PREFIXES.indexOf(String(n.id).split(":")[0]) !== -1;
   });
-  assert.equal(islandNodes.length, 103, "app-context island nodes");
+  assert.equal(islandNodes.length, 104, "app-context island nodes");
   assert.ok(
     g.nodes.some(function (n) {
       return n.id === "app:studio";
@@ -359,7 +359,10 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   var islandEdges = g.edges.filter(function (e) {
     return inIsland(e.source) || inIsland(e.target);
   });
-  assert.equal(islandNodes.length, 103, "app-context island nodes");
+  assert.equal(islandNodes.length, 104, "app-context island nodes");
+  // 103 -> 104 nodes on 2026-09-29: the terminology gained last-updated
+  // (Studio's "Last updated", replacing "last modified"; #710).
+  //
   // 312 -> 318 edges and 97 -> 103 nodes on 2026-09-11: personas joined the
   // island, six persona nodes with one in_app edge each to the app they work in.
   //

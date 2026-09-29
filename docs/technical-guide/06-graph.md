@@ -20,7 +20,7 @@ knows how a component reaches an accessibility criterion, a motion pattern, a
 product entity and a UX pattern in one query. It exists so a consumer can traverse
 the substrate rather than reassemble it.
 
-It holds **847 nodes across 10 types** and **1176 edges across 11 types**.
+It holds **863 nodes across 11 types** and **1250 edges across 12 types**.
 
 ## Where the edges come from
 
@@ -46,7 +46,7 @@ than typed data and there is nothing structured to carry.
 | --- | --- | --- |
 | `component` | 614 | Every registry entry across the three kits, not only the 54 with authored guidance |
 | `foundation_section` | 76 | Leaves of the foundations tree |
-| `terminology_term` | 33 | Product vocabulary |
+| `terminology_term` | 34 | Product vocabulary |
 | `a11y_criterion` | 32 | WCAG 2.2 AA sections, carrying their criterion numbers |
 | `ux_pattern` | 31 | Recurring product patterns |
 | `app_entity` | 30 | Product concepts |

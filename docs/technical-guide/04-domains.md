@@ -193,7 +193,7 @@ The product side: what the design system is being used to build.
 | Entities | 30 | Product concepts such as Dataset or Access Request |
 | Patterns | 31 | Recurring UX patterns tied to real flows |
 | Personas | 6 | The roles that use the products; each app's users and each persona's use cases are joined from them |
-| Terminology | 33 | The words the products use |
+| Terminology | 34 | The words the products use |
 | Recipes | 4 | Page recipes captured from the running product |
 | Sections | 6 | Sub-page parts (item header, facet tabs, properties panel, control bar, drawer header, action footer) captured from the product, referenced by page recipes and inlined by the derive |
 

@@ -63,12 +63,12 @@ test("360 pattern: 25 counted, two code-style mentions not counted", () => {
   assert.equal(byKey(m, "shows")!.store, "other");
 });
 
-test("Catalog Object: two-way links collapse, Topic stays incoming", () => {
+test("Item (catalog-object): two-way links collapse, Topic stays incoming", () => {
   const v = ownedValues("entity", fm(read("app-context/src/entities/catalog-object.md")));
   const m = buildConnections({ nodeId: "entity:catalog-object", index, original: v, live: v });
   assert.equal(countConnections(m), 18);
   const domain = byKey(m, "rel:belongsTo")!.items[0]!;
-  assert.equal(domain.reciprocal, "Domain says it contains Catalog Object.");
+  assert.equal(domain.reciprocal, "Domain says it contains Item.");
   assert.deepEqual(
     byKey(m, "in:contains")!.items.map((i) => i.title),
     ["Topic"],

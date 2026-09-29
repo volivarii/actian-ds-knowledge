@@ -26,7 +26,7 @@ test("shows one count, each group's words and where it is stored", () => {
   );
   assert.ok(screen.getByRole("heading", { name: "Connections" }));
   const related = screen.getByRole("group", { name: /Related to/ });
-  assert.ok(within(related).getByText("Entities Catalog Object is related to."));
+  assert.ok(within(related).getByText("Entities Item is related to."));
   assert.ok(within(related).getByText("Editable here"));
 });
 
@@ -38,7 +38,7 @@ test("selecting a link explains it in a sentence and says where it is stored", (
   );
   fireEvent.click(screen.getByRole("button", { name: /Glossary Item/ }));
   const panel = screen.getByRole("region", { name: "Selected connection" });
-  assert.match(panel.textContent!, /Catalog Object is related to Glossary Item\./);
+  assert.match(panel.textContent!, /Item is related to Glossary Item\./);
   assert.match(panel.textContent!, /catalog-object\.md/);
   assert.match(panel.textContent!, /Glossary Item says it/);
 });
