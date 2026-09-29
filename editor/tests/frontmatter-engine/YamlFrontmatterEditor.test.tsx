@@ -306,7 +306,7 @@ test("mounts the hover extension: sidebar[].label shows the sidebar item's own d
       const card = host.querySelector(".cm-schema-hover");
       assert.ok(card, "expected a hover card for sidebar[].label");
       const cardText = card!.textContent ?? "";
-      assert.match(cardText, /Display text for the sidebar navigation item\./);
+      assert.match(cardText, /Display text for the navigation item, as the product shows it\./);
       assert.doesNotMatch(
         cardText,
         /Human-readable display name of the app shown in navigation and documentation\./,

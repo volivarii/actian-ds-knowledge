@@ -38,12 +38,12 @@ test("documents a required top-level key: type, description, examples verbatim f
   assert.equal(doc!.required, true);
   assert.equal(
     doc!.description,
-    "Ordered list of primary navigation items shown in the app sidebar.",
+    "Ordered list of primary navigation items shown in the app sidebar. The one record of the app's side navigation: consecutive items sharing a group are drawn together with a divider where it changes, items with position bottom are drawn together in the rail's bottom block, in order.",
   );
   assert.deepEqual(doc!.examples, [
     [
-      { label: "Pipelines", id: "pipelines" },
-      { label: "Connections", id: "connections" },
+      { label: "Dashboard", id: "dashboard", icon: "dashboard", group: "main" },
+      { label: "Catalog", id: "catalog", icon: "catalog", group: "main" },
     ],
   ]);
   const from = text.indexOf("sidebar");

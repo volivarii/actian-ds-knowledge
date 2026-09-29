@@ -23,9 +23,11 @@ sidebar:
     group: main
   - label: Topics
     id: topics
+    icon: book-bookmark
     group: main
   - label: Import
     id: import
+    icon: download
     group: create
     children:
       - label: Select a connection

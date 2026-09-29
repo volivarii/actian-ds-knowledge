@@ -33,6 +33,37 @@ export const appContextAppUiSchema: UiSchema = {
       "ui:description":
         "The header this product draws. Matches the design system's global header.",
     },
+    context: {
+      "ui:title": "Context switcher",
+      "ui:description":
+        "The switcher left of the search, as the product shows it.",
+      label: {
+        "ui:title": "Switcher caption",
+        "ui:description": "The small word above the value, such as Catalog.",
+      },
+      value: {
+        "ui:title": "Switcher value",
+        "ui:description": "The value it shows, such as Default.",
+      },
+    },
+    search: {
+      "ui:title": "Search",
+      "ui:description": "The header's search field.",
+      scope: {
+        "ui:title": "Search scope",
+        "ui:description": "The value of the dropdown before the field.",
+      },
+      placeholder: {
+        "ui:title": "Search placeholder",
+        "ui:description": "The field's placeholder, exactly as shown.",
+      },
+    },
+    actions: {
+      "ui:title": "Header actions",
+      "ui:description":
+        "The actions at the right of the header, left to right, such as whats-new or avatar.",
+      "ui:options": { addLabel: "action" },
+    },
   },
   sidebar: {
     "ui:title": "Left navigation",
@@ -48,6 +79,42 @@ export const appContextAppUiSchema: UiSchema = {
         "ui:title": "Nav id",
         "ui:description":
           "The name this entry is referred to by elsewhere. Lower case, hyphens for spaces.",
+      },
+      icon: {
+        "ui:title": "Icon",
+        "ui:description":
+          "The design system icon the entry shows. Leave empty when no source names one.",
+      },
+      group: {
+        "ui:title": "Group",
+        "ui:description":
+          "Entries next to each other with the same group are drawn together, with a divider where the group changes.",
+      },
+      position: {
+        "ui:title": "Position",
+        "ui:description":
+          "Bottom puts the entry in the block anchored to the foot of the navigation.",
+      },
+      kind: {
+        "ui:title": "Kind",
+        "ui:description":
+          "Link goes somewhere; action does something, such as New Item.",
+      },
+      children: {
+        "ui:title": "Sub-items",
+        "ui:description": "Entries drawn under this one.",
+        "ui:options": { addLabel: "sub-item" },
+        items: {
+          label: {
+            "ui:title": "Sub-item label",
+            "ui:description": "What the reader sees in the navigation.",
+          },
+          id: {
+            "ui:title": "Sub-item id",
+            "ui:description":
+              "The name this sub-item is referred to by elsewhere. Lower case, hyphens for spaces.",
+          },
+        },
       },
     },
   },
