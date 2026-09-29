@@ -3290,12 +3290,9 @@
 /* ============ Search result card (rich header/details/tags/glossary), gray-box-to-zero family 3 ============ */
 /* Identity axis App = Explorer (default) | Studio; State is secondary, only
  * Selected/Focus map to a visible modifier. The fidelity oracle only
- * captures App=Explorer/State=Default, so only that default is built with
- * full fidelity; Studio's structural swaps are out of scope (see the
- * renderer case comment) and App=Studio renders the base card with no root
- * modifier -- there is no built CSS delta for it, so no --studio class is
- * emitted (a modifier must carry a real visual delta, never a no-op
- * namespace hook). Eyebrow/stage/catalog tags and the glossary item-type
+ * captures App=Explorer/State=Default, so that default is built with full
+ * fidelity; App=Studio is its own card on the --studio modifier below (#722),
+ * read off the Studio capture. Eyebrow/stage/catalog tags and the glossary item-type
  * badge reuse EXISTING .ds-tag / .ds-tag-stage / .ds-tag--catalog /
  * .ds-item-type rules verbatim -- only the
  * ds-search-result-card* classes below are new. (The stage pill's
@@ -3431,6 +3428,11 @@
  * own rule. */
 .ds-search-result-card--studio.ds-search-result-card--selected {
   box-shadow: inset 3px 0 0 var(--zen-border-selected); /* raw px: the left edge */
+}
+/* Focus, in Studio: --studio's border reset comes after --focus in this file,
+ * so the ring is drawn on the pair, inset so the row keeps its width. */
+.ds-search-result-card--studio.ds-search-result-card--focus {
+  box-shadow: inset 0 0 0 2px var(--zen-focus-ring-primary); /* captured Focus width 2px */
 }
 .ds-search-result-card--studio .ds-search-result-card__header {
   gap: var(--zen-spacing-xs);

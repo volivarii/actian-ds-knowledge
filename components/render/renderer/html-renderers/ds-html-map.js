@@ -467,6 +467,22 @@
   // Parse a comma-separated list prop (nav items, tabs, crumbs) into a trimmed,
   // empty-dropped array. `fallback` is used when raw is falsy (matches the prior
   // inline `String(props.Items || "default")` behavior exactly).
+  // The first of its arguments that is SET, else the last one (a literal
+  // fallback). An authored empty string is set (#717): `props.X || "specimen"`
+  // read "" as absent, so a screen that said "no description" printed the
+  // Figma specimen's sentence. Called as authored(props.A, props.B, "literal")
+  // so the reads stay literal `props.X` and the render contract still lists
+  // them, and scripts/render/derive-contract.js reads the literal as the
+  // default of the chain's head, the same way it reads `props.A || "literal"`.
+  function authored() {
+    var last = arguments.length - 1;
+    for (var i = 0; i < last; i++) {
+      if (arguments[i] !== undefined && arguments[i] !== null)
+        return String(arguments[i]);
+    }
+    return arguments[last];
+  }
+
   function parseItems(raw, fallback) {
     return String(raw || fallback || "")
       .split(",")
@@ -4008,19 +4024,10 @@
           // statically -- same discipline as tag-interactive's
           // Selected/Disabled-only handling above).
           //
-          // An AUTHORED empty string is a value (#717): `props.X || "specimen"`
-          // treated "" as absent, so a screen whose point was "these items have
-          // no description" printed the Figma specimen's sentence on every
-          // card. `srcText` falls back to the specimen only when the key is
-          // absent, which keeps the gallery's cells and lets a screen say
-          // nothing.
-          var srcText = function (key, fallback) {
-            return Object.prototype.hasOwnProperty.call(props, key) &&
-              props[key] !== undefined &&
-              props[key] !== null
-              ? String(props[key])
-              : fallback;
-          };
+          // An AUTHORED empty string is a value (#717): every text prop is
+          // read through authored(), which falls back to the specimen only when
+          // the prop is absent, so the gallery keeps its cells and a screen can
+          // say nothing.
           var srcCls = "ds-search-result-card";
           if (v.App === "Studio") srcCls += " ds-search-result-card--studio";
           if (v.State === "Selected")
@@ -4047,7 +4054,7 @@
             // Type is a SHAPE clamp before it touches the class attribute (the
             // read-only-tag case's discipline): a well-shaped value no
             // .ds-item-type-tag--<slug> rule matches renders as the base tag.
-            var sTypeRaw = srcText("Type", "");
+            var sTypeRaw = authored(props.Type, "");
             var sTypeSlug = sTypeRaw.toLowerCase().trim().replace(/\s+/g, "-");
             if (!/^[a-z0-9-]+$/.test(sTypeSlug)) sTypeSlug = "";
             var sType = sTypeRaw
@@ -4067,7 +4074,7 @@
               props.Shared !== false
                 ? '<span class="ds-search-result-card__shared">Shared</span>'
                 : "";
-            var sTech = srcText("Tech name", "");
+            var sTech = authored(props["Tech name"], "");
             var sPct =
               props.Completion !== undefined &&
               props.Completion !== null &&
@@ -4092,8 +4099,8 @@
                   sPct +
                   "%</span>" +
                   "</div>";
-            var sConnection = srcText("Connection", "");
-            var sDesc = srcText("Description", srcText("Body", ""));
+            var sConnection = authored(props.Connection, "");
+            var sDesc = authored(props.Description, props.Body, "");
             // Properties: a comma list of "Label: value" pairs, the label
             // drawn bold as the capture draws "Code:" and "Year:".
             var sChips = parseItems(props.Properties, "")
@@ -4111,8 +4118,8 @@
                 );
               })
               .join("");
-            var sSuggestion = srcText("Suggestion", "");
-            var sUpdated = srcText("Last updated", "");
+            var sSuggestion = authored(props.Suggestion, "");
+            var sUpdated = authored(props["Last updated"], "");
             return (
               '<div class="' +
               srcCls +
@@ -4126,7 +4133,7 @@
               sType +
               sShared +
               '<span class="ds-search-result-card__title">' +
-              esc(srcText("Title", "Financial Summary EY2024")) +
+              esc(authored(props.Title, "Financial Summary EY2024")) +
               "</span>" +
               (sTech
                 ? '<span class="ds-search-result-card__tech">' +
@@ -4186,9 +4193,9 @@
           // .ds-tag's re-grounded Type=Default paint in this card's theme
           // mode, and its catalog child is captured at #ecffff / #d0efed,
           // which is exactly Type=Catalog.
-          var srcTitle = esc(srcText("Title", "Financial Summary EY2024"));
-          var srcTech = esc(srcText("Tech name", "[Financial Summary EY2024]"));
-          var srcType = esc(srcText("Type", "Category"));
+          var srcTitle = esc(authored(props.Title, "Financial Summary EY2024"));
+          var srcTech = esc(authored(props["Tech name"], "[Financial Summary EY2024]"));
+          var srcType = esc(authored(props.Type, "Category"));
           // Stage and the glossary badge are OPTIONAL slots, the same shape
           // Task 1.2 fixed for checkbox/radio/toggle/dropdown-select-default/
           // text-input/label: `esc(props.X || "placeholder")` fed markup that
@@ -4199,14 +4206,12 @@
           // authored empty catalog or description omits its region the same
           // way.
           var srcStage = props.Stage ? esc(props.Stage) : "";
-          var srcCatalog = esc(srcText("Catalog", "Catalog"));
+          var srcCatalog = esc(authored(props.Catalog, "Catalog"));
           var srcDesc = esc(
-            srcText(
-              "Description",
-              srcText(
-                "Body",
-                "A product is anything that can be offered to a market that might satisfy a want or need by potential customers.",
-              ),
+            authored(
+              props.Description,
+              props.Body,
+              "A product is anything that can be offered to a market that might satisfy a want or need by potential customers.",
             ),
           );
           var srcProp1 = esc(

@@ -128,3 +128,30 @@ test("Studio's drawer header has open-in-full-page and close; Explorer's adds fa
   assert.deepEqual(names(drawer("App=Studio")), ["Open in full page", "Close"]);
   assert.deepEqual(names(drawer("App=Explorer")), ["Add to favorites", "Open in full page", "Close"]);
 });
+
+// The render contract lists a leaf's props by reading literal `props.X` in its
+// case block, and the consumers (the plugin, the Claude Design bundle, the
+// empty-slot and omission gates) read the contract. A prop read through a
+// variable key vanishes from all of them with nothing failing.
+test("the render contract lists every prop the card reads, with the defaults it states", () => {
+  const { deriveContract } = require("../../scripts/render/derive-contract.js");
+  const props = Object.fromEntries(
+    deriveContract().slugs["search-result-card"].props.map((p) => [p.name, p.default]),
+  );
+  for (const name of ["Title", "Tech name", "Type", "Catalog", "Description", "Body", "Connection", "Suggestion", "Last updated", "Completion", "Properties", "Shared"]) {
+    assert.ok(name in props, name);
+  }
+  assert.equal(props.Title, "Financial Summary EY2024");
+  assert.equal(props.Type, "Category");
+  assert.equal(props.Catalog, "Catalog");
+  assert.match(props.Description, /^A product is anything/);
+  assert.equal(props.Body, undefined, "Body is an alias: the default belongs to the chain's head");
+});
+
+// --studio resets the border after --focus in the file, so Focus needs a rule
+// of its own on the pair or it draws exactly as Default (no visible focus).
+test("Studio's Focus state draws a visible ring", () => {
+  const r = rule(".ds-search-result-card--studio.ds-search-result-card--focus");
+  assert.ok(r, "no Studio focus rule");
+  assert.match(r, /--zen-focus-ring-primary/);
+});
