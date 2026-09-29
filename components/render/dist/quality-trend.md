@@ -14,7 +14,7 @@ Sources last changed **2026-09-29**. Values are derived from the tree this ran a
 | Verified colour declarations (oracle numerator) | 97 | flat (was 97) |
 | Examined colour declarations (oracle denominator) | 534 | flat (was 534) |
 | Verified shape declarations (geometry numerator) | 150 | flat (was 150) |
-| Examined shape declarations (geometry denominator) | 705 | changed (was 704) |
+| Examined shape declarations (geometry denominator) | 705 | flat (was 705) |
 | Shape declarations the capture contradicts | 91 | flat (was 91) |
 
 Oracle coverage is **97 of 534** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
@@ -42,7 +42,7 @@ Geometry coverage is **150 of 705** gap, padding and fixed-height declarations, 
 
 | Date | Version | Unexplained |
 | --- | --- | --- |
-| 2026-09-29 | v0.34.220 | 41 |
+| 2026-09-29 | v0.34.221 | 41 |
 | 2026-09-16 | v0.34.212 | 41 |
 | 2026-09-09 | v0.34.205 | 41 |
 | 2026-09-08 | v0.34.202 | 41 |
