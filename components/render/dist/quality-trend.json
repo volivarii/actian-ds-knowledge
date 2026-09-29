@@ -49,8 +49,8 @@
     },
     "geometryExamined": {
       "value": 705,
-      "direction": "changed",
-      "previous": 704
+      "direction": "unchanged",
+      "previous": 705
     },
     "geometryMismatch": {
       "value": 91,
@@ -417,8 +417,8 @@
   "collapseSeries": [
     {
       "date": "2026-09-29",
-      "version": "0.34.220",
-      "sha": "746f1594",
+      "version": "0.34.221",
+      "sha": "f5df54be",
       "unexplained": 41
     },
     {

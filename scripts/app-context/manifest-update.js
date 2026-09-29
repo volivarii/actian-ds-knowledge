@@ -9,6 +9,7 @@
 //   - collections  : appContextSrc (human) + appContextRecipesSrc (human)
 //                    + appContextRecipes (ci, per-slug dist leaves)
 //                    + appContextSectionsSrc (human) + appContextSections (ci)
+//                    + appContextHandover (human, the handover templates)
 //   - generator    : "scripts/app-context/derive-app-context.js"
 
 const fs = require("node:fs");
@@ -36,7 +37,7 @@ function updatePathsManifest(manifestPath, opts) {
       delete manifest.paths[k];
     }
   });
-  ["appContext.src", "appContextSrc", "appContextRecipesSrc", "appContextRecipes", "appContextSectionsSrc", "appContextSections"].forEach((k) => {
+  ["appContext.src", "appContextSrc", "appContextRecipesSrc", "appContextRecipes", "appContextSectionsSrc", "appContextSections", "appContextHandover"].forEach((k) => {
     if (Object.prototype.hasOwnProperty.call(manifest.collections, k)) {
       delete manifest.collections[k];
     }
@@ -80,7 +81,7 @@ function updatePathsManifest(manifestPath, opts) {
     origin: "human",
     recursive: true,
     description:
-      "Authoring surface for app context. Per-kind subdirs: apps, entities, patterns, personas. Terminology lives in terminology.yml (not covered by this collection).",
+      "Authoring surface for app context. Per-kind subdirs: apps, entities, patterns, personas, and handover (the handover templates, also resolvable as appContextHandover). Terminology lives in terminology.yml (not covered by this collection).",
   };
   added.push("appContextSrc");
 
@@ -136,6 +137,19 @@ function updatePathsManifest(manifestPath, opts) {
   };
   added.push("appContextSections");
 
+  // The handover templates engineering receives (knowledge-first
+  // simplification, 2026-09-29). Authored markdown, shipped as source with no
+  // derive: vendored-source-bump.yml is what tags a change to them.
+  manifest.collections["appContextHandover"] = {
+    dir: "app-context/src/handover",
+    pattern: "{slug}.md",
+    type: "markdown",
+    origin: "human",
+    description:
+      "The handover templates engineering receives: intent.md (the PM's intent, business fields left as the gap marker until the PM fills them) and specs.md (the designer's specs, each section naming its source). Each file's frontmatter lists its sections in order with an owner (pm, ux or designer); the plugin's check-handover.js reads it. Ships as source with no derive, so vendored-source-bump.yml tags a change to it.",
+  };
+  added.push("appContextHandover");
+
   // 4. Zones — ensure appContextSrc + appContextBundle are classified in _zones.metadata.
   // Each non-namespaced key prefix must appear in _zones so the manifest-zones check passes.
   // "appContext" is already there; "appContextSrc" and "appContextBundle" must be added
@@ -148,6 +162,7 @@ function updatePathsManifest(manifestPath, opts) {
       "appContextRecipes",
       "appContextSectionsSrc",
       "appContextSections",
+      "appContextHandover",
     ]) {
       if (!manifest._zones.metadata.includes(key)) {
         manifest._zones.metadata.push(key);
