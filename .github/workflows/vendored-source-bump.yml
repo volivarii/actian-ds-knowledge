@@ -47,6 +47,9 @@ on:
       - 'clients/**'
       - 'schemas/**'
       - 'components/render/renderer/**'
+      # The handover templates (intent.md, specs.md) ship as source with no derive;
+      # the plugin's check-handover.js reads them from its vendor copy.
+      - 'app-context/src/handover/**'
 
 # Serialize per branch: concurrent auto-commit pushes to the same PR head race
 # each other (lost push = red required check). Queue, never cancel.

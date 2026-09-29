@@ -20,6 +20,7 @@
       "appContextRecipes",
       "appContextRecipesSrc",
       "appContextSections",
+      "appContextHandover",
       "appContextSectionsSrc",
       "appContextSrc",
       "tokens"
@@ -943,6 +944,13 @@
       "origin": "ci",
       "generator": "scripts/app-context/derive-app-context.js",
       "description": "Per-slug section recipe JSONs (validated + stamped). A page recipe's dist leaf already has these inlined; a consumer composing from a generic archetype reads them here by role."
+    },
+    "appContextHandover": {
+      "dir": "app-context/src/handover",
+      "pattern": "{slug}.md",
+      "type": "markdown",
+      "origin": "human",
+      "description": "The handover templates engineering receives: intent.md (the PM's intent, business fields left as the gap marker until the PM fills them) and specs.md (the designer's specs, each section naming its source). Each file's frontmatter lists its sections in order with an owner (pm, ux or designer); the plugin's check-handover.js reads it. Ships as source with no derive, so vendored-source-bump.yml tags a change to it."
     },
     "appContextSectionsSrc": {
       "dir": "app-context/src/sections",
