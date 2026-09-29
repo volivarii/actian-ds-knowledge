@@ -149,7 +149,7 @@ test("the scan reads section text, recipe props and capitalised keys", () => {
   const all = productText();
   const has = (where, s) => all.some((x) => x.where.startsWith(where) && x.s === s);
   assert.ok(has("sections/item-header.json", "Last updated: {{last_updated}}"), "section content");
-  assert.ok(has("recipes/faceted-browse.json", "Last updated: {{result_1_updated}}"), "recipe prop");
+  assert.ok(all.some((x) => x.where.startsWith("recipes/faceted-browse.json") && x.where.endsWith(".props.Last updated") && x.s === "{{result_1_updated}}"), "recipe prop");
   assert.ok(has("recipes/faceted-browse.json", "{{result_1_title}}"), "capitalised Title");
 });
 
