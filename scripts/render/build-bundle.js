@@ -9,9 +9,14 @@
 //   Type/type.html          — the type scale and families.
 //   Spacing/spacing.html    — the spacing scale as labeled bars.
 //   styles.css              — the fonts and render.css, the system's stylesheet.
+//   Product/                — NOT cards: what a design needs beyond the components
+//                             (app records, recipes and screenshots, sections,
+//                             terminology, content rules, icons, handover
+//                             templates) and a README that is the route in.
 // Returns { written, assets }: written is the list of relative paths written
 // (DesignSync compiles the @dsCard markers into _ds_manifest.json and reads the
-// files from disk, so the bundle is exactly this directory of grouped cards);
+// files from disk, so the cards are exactly this directory's grouped .html
+// files; Product/ ships beside them and holds none);
 // assets is the {name, path, group, subtitle} list for DesignSync's legacy
 // register_assets call.
 //
@@ -462,12 +467,21 @@ function buildBundle(outDir, opts) {
 // The recipes and sections are the dist copies, the ones with their sections
 // inlined; the screenshots are the authored captures.
 var PRODUCT_SOURCES = [
-  ["app-context/src/apps", "Product/apps", ".md"],
-  ["app-context/dist/recipes", "Product/recipes", ".json"],
-  ["app-context/src/recipes/captures", "Product/recipes/captures", ".png"],
-  ["app-context/dist/sections", "Product/sections", ".json"],
-  ["content/dist", "Product/content", ".md"],
-  ["app-context/src/handover", "Product/handover", ".md"],
+  ["app-context/src/apps", "Product/apps", /\.md$/],
+  ["app-context/dist/recipes", "Product/recipes", /\.json$/],
+  ["app-context/src/recipes/captures", "Product/recipes/captures", /\.png$/],
+  ["app-context/dist/sections", "Product/sections", /\.json$/],
+  // global.md only: it is the concatenation of writing.md, patterns.md and
+  // product.md, so shipping all four would carry every rule twice.
+  ["content/dist", "Product/content", /^global\.md$/],
+  ["app-context/src/handover", "Product/handover", /\.md$/],
+];
+// Single files. The icons carry the geometry for the icon slugs the app
+// records name (Studio's side navigation), which no card is guaranteed to
+// inline.
+var PRODUCT_FILES = [
+  ["app-context/src/terminology.yml", "Product/terminology.yml"],
+  ["components/dist/icons/icons.json", "Product/icons.json"],
 ];
 
 // The README is llms.txt's "Building a screen", with its paths rewritten to
@@ -483,9 +497,10 @@ var PRODUCT_PATHS = [
   ["app-context/src/terminology.yml", "terminology.yml"],
   ["app-context/src/handover/", "handover/"],
   ["content/dist/", "content/"],
+  ["anything you make from this repository", "anything you make from this design system"],
 ];
 var PRODUCT_COMPONENTS_LINE =
-  "- The components: the cards of this design system (one per component, grouped as the Figma library groups them, each with its usage notes beside it in `<slug>.prompt.md`) and [styles.css](../styles.css) (the tokens and the component styles, themed with `data-theme`: `actian`, `studio`, `explorer`).";
+  "- The components: the cards of this design system (one per component, grouped as the Figma library groups them, each with its usage notes beside it in `<slug>.prompt.md`) and [styles.css](../styles.css) (the tokens and the component styles, themed with `data-theme`: `actian`, `studio`, `explorer`); the SVG geometry for every icon slug is in [icons.json](icons.json).";
 
 function productReadme() {
   var lines = require("../llms-txt-generate.js")
@@ -510,10 +525,7 @@ function writeProductFolder(outDir, written) {
     var src = path.join(REPO_ROOT, s[0]);
     fs.readdirSync(src)
       .filter(function (f) {
-        return (
-          f.slice(-s[2].length) === s[2] &&
-          fs.statSync(path.join(src, f)).isFile()
-        );
+        return s[2].test(f) && fs.statSync(path.join(src, f)).isFile();
       })
       .sort()
       .forEach(function (f) {
@@ -526,13 +538,11 @@ function writeProductFolder(outDir, written) {
         );
       });
   });
-  written.push(
-    writeFile(
-      outDir,
-      path.join("Product", "terminology.yml"),
-      fs.readFileSync(path.join(REPO_ROOT, "app-context/src/terminology.yml")),
-    ),
-  );
+  PRODUCT_FILES.forEach(function (p) {
+    written.push(
+      writeFile(outDir, p[1], fs.readFileSync(path.join(REPO_ROOT, p[0]))),
+    );
+  });
   written.push(
     writeFile(outDir, path.join("Product", "README.md"), productReadme()),
   );

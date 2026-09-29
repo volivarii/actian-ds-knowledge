@@ -399,3 +399,22 @@ test("the product README is the route in, pointing at the bundle's own paths", f
     );
   });
 });
+
+test("the product folder ships the icons its records name, and each content rule once", function () {
+  var dir = freshDir();
+  var rel = buildBundle(dir).written.map(function (p) {
+    return p.split(path.sep).join("/");
+  });
+  assert.ok(rel.indexOf("Product/icons.json") !== -1, "icon geometry for the records' icon slugs");
+  var content = rel.filter(function (r) {
+    return r.indexOf("Product/content/") === 0;
+  });
+  assert.deepEqual(content, ["Product/content/global.md"], "global.md already holds the three buckets");
+  var readme = fs.readFileSync(path.join(dir, "Product/README.md"), "utf8");
+  assert.ok(readme.indexOf("icons.json") !== -1, "the README points at the icons");
+  // No path of this repository, linked or bare, and no mention of a repository
+  // the reader of a Claude Design project does not have.
+  ["app-context/", "components/render/", "components/dist/", "content/dist/", "this repository"].forEach(function (leak) {
+    assert.ok(readme.indexOf(leak) === -1, leak + " leaked into the bundle README");
+  });
+});
