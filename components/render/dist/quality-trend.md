@@ -12,14 +12,14 @@ Sources last changed **2026-09-29**. Values are derived from the tree this ran a
 | FM modifier classes with no rule | 56 | flat (was 56) |
 | Inline-style hex (cannot re-theme) | 47 | flat (was 47) |
 | Verified colour declarations (oracle numerator) | 97 | flat (was 97) |
-| Examined colour declarations (oracle denominator) | 534 | flat (was 534) |
+| Examined colour declarations (oracle denominator) | 548 | changed (was 534) |
 | Verified shape declarations (geometry numerator) | 150 | flat (was 150) |
-| Examined shape declarations (geometry denominator) | 705 | flat (was 705) |
+| Examined shape declarations (geometry denominator) | 730 | changed (was 705) |
 | Shape declarations the capture contradicts | 91 | flat (was 91) |
 
-Oracle coverage is **97 of 534** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
+Oracle coverage is **97 of 548** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
 
-Geometry coverage is **150 of 705** gap, padding and fixed-height declarations, with **91** the capture contradicts. That last number is a worklist, not a verdict: a disagreement can mean the CSS has the shape wrong, that the renderer flattened a structure Figma splits across nested frames, or that the Figma component itself is off the spacing scale. The check reports; `tests/render/geometry-ratchet.test.js` is what keeps the number falling.
+Geometry coverage is **150 of 730** gap, padding and fixed-height declarations, with **91** the capture contradicts. That last number is a worklist, not a verdict: a disagreement can mean the CSS has the shape wrong, that the renderer flattened a structure Figma splits across nested frames, or that the Figma component itself is off the spacing scale. The check reports; `tests/render/geometry-ratchet.test.js` is what keeps the number falling.
 
 ## Oracle numerator over time
 
@@ -52,8 +52,8 @@ Geometry coverage is **150 of 705** gap, padding and fixed-height declarations, 
 | 2026-09-03 | v0.34.180 | 42 |
 | 2026-09-03 | v0.34.178 | 44 |
 | 2026-09-02 | v0.34.177 | 44 |
-| 2026-08-31 | v0.34.159 | 54 |
-| 2026-08-26 | v0.34.155 | 54 |
+| 2026-08-31 | v0.34.159 | 55 |
+| 2026-08-26 | v0.34.155 | 55 |
 
 ## Where the inline hex is
 
