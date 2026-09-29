@@ -10,7 +10,7 @@ CI does the rest automatically: on your PR it regenerates the `dist/` files, bum
 
 ## Read first
 
-- [llms.txt](llms.txt) — content index
+- [llms.txt](llms.txt) — content index. Building a screen: the screenshot decides structure, the design system decides appearance; see llms.txt, Building a screen.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — `src/`+`dist/` convention, edit-here table, per-domain pointers
 - [docs/technical-guide/](docs/technical-guide/README.md) — the full picture: philosophy, architecture, the contract, pipelines, and the failure modes that pass every check. Chapter 11 (Traps) before you trust anything that is green
 

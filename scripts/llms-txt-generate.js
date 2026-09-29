@@ -48,6 +48,30 @@ function stripAnchorMarkers(md) {
     .replace(/^(\s*\*\*[^*\n]+\*\*)\s+\{#[a-z0-9-]+\}(\s*)$/gm, "$1$2");
 }
 
+// The route in: one list of what to read for any screen or flow of an Actian
+// app, in any tool, and three honesty rules for anything made from it. Exported
+// because the Claude Design bundle's product README (scripts/render/build-bundle.js)
+// carries the same lines, rewritten to the bundle's own paths.
+function buildingAScreenLines() {
+  return [
+    "## Building a screen",
+    "",
+    "Read these, in this order, for any screen or flow of an Actian app, in any tool:",
+    "",
+    "- The app record ([app-context/src/apps/](app-context/src/apps/), one file per app: Studio, Explorer, Administration): header (context, search, actions) and side navigation (groups, icons, sub-items, the bottom block). It is the one record of the app's chrome.",
+    "- The page's recipe and its screenshot ([app-context/dist/recipes/](app-context/dist/recipes/) and [app-context/src/recipes/captures/](app-context/src/recipes/captures/)): one captured page per file, with its regions (`slots`), what the renderer reads (`renderNotes`) and a node tree. The screenshot decides structure (what is on the page and where); the design system decides appearance. [Captured page sections](app-context/dist/sections/) are the parts the product repeats across pages.",
+    "- The components: [component markup](components/render/dist/fragments/) (one HTML file per component, one cell per variant, in the design system's own classes), [render.css](components/render/dist/render.css) (the tokens and the component styles, themed with `data-theme`: `actian`, `studio`, `explorer`; [fonts](components/render/dist/render-fonts.css) are separate), [icons](components/dist/icons/icons.json), and [what each component draws](components/render/dist/render-contract.json).",
+    "- The words: [terminology.yml](app-context/src/terminology.yml) (the product's word for each thing, and the words it never uses) and [content/dist/](content/dist/) (writing rules, patterns, product copy).",
+    "- The handover templates, when the work goes to engineering: [app-context/src/handover/intent.md](app-context/src/handover/intent.md) (the PM's intent) and [app-context/src/handover/specs.md](app-context/src/handover/specs.md) (the designer's specs).",
+    "",
+    "Three rules for anything you make from this repository:",
+    "",
+    "1. Mark what is new on the page itself: every part the product does not have today, labelled as new where a reader sees it.",
+    "2. Ask the open questions: write them down; with nobody to ask, write them into the file as flagged concerns.",
+    "3. Say what was not checked: any check you could not run, and anything you could not look at.",
+  ];
+}
+
 function generateLlmsTxt() {
   var lines = [
     "# Actian Design System knowledge layer",
@@ -90,18 +114,7 @@ function generateLlmsTxt() {
     "- [Component media](components/dist/media/): per-component preview and default-variant captures (webp)",
     "- [Knowledge graph](graph/dist/graph.json): typed cross-domain nodes and edges; also graph/dist/graph.jsonld (JSON-LD linked-data view)",
     "",
-    "## Building a screen",
-    "",
-    "Everything needed to draw an Actian product screen as HTML, in the order a reader uses it:",
-    "",
-    "- [App chrome and navigation](app-context/src/apps/): one file per app (Studio, Explorer, Administration) with its header, side navigation and use cases",
-    "- [Captured product pages](app-context/dist/recipes/): one real page per file, with its regions (`slots`), what the renderer reads (`renderNotes`) and a node tree; a captured page's product screenshot, when it ships one, is in [app-context/src/recipes/captures/](app-context/src/recipes/captures/), and it is the fastest way to see what the page looks like",
-    "- [Captured page sections](app-context/dist/sections/): the parts the product repeats across pages (item header, control bar, drawer header)",
-    "- [Component markup](components/render/dist/fragments/): one HTML file per component, one cell per variant the renderer draws, in the design system's own classes",
-    "- [Stylesheet](components/render/dist/render.css): the tokens and the component styles in one file, themed with `data-theme` (`actian`, `studio`, `explorer`); [fonts](components/render/dist/render-fonts.css) are separate",
-    "- [Icons](components/dist/icons/icons.json): SVG geometry per icon slug",
-    "- [What each component draws](components/render/dist/render-contract.json): the props and variant values the renderer honours, per component",
-    "- [Product terminology](app-context/src/terminology.yml), with the content buckets above: the words a screen uses",
+    ...buildingAScreenLines(),
     "",
     "## Manifest",
     "",
@@ -142,6 +155,7 @@ if (require.main === module) {
 
 module.exports = {
   generateLlmsTxt: generateLlmsTxt,
+  buildingAScreenLines: buildingAScreenLines,
   generateLlmsFullTxt: generateLlmsFullTxt,
   stripAnchorMarkers: stripAnchorMarkers,
 };
