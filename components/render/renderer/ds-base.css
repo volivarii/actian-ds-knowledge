@@ -1076,7 +1076,9 @@
 .ds-fieldbox--error .ds-fieldbox__text,
 .ds-fieldbox--filled .ds-fieldbox__text,
 .ds-fieldbox--warning .ds-fieldbox__text {
-  color: var(--zen-color-text-default); /* capture: #000000 on these four States */
+  color: var(
+    --zen-color-text-default
+  ); /* capture: #000000 on these four States */
 }
 .ds-fieldbox.is-disabled .ds-fieldbox__text {
   color: var(--zen-color-text-disabled); /* capture: #656574 */
@@ -1240,6 +1242,20 @@
   font-weight: var(--zen-font-weight-regular);
   text-decoration: none;
   cursor: pointer;
+}
+/* Sub-items (.ds-sidenav__item--sub, Import's Select a connection / Select a
+   file) take no rule of their own: their empty 16px icon slot already puts
+   the label under the parent's label, which is where
+   components/dist/media/side-nav/default.webp draws it. */
+/* Trailing chevron of an open item with sub-items — anatomy: Icon right,
+   16px, pushed to the row's right edge. */
+.ds-sidenav__chevron {
+  display: flex;
+  align-items: center;
+  width: 16px; /* anatomy: icon size (raw px) */
+  height: 16px;
+  margin-left: auto;
+  color: inherit;
 }
 /* Icon slot — anatomy: 16px square, SVG currentColor. Legacy path renders an
    empty span (no SVG) so we keep a small fixed box for visual alignment. */
@@ -4950,7 +4966,9 @@
 }
 .ds-line-graph__line {
   fill: none;
-  stroke: var(--zen-color-primary-500); /* capture: #0f5fdc on the Line vector */
+  stroke: var(
+    --zen-color-primary-500
+  ); /* capture: #0f5fdc on the Line vector */
   stroke-width: 1; /* capture: 1px */
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;

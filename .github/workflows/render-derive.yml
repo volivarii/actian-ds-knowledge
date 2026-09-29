@@ -63,6 +63,12 @@ on:
       # reds no required check, which is how a fossil survived a month (#565).
       - 'components/dist/guidelines/**'
       - 'components/dist/categories/**'
+      # The app records. matrix.js draws the side-nav and global-header cells
+      # from app-context/dist/app-context.json (derived and auto-committed by
+      # app-context-derive.yml with the App token, so this re-triggers), and
+      # without this path an edit to an app's navigation would leave both
+      # fragments showing the previous record.
+      - 'app-context/dist/app-context.json'
 
 # Serialize runs per branch: concurrent auto-commit pushes to the same PR
 # head race each other (lost push = red required check). Queue, never cancel:
