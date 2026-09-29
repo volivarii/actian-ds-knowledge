@@ -2638,7 +2638,7 @@
           ]
         }
       },
-      "updated_at": "2026-09-29T21:05:12+02:00"
+      "updated_at": "2026-09-29T21:22:36+02:00"
     },
     "card-for-grouped-content": {
       "_schema_version": 1,
@@ -2936,7 +2936,7 @@
           ]
         }
       },
-      "updated_at": "2026-09-29T21:05:12+02:00",
+      "updated_at": "2026-09-29T21:22:36+02:00",
       "_alias_of": "card"
     },
     "card-for-perimeter": {
@@ -3235,7 +3235,7 @@
           ]
         }
       },
-      "updated_at": "2026-09-29T21:05:12+02:00",
+      "updated_at": "2026-09-29T21:22:36+02:00",
       "_alias_of": "card"
     },
     "chat-with-ai-steward": {
@@ -5129,7 +5129,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-09-29T21:05:12+02:00"
+      "updated_at": "2026-09-29T21:22:36+02:00"
     },
     "dropdown-select": {
       "_schema_version": 1,
@@ -10929,7 +10929,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-09-29T21:05:12+02:00"
+      "updated_at": "2026-09-29T21:22:36+02:00"
     },
     "segmented-control": {
       "_schema_version": 1,
@@ -12664,7 +12664,7 @@
           "status": "not-started"
         }
       },
-      "updated_at": "2026-09-29T21:05:12+02:00"
+      "updated_at": "2026-09-29T21:22:36+02:00"
     },
     "tabs": {
       "_schema_version": 1,
