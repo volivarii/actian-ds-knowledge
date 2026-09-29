@@ -1775,6 +1775,15 @@
           var headerAvatar = esc(props.Account || "AU");
           var headerContext = esc(props.Context || "Catalog");
           var headerContextValue = esc(props.ContextValue || "Default");
+          // The search's scope dropdown and placeholder, from the app record's
+          // header.search. `Search` stays the show/hide switch it always was.
+          // Without a scope the dropdown repeats the context value, as before.
+          var headerSearchScope = props.SearchScope
+            ? esc(props.SearchScope)
+            : headerContextValue;
+          var headerSearchPlaceholder = esc(
+            props.SearchPlaceholder || "Search items",
+          );
           var showSearch =
             props.Search !== false &&
             props.Search !== "false" &&
@@ -1839,7 +1848,7 @@
             ? '<div class="ds-header__search">' +
               '<span class="ds-header__search-scope">' +
               '<span class="ds-header__search-scope-value">' +
-              headerContextValue +
+              headerSearchScope +
               "</span>" +
               renderIcon("arrow-down") +
               "</span>" +
@@ -1848,7 +1857,9 @@
               SVG_SEARCH +
               "</span>" +
               '<input class="ds-header__search-input" type="search"' +
-              ' placeholder="Search items" aria-label="Search items">' +
+              ' placeholder="' +
+              headerSearchPlaceholder +
+              '" aria-label="Search items">' +
               "</span>" +
               '<span class="ds-header__search-info" aria-hidden="true">' +
               renderIcon("info-filled") +
@@ -1911,8 +1922,16 @@
 
           // Helper: render a single nav item row.
           // icon may be null (legacy path) or a slug string (grouped path).
-          function renderNavItem(label, icon, isActive) {
+          // modifier is "action" (an entry that does something, New Item) or
+          // "sub" (a sub-item under its parent, Import's Select a file).
+          // expanded is true/false for an item with sub-items (said to
+          // assistive tech as aria-expanded), undefined for any other item. An
+          // open item carries the anatomy's trailing chevron (Icon right,
+          // drawn pointing up in components/dist/media/side-nav/default.webp);
+          // a closed one carries none, as the product screenshot shows.
+          function renderNavItem(label, icon, isActive, modifier, expanded) {
             var itemCls = "ds-sidenav__item";
+            if (modifier) itemCls += " ds-sidenav__item--" + modifier;
             if (isActive) itemCls += " is-active";
             var iconHtml = icon
               ? '<span class="ds-sidenav__icon">' + renderIcon(icon) + "</span>"
@@ -1920,11 +1939,21 @@
             return (
               '<a class="' +
               itemCls +
-              '">' +
+              '"' +
+              (expanded === true || expanded === false
+                ? ' aria-expanded="' + expanded + '"'
+                : "") +
+              ">" +
               iconHtml +
               '<span class="ds-sidenav__label">' +
               esc(label) +
-              "</span></a>"
+              "</span>" +
+              (expanded === true
+                ? '<span class="ds-sidenav__chevron" aria-hidden="true">' +
+                  renderIcon("arrow-up") +
+                  "</span>"
+                : "") +
+              "</a>"
             );
           }
 
@@ -1943,39 +1972,86 @@
             }
             if (!Array.isArray(groups)) groups = [];
 
-            // Flatten all group items to run resolveActive across the full set.
+            // Flatten all group items (sub-items included) to run
+            // resolveActive across the full set.
             var allLabels = [];
             groups.forEach(function (g) {
               (g.items || []).forEach(function (it) {
                 allLabels.push(it.label || "");
+                (it.children || []).forEach(function (ch) {
+                  allLabels.push(ch.label || "");
+                });
               });
             });
             var navActive = resolveActive(allLabels, props.Active);
 
-            // anatomy: primary groups at the top; the LAST group (utilities:
-            // Access request / Catalog design / Analytics) is anchored to the
-            // rail bottom. With a single group, keep it all at the top.
+            // An item's sub-items render right after it, and only while the
+            // item or one of its sub-items is the active one (Vincent,
+            // 2026-09-29). The product screenshot shows Import closed; the
+            // Figma component is drawn open (default.webp), so the closed
+            // default is the screenshot's, which wins where the two disagree.
+            // Sub-items carry no icon of their own in the record, and no
+            // nesting below them.
             var renderGroup = function (g) {
               var groupItems = (g.items || [])
                 .map(function (it) {
-                  return renderNavItem(
+                  var subs = it.children || [];
+                  var open =
+                    (it.label || "") === navActive ||
+                    subs.some(function (ch) {
+                      return (ch.label || "") === navActive;
+                    });
+                  var row = renderNavItem(
                     it.label || "",
                     it.icon || null,
                     (it.label || "") === navActive,
+                    it.kind === "action" ? "action" : null,
+                    subs.length ? open : undefined,
                   );
+                  if (!open) return row;
+                  subs.forEach(function (ch) {
+                    row += renderNavItem(
+                      ch.label || "",
+                      null,
+                      (ch.label || "") === navActive,
+                      "sub",
+                    );
+                  });
+                  return row;
                 })
                 .join("");
               return '<div class="ds-sidenav__group">' + groupItems + "</div>";
             };
-            var hasBottomGroup = groups.length >= 2;
-            var topGroups = hasBottomGroup ? groups.slice(0, -1) : groups;
+            // Which groups sit in the rail's bottom block. The app record says
+            // so explicitly (a group with `bottom: true`, from items with
+            // `position: bottom`). Without that flag the legacy anatomy rule
+            // holds: the LAST of two or more groups (Access requests / Catalog
+            // design / Analytics) is anchored to the bottom, and a single
+            // group stays at the top.
+            // A group that carries `bottom` at all (true or false) means the
+            // caller placed every group, so the legacy rule stays out of it.
+            var explicitBottom = groups.some(function (g) {
+              return g && typeof g.bottom === "boolean";
+            });
+            var topGroups, bottomGroups;
+            if (explicitBottom) {
+              topGroups = groups.filter(function (g) {
+                return !(g && g.bottom === true);
+              });
+              bottomGroups = groups.filter(function (g) {
+                return g && g.bottom === true;
+              });
+            } else if (groups.length >= 2) {
+              topGroups = groups.slice(0, -1);
+              bottomGroups = groups.slice(-1);
+            } else {
+              topGroups = groups;
+              bottomGroups = [];
+            }
             var topHtml = topGroups.map(renderGroup).join(navSeparator);
 
             // Bottom section: the utilities group (if any) + separator + collapse.
-            var bottomInner = "";
-            if (hasBottomGroup) {
-              bottomInner += renderGroup(groups[groups.length - 1]);
-            }
+            var bottomInner = bottomGroups.map(renderGroup).join(navSeparator);
             bottomInner +=
               navSeparator +
               '<button class="ds-sidenav__collapse" type="button" aria-label="Collapse sidebar">' +
@@ -1996,10 +2072,10 @@
             );
           } else {
             // ── Legacy mode (comma Items list, no icons) ──────────────────
-            var navItems = parseItems(
-              props.Items,
-              "Catalog, Pipelines, Connections, Settings",
-            );
+            // No default list: an invented one ("Catalog, Pipelines,
+            // Connections, Settings") read as an Actian app's navigation and
+            // matched none. No items given draws an empty rail.
+            var navItems = parseItems(props.Items, "");
             var legacyActive = resolveActive(navItems, props.Active);
             var navRows = navItems
               .map(function (item) {
