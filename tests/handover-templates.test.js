@@ -93,3 +93,18 @@ test("the committed manifest is what the app-context manifest generator writes",
   assert.ok(manifest.collections.appContextHandover, "the generator writes the handover collection");
   assert.equal(fs.readFileSync(copy, "utf8"), fs.readFileSync(file, "utf8"));
 });
+
+// The plugin reads the frontmatter LINE BY LINE, not as YAML
+// (check-handover.js, assemble-intent.js): each section is one line in this
+// exact shape, and the title is taken verbatim up to the comma, so a quoted
+// title would be looked for as a heading WITH its quotes and reported missing.
+// The regex is the consumer's, quoted from its 2026-09-29 source.
+const CONSUMER_LINE = /^\s*-\s*\{\s*title:\s*(.+?),\s*owner:\s*(\w+),\s*required:\s*(true|false)\s*\}/;
+for (const kind of ["intent", "specs"]) {
+  test(kind + ": every section line reads as the plugin's line reader reads it", () => {
+    const src = fs.readFileSync(path.join(ROOT, "app-context/src/handover", kind + ".md"), "utf8");
+    const front = src.split("\n---\n")[0];
+    const read = front.split("\n").map((l) => CONSUMER_LINE.exec(l)).filter(Boolean).map((m) => m[1].trim());
+    assert.deepEqual(read, load(kind).fm.sections.map((s) => s.title));
+  });
+}
