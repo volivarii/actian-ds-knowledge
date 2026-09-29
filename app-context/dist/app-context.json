@@ -139,36 +139,84 @@
         "Data steward"
       ],
       "header": {
-        "type": "Studio"
+        "type": "Studio",
+        "context": {
+          "label": "Catalog",
+          "value": "Default"
+        },
+        "search": {
+          "scope": "Default",
+          "placeholder": "Search your items..."
+        },
+        "actions": [
+          "whats-new",
+          "notifications",
+          "app-switcher",
+          "avatar"
+        ]
       },
       "sidebar": [
         {
           "label": "Dashboard",
-          "id": "dashboard"
+          "id": "dashboard",
+          "icon": "dashboard",
+          "group": "main"
         },
         {
           "label": "Catalog",
-          "id": "catalog"
+          "id": "catalog",
+          "icon": "catalog",
+          "group": "main"
         },
         {
           "label": "Topics",
-          "id": "topics"
+          "id": "topics",
+          "icon": "book-bookmark",
+          "group": "main"
         },
         {
           "label": "Import",
-          "id": "import"
+          "id": "import",
+          "icon": "download",
+          "group": "create",
+          "children": [
+            {
+              "label": "Select a connection",
+              "id": "import-connection"
+            },
+            {
+              "label": "Select a file",
+              "id": "import-file"
+            }
+          ]
+        },
+        {
+          "label": "New Item",
+          "id": "new-item",
+          "icon": "add",
+          "group": "create",
+          "kind": "action"
         },
         {
           "label": "Access requests",
-          "id": "access-requests"
+          "id": "access-requests",
+          "icon": "data-access-request",
+          "group": "admin",
+          "position": "bottom"
         },
         {
           "label": "Catalog design",
-          "id": "catalog-design"
+          "id": "catalog-design",
+          "icon": "catalog-design",
+          "group": "admin",
+          "position": "bottom"
         },
         {
           "label": "Analytics",
-          "id": "analytics"
+          "id": "analytics",
+          "icon": "analytics",
+          "group": "admin",
+          "position": "bottom"
         }
       ],
       "signals": [
@@ -1907,7 +1955,7 @@
         "app-context/src/apps/administration.md",
         "General role definition, not Actian user research"
       ],
-      "description": "Configures and operates the platform for everyone else: users and groups, sign-in and permissions, connections, scanners and system settings. An administrator is responsible for the product being available, secure and correctly set up, rather than for what the catalog contains. Also referred to as IT operations.\n\nIn the product the administrator works in Administration: configuring connections and scanners, managing users, groups and permissions, and setting governance policies and maintenance windows.",
+      "description": "Configures and operates the platform for everyone else: users and groups, sign-in and permissions, connections, scanners and system settings. An administrator is responsible for the product being available, secure and correctly set up, rather than for what the catalog contains. Also referred to as IT operations.\n\nIn the product the administrator works in Administration. What they do there is listed by Administration's use cases.",
       "useCases": [
         {
           "app": "administration",
@@ -1933,7 +1981,7 @@
         "app-context/src/apps/explorer.md",
         "General role definition, not Actian user research"
       ],
-      "description": "Turns data into answers: explores datasets, builds reports and dashboards, and checks whether figures can be trusted before sharing them. An analyst needs to know where data comes from, what its fields mean, and how complete and current it is.\n\nIn the product the analyst works in Explorer: discovering and browsing data products in the marketplace, understanding an asset before using it, requesting access to the data a question needs, and asking AI for help finding and understanding data.",
+      "description": "Turns data into answers: explores datasets, builds reports and dashboards, and checks whether figures can be trusted before sharing them. An analyst needs to know where data comes from, what its fields mean, and how complete and current it is.\n\nIn the product the analyst works in Explorer. What they do there is listed by Explorer's use cases.",
       "useCases": [
         {
           "app": "explorer",
@@ -1961,7 +2009,7 @@
         "app-context/src/apps/explorer.md",
         "General role definition, not Actian user research"
       ],
-      "description": "Someone whose work depends on data but whose job is not data itself, such as a marketing lead, a finance controller or an operations manager. A business user wants to find data they can trust, understand what it means in business terms, and get access to it without needing to know how it is produced. Also referred to as a data consumer.\n\nIn the product the business user works in Explorer: discovering and browsing data products in the marketplace, understanding an asset before using it, requesting access to the data they need, and asking AI for help finding and understanding data.",
+      "description": "Someone whose work depends on data but whose job is not data itself, such as a marketing lead, a finance controller or an operations manager. A business user wants to find data they can trust, understand what it means in business terms, and get access to it without needing to know how it is produced. Also referred to as a data consumer.\n\nIn the product the business user works in Explorer. What they do there is listed by Explorer's use cases.",
       "useCases": [
         {
           "app": "explorer",
@@ -1989,7 +2037,7 @@
         "app-context/src/apps/studio.md",
         "General role definition, not Actian user research"
       ],
-      "description": "Designs how an organization's data is structured and related: the models, the relationships between concepts, and the standards other teams build on. A data architect cares about consistency across domains more than about any single dataset.\n\nIn the product the architect works in Studio: governing and curating the catalog, managing lineage and the business glossary, and enriching metadata and designing catalog structure.",
+      "description": "Designs how an organization's data is structured and related: the models, the relationships between concepts, and the standards other teams build on. A data architect cares about consistency across domains more than about any single dataset.\n\nIn the product the architect works in Studio. What they do there is listed by Studio's use cases.",
       "useCases": [
         {
           "app": "studio",
@@ -2015,7 +2063,7 @@
         "app-context/src/apps/studio.md",
         "General role definition, not Actian user research"
       ],
-      "description": "Builds and runs the systems that move and prepare data: connections to sources, ingestion and transformation pipelines, and the technical metadata those systems produce. A data engineer is responsible for data arriving reliably and in the expected shape.\n\nIn the product the engineer works in Studio: importing and connecting data sources, reviewing and resolving access requests, and tracking stewardship activity.",
+      "description": "Builds and runs the systems that move and prepare data: connections to sources, ingestion and transformation pipelines, and the technical metadata those systems produce. A data engineer is responsible for data arriving reliably and in the expected shape.\n\nIn the product the engineer works in Studio. What they do there is listed by Studio's use cases.",
       "useCases": [
         {
           "app": "studio",
@@ -2043,7 +2091,7 @@
         "app-context/src/entities/user-group.md",
         "General role definition, not Actian user research"
       ],
-      "description": "Looks after the quality, meaning and correct use of an organization's data. A data steward documents assets, keeps definitions and the business glossary consistent, names the people responsible for each item, and weighs who should be allowed to use what.\n\nIn the product the steward works in Studio: governing and curating the catalog, managing lineage and the business glossary, enriching metadata and designing catalog structure, importing and connecting data sources, reviewing and resolving access requests, and tracking stewardship activity.",
+      "description": "Looks after the quality, meaning and correct use of an organization's data. A data steward documents assets, keeps definitions and the business glossary consistent, names the people responsible for each item, and weighs who should be allowed to use what.\n\nIn the product the steward works in Studio. What they do there is listed by Studio's use cases.",
       "useCases": [
         {
           "app": "studio",
