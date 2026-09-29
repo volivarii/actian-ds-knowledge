@@ -99,8 +99,51 @@ test("Studio's bottom block is Access requests, Catalog design, Analytics", () =
   );
 });
 
-test("Studio's header carries context and search", () => {
+// The header anatomy names the context switcher's two text layers and the
+// actions' Types, left to right. The contract's action slugs map to those Types
+// by name here, so a Type Figma adds or renames fails instead of passing.
+const ACTION_SLUG = {
+  "What's new": "whats-new",
+  Notification: "notifications",
+  "App switcher": "app-switcher",
+  Account: "avatar",
+};
+function anatomyHeader() {
+  const a = JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "components/dist/anatomy/global-header.json"),
+      "utf8",
+    ),
+  );
+  const find = (n, name) =>
+    n.name === name
+      ? n
+      : (n.children || []).reduce((hit, c) => hit || find(c, name), null);
+  const texts = (find(a.root, "Catalog dropdown").children || [])
+    .map((c) => c.text)
+    .filter(Boolean);
+  const actions = find(a.root, "Action on right").children.map(
+    (c) => ACTION_SLUG[c.props.Type] || "unmapped: " + c.props.Type,
+  );
+  return { texts, actions };
+}
+
+test("Studio's header context and actions equal the anatomy", () => {
   const h = yaml("app-context/src/apps/studio.md").header;
-  assert.deepEqual(h.context, { label: "Catalog", value: "Default" });
-  assert.equal(h.search.placeholder, "Search your items...");
+  const a = anatomyHeader();
+  assert.deepEqual(
+    [h.context.label, h.context.value].sort(),
+    [...a.texts].sort(),
+  );
+  assert.deepEqual(h.actions, a.actions);
+});
+
+// The anatomy holds no search text; the screenshot shows the scope and the
+// placeholder.
+test("Studio's header search is the screenshot's", () => {
+  const h = yaml("app-context/src/apps/studio.md").header;
+  assert.deepEqual(h.search, {
+    scope: "Default",
+    placeholder: "Search your items...",
+  });
 });
