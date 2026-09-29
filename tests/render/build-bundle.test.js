@@ -349,3 +349,53 @@ test("buildBundle: no two cards share a name, so a shared family name gives way 
   });
   assert.equal(btn.name, "Buttons", "a family name used once is kept");
 });
+
+// The product folder (knowledge-first simplification, C5): what a Claude Design
+// project needs to draw an Actian screen beyond the components, with the route
+// in as its README. None of it is a card, so none of it is .html.
+test("the bundle carries the product folder, none of it as a card", function () {
+  var dir = freshDir();
+  var rel = buildBundle(dir).written.map(function (p) {
+    return p.split(path.sep).join("/");
+  });
+  [
+    "Product/README.md",
+    "Product/apps/studio.md",
+    "Product/recipes/faceted-browse.json",
+    "Product/recipes/captures/faceted-browse.png",
+    "Product/sections/item-header.json",
+    "Product/terminology.yml",
+    "Product/content/global.md",
+    "Product/handover/intent.md",
+    "Product/handover/specs.md",
+  ].forEach(function (must) {
+    assert.ok(rel.indexOf(must) !== -1, must);
+  });
+  assert.ok(
+    !rel.some(function (r) {
+      return r.indexOf("Product/") === 0 && /\.html$/.test(r);
+    }),
+    "no card under Product/",
+  );
+});
+
+test("the product README is the route in, pointing at the bundle's own paths", function () {
+  var dir = freshDir();
+  buildBundle(dir);
+  var readme = fs.readFileSync(path.join(dir, "Product/README.md"), "utf8");
+  assert.ok(readme.indexOf("Mark what is new on the page") !== -1);
+  assert.ok(readme.indexOf("decides structure") !== -1);
+  // Every relative link resolves inside the bundle, so no path points back into
+  // this repository.
+  var links = [];
+  readme.replace(/\]\(([^)]+)\)/g, function (_, href) {
+    links.push(href);
+  });
+  assert.ok(links.length > 0, "the README links its sources");
+  links.forEach(function (href) {
+    assert.ok(
+      fs.existsSync(path.join(dir, "Product", href)),
+      href + " does not resolve inside the bundle",
+    );
+  });
+});

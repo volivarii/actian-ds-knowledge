@@ -452,7 +452,90 @@ function buildBundle(outDir, opts) {
     group: "Spacing",
     subtitle: SPACING_SUBTITLE,
   });
+  writeProductFolder(outDir, written);
   return { written: written, assets: assets };
+}
+
+// The product folder: what a Claude Design project needs to draw an Actian
+// screen beyond the components (knowledge-first simplification, 2026-09-29).
+// None of it is a card, so none of it is .html and none of it is an asset.
+// The recipes and sections are the dist copies, the ones with their sections
+// inlined; the screenshots are the authored captures.
+var PRODUCT_SOURCES = [
+  ["app-context/src/apps", "Product/apps", ".md"],
+  ["app-context/dist/recipes", "Product/recipes", ".json"],
+  ["app-context/src/recipes/captures", "Product/recipes/captures", ".png"],
+  ["app-context/dist/sections", "Product/sections", ".json"],
+  ["content/dist", "Product/content", ".md"],
+  ["app-context/src/handover", "Product/handover", ".md"],
+];
+
+// The README is llms.txt's "Building a screen", with its paths rewritten to
+// the bundle's own. Most specific first: the captures path contains the
+// recipes one. The components bullet names repository files the bundle does
+// not carry, so it is replaced with the bundle's equivalent: the cards and
+// styles.css.
+var PRODUCT_PATHS = [
+  ["app-context/src/recipes/captures/", "recipes/captures/"],
+  ["app-context/dist/recipes/", "recipes/"],
+  ["app-context/dist/sections/", "sections/"],
+  ["app-context/src/apps/", "apps/"],
+  ["app-context/src/terminology.yml", "terminology.yml"],
+  ["app-context/src/handover/", "handover/"],
+  ["content/dist/", "content/"],
+];
+var PRODUCT_COMPONENTS_LINE =
+  "- The components: the cards of this design system (one per component, grouped as the Figma library groups them, each with its usage notes beside it in `<slug>.prompt.md`) and [styles.css](../styles.css) (the tokens and the component styles, themed with `data-theme`: `actian`, `studio`, `explorer`).";
+
+function productReadme() {
+  var lines = require("../llms-txt-generate.js")
+    .buildingAScreenLines()
+    .map(function (line) {
+      if (line.indexOf("- The components:") === 0)
+        return PRODUCT_COMPONENTS_LINE;
+      PRODUCT_PATHS.forEach(function (p) {
+        line = line.split(p[0]).join(p[1]);
+      });
+      return line;
+    });
+  return (
+    "# Actian products: what to read before drawing a screen\n\n" +
+    lines.join("\n") +
+    "\n"
+  );
+}
+
+function writeProductFolder(outDir, written) {
+  PRODUCT_SOURCES.forEach(function (s) {
+    var src = path.join(REPO_ROOT, s[0]);
+    fs.readdirSync(src)
+      .filter(function (f) {
+        return (
+          f.slice(-s[2].length) === s[2] &&
+          fs.statSync(path.join(src, f)).isFile()
+        );
+      })
+      .sort()
+      .forEach(function (f) {
+        written.push(
+          writeFile(
+            outDir,
+            path.join(s[1], f),
+            fs.readFileSync(path.join(src, f)),
+          ),
+        );
+      });
+  });
+  written.push(
+    writeFile(
+      outDir,
+      path.join("Product", "terminology.yml"),
+      fs.readFileSync(path.join(REPO_ROOT, "app-context/src/terminology.yml")),
+    ),
+  );
+  written.push(
+    writeFile(outDir, path.join("Product", "README.md"), productReadme()),
+  );
 }
 
 if (require.main === module) {
