@@ -99,7 +99,8 @@ by logical name. llms.txt "Building a screen" gives the same route by path.
 | `collections.appContextHandover` | The handover templates, when the work goes to engineering: `intent.md` (the PM's intent) and `specs.md` (the designer's specs) |
 
 Read a captured page's screenshot, when it has one, before its node tree: the tree is written for the
-plugin's JSON renderer, the screenshot and the `slots` prose carry the page. The screenshot
+plugin's JSON renderer, the screenshot and the `slots` prose carry the page (only some recipes ship a
+screenshot; without one, the `slots` prose carries it alone). The screenshot
 decides structure (what is on the page and where); the design system decides appearance.
 
 Three rules for anything made from this repository:

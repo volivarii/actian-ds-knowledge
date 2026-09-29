@@ -32,3 +32,11 @@ test("Building a screen names every source and the three honesty rules", () => {
 test("llms.txt carries the section as written", () => {
   assert.ok(generateLlmsTxt().includes(buildingAScreenLines().join("\n")));
 });
+
+// Only some recipes ship a capture, so the route may not promise one for every
+// page, and must say what carries the page when there is none.
+test("the route qualifies the screenshot and names the fallback", () => {
+  const s = buildingAScreenLines().join("\n");
+  assert.ok(s.includes("its screenshot, when it has one"));
+  assert.ok(s.includes("Without one, the `slots` prose carries the page"));
+});
