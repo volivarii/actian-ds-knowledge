@@ -14,12 +14,12 @@ Sources last changed **2026-09-16**. Values are derived from the tree this ran a
 | Verified colour declarations (oracle numerator) | 97 | flat (was 97) |
 | Examined colour declarations (oracle denominator) | 534 | flat (was 534) |
 | Verified shape declarations (geometry numerator) | 150 | flat (was 150) |
-| Examined shape declarations (geometry denominator) | 704 | flat (was 704) |
+| Examined shape declarations (geometry denominator) | 705 | changed (was 704) |
 | Shape declarations the capture contradicts | 91 | flat (was 91) |
 
 Oracle coverage is **97 of 534** declarations. It is stated as a pair on purpose: the ratio improves when declarations leave the denominator, which is not progress.
 
-Geometry coverage is **150 of 704** gap, padding and fixed-height declarations, with **91** the capture contradicts. That last number is a worklist, not a verdict: a disagreement can mean the CSS has the shape wrong, that the renderer flattened a structure Figma splits across nested frames, or that the Figma component itself is off the spacing scale. The check reports; `tests/render/geometry-ratchet.test.js` is what keeps the number falling.
+Geometry coverage is **150 of 705** gap, padding and fixed-height declarations, with **91** the capture contradicts. That last number is a worklist, not a verdict: a disagreement can mean the CSS has the shape wrong, that the renderer flattened a structure Figma splits across nested frames, or that the Figma component itself is off the spacing scale. The check reports; `tests/render/geometry-ratchet.test.js` is what keeps the number falling.
 
 ## Oracle numerator over time
 
