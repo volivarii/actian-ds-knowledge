@@ -36,14 +36,12 @@ const VARIANT = { studio: "Studio", administration: "Admin" };
 const sideNav = deriveFragment("side-nav");
 const header = deriveFragment("global-header");
 
-test("each app's side-nav cell shows its record's labels, children included, in order", () => {
+// The gallery cell names no active item, so an item with sub-items is drawn
+// closed, as the anatomy (Opened/Closed=Closed) and the screenshot show Import.
+test("each app's side-nav cell shows its record's top-level labels, in order", () => {
   const c = cells(sideNav);
   for (const [slug, v] of Object.entries(VARIANT)) {
-    const want = [];
-    for (const i of apps[slug].sidebar) {
-      want.push(i.label);
-      for (const ch of i.children || []) want.push(ch.label);
-    }
+    const want = apps[slug].sidebar.map((i) => i.label);
     assert.ok(c[v], "no " + v + " cell");
     assert.deepEqual(labels(c[v]), want, v);
   }
@@ -70,10 +68,38 @@ test("Admin's record names no icons, so its cell draws none", () => {
   assert.ok(!/ds-sidenav__icon"><svg/.test(cells(sideNav).Admin));
 });
 
-test("New Item is drawn as an action and Import's sub-items as sub-items", () => {
+test("New Item is drawn as an action", () => {
   const studio = cells(sideNav).Studio;
   assert.match(studio, /ds-sidenav__item--action[^>]*>(?:(?!<\/a>).)*New Item/);
-  assert.equal((studio.match(/ds-sidenav__item--sub/g) || []).length, 2);
+});
+
+// Sub-items are drawn only while their parent or one of them is the active
+// item (Vincent, 2026-09-29): the product shows Import closed until it is used.
+const DS = require("../../components/render/renderer/html-renderers/ds-html-map.js");
+// The Studio cell's own Groups (drawn from the record), rendered with an Active.
+const studioGroups = require("../../components/render/renderer/matrix.js")
+  .variantMatrix("side-nav")
+  .find((c) => c.label === "Studio").props.Groups;
+function studioRail(active) {
+  return DS.renderDSComponent({
+    dsSlug: "side-nav",
+    variant: "App=Studio",
+    props: { Groups: studioGroups, Active: active },
+  });
+}
+test("Import's sub-items stay hidden while neither Import nor a sub-item is active", () => {
+  assert.equal((cells(sideNav).Studio.match(/ds-sidenav__item--sub/g) || []).length, 0);
+  assert.equal((studioRail("Catalog").match(/ds-sidenav__item--sub/g) || []).length, 0);
+});
+test("Import's sub-items are drawn under it when Import or one of them is active", () => {
+  for (const active of ["Import", "Select a file"]) {
+    const html = studioRail(active);
+    const at = labels(html);
+    const i = at.indexOf("Import");
+    assert.deepEqual(at.slice(i, i + 3), ["Import", "Select a connection", "Select a file"], active);
+    assert.equal((html.match(/ds-sidenav__item--sub/g) || []).length, 2, active);
+  }
+  assert.match(studioRail("Select a file"), /ds-sidenav__item--sub is-active"><span class="ds-sidenav__icon"><\/span><span class="ds-sidenav__label">Select a file/);
 });
 
 test("Studio's header cell shows the record's context and search", () => {

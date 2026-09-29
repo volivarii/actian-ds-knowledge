@@ -1970,8 +1970,11 @@
             });
             var navActive = resolveActive(allLabels, props.Active);
 
-            // An item's sub-items render right after it; they carry no icon
-            // of their own in the record, and no nesting below them.
+            // An item's sub-items render right after it, and only while the
+            // item or one of its sub-items is the active one: the anatomy
+            // (Opened/Closed=Closed) and the product screenshot both show
+            // Import closed until it is used (Vincent, 2026-09-29). They carry
+            // no icon of their own in the record, and no nesting below them.
             var renderGroup = function (g) {
               var groupItems = (g.items || [])
                 .map(function (it) {
@@ -1981,7 +1984,14 @@
                     (it.label || "") === navActive,
                     it.kind === "action" ? "action" : null,
                   );
-                  (it.children || []).forEach(function (ch) {
+                  var subs = it.children || [];
+                  var open =
+                    (it.label || "") === navActive ||
+                    subs.some(function (ch) {
+                      return (ch.label || "") === navActive;
+                    });
+                  if (!open) return row;
+                  subs.forEach(function (ch) {
                     row += renderNavItem(
                       ch.label || "",
                       null,
