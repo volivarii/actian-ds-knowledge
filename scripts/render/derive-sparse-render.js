@@ -377,8 +377,12 @@ function writeSparse(outPath) {
 // The slug list, the markup and the assets all come from the contract derive's
 // own inputs, so the two derives are watched by one declaration rather than by
 // two lists that can disagree. tests/render/derive-contract.test.js asserts
-// render-derive.yml watches every entry.
-var INPUTS = contractDerive.INPUTS;
+// render-derive.yml watches every entry. Plus the app records: matrix.js draws
+// the side-nav and global-header cells from them, so a record edit changes the
+// cells this measures.
+var INPUTS = contractDerive.INPUTS.concat([
+  "app-context/dist/app-context.json",
+]);
 
 module.exports = {
   measureSparse: measureSparse,
