@@ -255,3 +255,25 @@ test("a persona lists only apps that exist, and no two personas share a label", 
     errors.join("\n"),
   );
 });
+
+// A persona's jobs come from the join (its useCases), never from its own prose:
+// a copy in the description drifts the first time an app's use cases change.
+// Words compare by their first four letters so "Govern and curate the catalog"
+// matches "governing and curating the catalog".
+test("a persona's description does not restate the jobs the join supplies", () => {
+  const { personas } = deriveToObject(
+    path.resolve(__dirname, "..", "app-context", "src"),
+  );
+  const stems = (s) =>
+    (s.toLowerCase().match(/[a-z]+/g) || []).map((w) => w.slice(0, 4)).join(" ");
+  const copies = [];
+  for (const [slug, p] of Object.entries(personas)) {
+    const prose = " " + stems(p.description || "") + " ";
+    for (const uc of p.useCases || []) {
+      for (const job of uc.jobs || []) {
+        if (prose.includes(" " + stems(job) + " ")) copies.push(slug + ": " + job);
+      }
+    }
+  }
+  assert.deepEqual(copies, [], "the join supplies these; delete them from the persona's prose");
+});
