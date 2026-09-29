@@ -125,6 +125,15 @@ const ACCEPTED_INVENTED = {
   "message.Message":
     'generalises the capture\'s two strings ("Warning message goes here" for Type=Warning, "Helper text" for the structural Helper text variant); the registry publishes no TEXT prop for this component',
   "pagination.Page": 'the capture\'s "Current page" text layer reads "1"',
+
+  // The header search's two slots, split out of what was one hardcoded field so
+  // an app record can name its own (Studio: "Default", "Search your items...").
+  // Both fallbacks are what the header drew before the props existed, and both
+  // come from a capture, not from the renderer.
+  "global-header.SearchScope":
+    'falls back to the context value, the capture\'s "Default" text layer in anatomy/global-header.json (Catalog dropdown)',
+  "global-header.SearchPlaceholder":
+    'the header\'s Search instance is the search component (Type=Global header), whose capture text layer reads "Search items" (anatomy/search.json)',
   "pagination.Pages": 'the capture\'s trailing text layer reads "of 2 pages"',
   "data-viz-legend.Series":
     "the capture's LABEL text layer reads \"All\"; named Series rather than Label because variantMatrix sets Label on every identity cell to the cell's own variant value",
@@ -152,7 +161,7 @@ const ACCEPTED_INVENTED = {
   "line-graph.Range":
     'the capture\'s second header text layer reads "May 07, 2025 to June 07, 2025"',
   "line-graph.Labels":
-    "the capture's X-axis text layers, rebuilt as May 7 to June 7; its duplicated \"30\" is a slip in the Figma frame and is not reproduced",
+    'the capture\'s X-axis text layers, rebuilt as May 7 to June 7; its duplicated "30" is a slip in the Figma frame and is not reproduced',
   "glossary-item-hierarchy.Main":
     "media/glossary-item-hierarchy/preview.webp; the capture's ten items are instances of an unpublished component and carry no text",
   "glossary-item-hierarchy.Items":
