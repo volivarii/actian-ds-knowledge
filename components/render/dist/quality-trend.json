@@ -39,8 +39,8 @@
     },
     "oracleExamined": {
       "value": 548,
-      "direction": "changed",
-      "previous": 534
+      "direction": "unchanged",
+      "previous": 548
     },
     "geometryVerified": {
       "value": 150,
@@ -49,8 +49,8 @@
     },
     "geometryExamined": {
       "value": 730,
-      "direction": "changed",
-      "previous": 705
+      "direction": "unchanged",
+      "previous": 730
     },
     "geometryMismatch": {
       "value": 91,
@@ -331,8 +331,8 @@
   "oracleSeries": [
     {
       "date": "2026-09-29",
-      "version": "0.34.224",
-      "sha": "268d46d1",
+      "version": "0.34.225",
+      "sha": "a65b81f8",
       "verified": 97,
       "examined": 548
     },
@@ -417,8 +417,8 @@
   "collapseSeries": [
     {
       "date": "2026-09-29",
-      "version": "0.34.224",
-      "sha": "268d46d1",
+      "version": "0.34.225",
+      "sha": "a65b81f8",
       "unexplained": 41
     },
     {
