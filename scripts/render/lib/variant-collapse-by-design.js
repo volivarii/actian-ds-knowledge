@@ -28,13 +28,6 @@ module.exports = {
     "loader is the INDETERMINATE spinner; determinate progress is progress-bar-small",
   "loader Percent=50":
     "loader is the INDETERMINATE spinner; Percent=50 renders the same spinner as every other Percent value",
-  // ds-html-map.js, case "search-result-card": "Studio's structural swaps
-  // (button -> progress-bar-small, digram -> tag-read-only) are intentionally NOT
-  // built here, per the spec. App=Studio therefore renders the BASE card with no
-  // root modifier -- there is no built CSS delta for it, and a modifier class
-  // must not be emitted without one."
-  "search-result-card App=Studio":
-    "Studio's structural swaps are not built, and a modifier class must not be emitted with no CSS delta",
   // ds-html-map.js, case "whats-new-dropdown": "The guideline collapses
   // Drilldown1+Drilldown2 into one 'Drilldown' concept, so normalize both onto a
   // single wnMode."

@@ -660,9 +660,12 @@ var MATRIX_OVERRIDES = {
 
   // App is the identity axis (Explorer/Studio), but this leaf reads its own
   // Title/Type/Stage/Catalog/etc props, not Label -- the generic derivation
-  // would render an all-default card for each App value. Curate 2 cells
+  // would render an all-default card for each App value. Curate the cells
   // instead, mirroring card-for-items' only-Selected-shown convention: the
-  // faithful default (App=Explorer, State=Default) plus State=Selected.
+  // faithful default (App=Explorer, State=Default) plus State=Selected, then
+  // Studio's own card and its Selected (#722). The Studio cells carry the
+  // Figma specimen's values and every part App=Studio has, so the gallery
+  // shows each one.
   "search-result-card": [
     {
       label: "Default",
@@ -696,6 +699,38 @@ var MATRIX_OVERRIDES = {
         "Featured property 2": "Source Application: App 120",
         "Glossary initials": "VH",
         "Glossary label": "Vehicle",
+      },
+    },
+    {
+      label: "Studio",
+      variant: "App=Studio, State=Default",
+      props: {
+        Title: "Financial Summary EY2024",
+        "Tech name": "[Financial Summary EY2024]",
+        Type: "Dataset",
+        Completion: 75,
+        Connection: "Powerbi",
+        Description:
+          "A product is anything that can be offered to a market that might satisfy a want or need by potential customers.",
+        Properties: "Business Domain: IT, Source Application: App 120",
+        Suggestion: "1 Suggestion is pending",
+        "Last updated": "Dec 15, 2025",
+      },
+    },
+    {
+      label: "Studio selected",
+      variant: "App=Studio, State=Selected",
+      props: {
+        Title: "Financial Summary EY2024",
+        "Tech name": "[Financial Summary EY2024]",
+        Type: "Dataset",
+        Completion: 75,
+        Connection: "Powerbi",
+        Description:
+          "A product is anything that can be offered to a market that might satisfy a want or need by potential customers.",
+        Properties: "Business Domain: IT, Source Application: App 120",
+        Suggestion: "1 Suggestion is pending",
+        "Last updated": "Dec 15, 2025",
       },
     },
   ],
@@ -772,7 +807,9 @@ var MATRIX_OVERRIDES = {
 
   // App (Studio/Explorer) is the identity axis, but this leaf reads
   // Name/Type/Show Back, not Label -- curate both cells so the gallery
-  // shows the faithful Studio default plus the minimal Explorer accent.
+  // shows the faithful Studio default plus the minimal Explorer accent. Each
+  // cell's tabs are its app's own, from its recipe (studio-quick-edit-drawer,
+  // right-sliding-drawer), labels as the product prints them.
   drawer: [
     {
       label: "Studio",
@@ -781,6 +818,7 @@ var MATRIX_OVERRIDES = {
         Name: "Financial Summary EY2024",
         Type: "Dataset",
         Completion: 50,
+        Tabs: "General, Properties, People, Suggestions",
       },
     },
     {
@@ -790,6 +828,7 @@ var MATRIX_OVERRIDES = {
         Name: "Financial Summary EY2024",
         Type: "Dataset",
         Completion: 50,
+        Tabs: "Description, Fields 2, Properties 18, Contacts 6, Suggestions 1",
       },
     },
   ],

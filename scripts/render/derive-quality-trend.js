@@ -356,10 +356,37 @@ function currentMeasures() {
 }
 
 // The collapse figure at each committed revision of the contract, computed by
-// running TODAY's classifier over the historical artifact. Same helper as the
-// current figure and as the gate, so a point in the series can never disagree
-// with what the gate would have said about that tree.
+// running TODAY's classifier over the historical artifact with the BY_DESIGN
+// record AS IT STOOD at that revision. Same helper as the current figure and as
+// the gate, so a point in the series can never disagree with what the gate
+// said about that tree. Today's record applied to the past rewrote it: the day
+// an entry is retired because its collapse was fixed ("search-result-card
+// App=Studio", #722), the merge base's point counted that collapse as
+// unexplained and read 42 where the artifact committed there says 41; and a
+// new excuse would lower every past point, turning "worse" into "unchanged".
 const CONTRACT_REL = "components/render/dist/render-contract.json";
+const BY_DESIGN_REL = "scripts/render/lib/variant-collapse-by-design.js";
+
+// The record is a plain `module.exports = { ... }` object literal, so it is
+// evaluated in an empty vm context with nothing but `module` in scope. A
+// revision that predates the file, or one that fails to evaluate, falls back to
+// today's record.
+function byDesignAt(sha) {
+  let src;
+  try {
+    src = git(["show", sha + ":" + BY_DESIGN_REL]);
+  } catch (e) {
+    return BY_DESIGN;
+  }
+  try {
+    const sandbox = { module: { exports: {} } };
+    require("vm").runInNewContext(src, sandbox, { timeout: 1000 });
+    const record = sandbox.module.exports;
+    return record && typeof record === "object" ? record : BY_DESIGN;
+  } catch (e) {
+    return BY_DESIGN;
+  }
+}
 
 function collapseSeries(opts) {
   const limit = (opts && opts.limit) || 12;
@@ -376,7 +403,7 @@ function collapseSeries(opts) {
       date: date,
       version: pkg.version || "0.0.0",
       sha: sha.slice(0, 8),
-      unexplained: collapse.classify(contract, BY_DESIGN).unexplained.length,
+      unexplained: collapse.classify(contract, byDesignAt(sha)).unexplained.length,
     });
   }
   return points;
@@ -789,6 +816,7 @@ module.exports = {
   renderMarkdown: renderMarkdown,
   GOOD_DIRECTION: GOOD_DIRECTION,
   DEFINITION_EPOCH: DEFINITION_EPOCH,
+  byDesignAt: byDesignAt,
   // Exported so the markdown gate can assert EVERY measure appears rather than
   // restating three of them by hand. A hand-written list of measure names in a
   // test is a second copy of this map that goes stale the moment a measure is

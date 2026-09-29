@@ -450,9 +450,19 @@ test("the historical collapse figure uses the gate's classifier too", function (
     ),
   );
 
+  // ...with the by-design record AT that revision too, read here on its own
+  // rather than through trend.byDesignAt: today's record applied to the past
+  // rewrote it whenever an entry was retired or added (#722).
+  const recordSrc = execFileSync(
+    "git",
+    ["show", series[0].sha + ":scripts/render/lib/variant-collapse-by-design.js"],
+    { cwd: REPO_ROOT, encoding: "utf8" },
+  );
+  const sandbox = { module: { exports: {} } };
+  require("node:vm").runInNewContext(recordSrc, sandbox);
   assert.strictEqual(
     series[0].unexplained,
-    collapse.classify(atRevision, BY_DESIGN).unexplained.length,
+    collapse.classify(atRevision, sandbox.module.exports).unexplained.length,
     "the newest point equals the gate's classification of that same revision",
   );
 });

@@ -467,6 +467,22 @@
   // Parse a comma-separated list prop (nav items, tabs, crumbs) into a trimmed,
   // empty-dropped array. `fallback` is used when raw is falsy (matches the prior
   // inline `String(props.Items || "default")` behavior exactly).
+  // The first of its arguments that is SET, else the last one (a literal
+  // fallback). An authored empty string is set (#717): `props.X || "specimen"`
+  // read "" as absent, so a screen that said "no description" printed the
+  // Figma specimen's sentence. Called as authored(props.A, props.B, "literal")
+  // so the reads stay literal `props.X` and the render contract still lists
+  // them, and scripts/render/derive-contract.js reads the literal as the
+  // default of the chain's head, the same way it reads `props.A || "literal"`.
+  function authored() {
+    var last = arguments.length - 1;
+    for (var i = 0; i < last; i++) {
+      if (arguments[i] !== undefined && arguments[i] !== null)
+        return String(arguments[i]);
+    }
+    return arguments[last];
+  }
+
   function parseItems(raw, fallback) {
     return String(raw || fallback || "")
       .split(",")
@@ -3342,10 +3358,20 @@
             '<span class="ds-drawer__tag-shared">Shared</span>' +
             "</div>";
 
+          // The header's icon buttons are each app's own (#708): Studio's
+          // quick edit drawer carries exactly two, open in full page and close
+          // (recipe studio-quick-edit-drawer, slot header), and Explorer's
+          // quick view adds favourite before them (recipe
+          // right-sliding-drawer, slot header).
           var drActions =
             '<div class="ds-drawer__actions">' +
-            '<button type="button" aria-label="Add to favorites">' +
-            renderIcon("favorite") +
+            (drIsExplorer
+              ? '<button type="button" aria-label="Add to favorites">' +
+                renderIcon("favorite") +
+                "</button>"
+              : "") +
+            '<button type="button" aria-label="Open in full page">' +
+            renderIcon("view-detail") +
             "</button>" +
             '<button type="button" aria-label="Close">' +
             renderIcon("close") +
@@ -3457,15 +3483,35 @@
             ? '<div class="ds-drawer__body">' + drBodyInner + "</div>"
             : "";
 
-          // Static tab strip (do not recurse into the tabs component);
-          // registry exposes no tab-label content props, so hardcoded
-          // plausible defaults.
-          var drTabs =
-            '<div class="ds-drawer__tabs" role="tablist">' +
-            '<span class="ds-drawer__tab is-active" role="tab" aria-selected="true">Overview</span>' +
-            '<span class="ds-drawer__tab" role="tab" aria-selected="false">Lineage</span>' +
-            '<span class="ds-drawer__tab" role="tab" aria-selected="false">Quality</span>' +
-            "</div>";
+          // Static tab strip (do not recurse into the tabs component), drawn
+          // from props.Tabs, a comma list, the first tab active. The registry
+          // exposes no tab-label props, and the strip was hardcoded to
+          // Overview / Lineage / Quality, a set no app has (#708): the apps'
+          // own sets are in their recipes (Studio: General, Properties,
+          // People, Suggestions). No Tabs, no strip.
+          var drTabs = parseItems(props.Tabs, "")
+            .map(function (label, i) {
+              return (
+                '<span class="ds-drawer__tab' +
+                (i === 0 ? " is-active" : "") +
+                '" role="tab" aria-selected="' +
+                (i === 0 ? "true" : "false") +
+                '">' +
+                esc(label) +
+                "</span>"
+              );
+            })
+            .join("");
+          if (drTabs)
+            drTabs =
+              '<div class="ds-drawer__tabs" role="tablist">' + drTabs + "</div>";
+          // The selected tab's panel: whatever the screen puts in the drawer
+          // (#708), text in a Content prop. Omitted when absent.
+          var drPanel = drHas(props.Content)
+            ? '<div class="ds-drawer__panel" role="tabpanel">' +
+              esc(props.Content) +
+              "</div>"
+            : "";
 
           // Body 3: three labeled sections captured in the Studio anatomy
           // (Glossary items, Description, Source description). Same rule as
@@ -3507,6 +3553,7 @@
             drBody +
             drTabs +
             drSections +
+            drPanel +
             "</div>"
           );
         }
@@ -4047,19 +4094,168 @@
 
         case "search-result-card": {
           // Rich result card. Identity axis App = Explorer (default) |
-          // Studio; State is a secondary axis, only Selected/Focus mapped
-          // to a visible modifier (Hover/Pressed are transient interaction
-          // states, not rendered statically -- same discipline as
-          // tag-interactive's Selected/Disabled-only handling above). The
-          // fidelity oracle only captures App=Explorer/State=Default, so
-          // that default stays faithful; Studio's structural swaps (button
-          // -> progress-bar-small, digram -> tag-read-only) are intentionally
-          // NOT built here, per the spec. App=Studio therefore renders the
-          // BASE card with no root modifier -- there is no built CSS delta
-          // for it, and a modifier class must not be emitted without one
-          // (no no-op namespace-hook markers; see ds-base.css). Inlines the
-          // eyebrow/stage/catalog tags and the glossary item-type badge
-          // reusing EXISTING shared classes (.ds-tag / .ds-tag-stage /
+          // Studio, and the two are different cards (#722). State is a
+          // secondary axis, only Selected/Focus mapped to a visible modifier
+          // (Hover/Pressed are transient interaction states, not rendered
+          // statically -- same discipline as tag-interactive's
+          // Selected/Disabled-only handling above).
+          //
+          // An AUTHORED empty string is a value (#717): every text prop is
+          // read through authored(), which falls back to the specimen only when
+          // the prop is absent, so the gallery keeps its cells and a screen can
+          // say nothing.
+          var srcCls = "ds-search-result-card";
+          if (v.App === "Studio") srcCls += " ds-search-result-card--studio";
+          if (v.State === "Selected")
+            srcCls += " ds-search-result-card--selected";
+          if (v.State === "Focus") srcCls += " ds-search-result-card--focus";
+
+          if (v.App === "Studio") {
+            // Studio's card, as its Catalog draws it
+            // (app-context/src/recipes/captures/faceted-browse.png) and as
+            // Figma's App=Studio lists its parts (#722): a selection
+            // checkbox, the item type tag, a Shared tag, the title and
+            // technical name, the completion bar with its percentage at the
+            // right of that row; under it a Connection line, the description
+            // (or "No summary available", the product's words for none),
+            // property chips and a pending-suggestion chip; "Last updated"
+            // at the bottom right. A flat row closed by a bottom rule, no box
+            // (the --studio rule in ds-base.css). The registry's
+            // nestedComponents already named checkbox and progress-bar-small;
+            // their EXISTING markup is reused verbatim rather than recursing
+            // into renderDSComponent, the same idiom as the Explorer card's
+            // tags. Everything below the title row is an optional slot: no
+            // prop, no markup.
+            //
+            // Type is a SHAPE clamp before it touches the class attribute (the
+            // read-only-tag case's discipline): a well-shaped value no
+            // .ds-item-type-tag--<slug> rule matches renders as the base tag.
+            var sTypeRaw = authored(props.Type, "");
+            var sTypeSlug = sTypeRaw.toLowerCase().trim().replace(/\s+/g, "-");
+            if (!/^[a-z0-9-]+$/.test(sTypeSlug)) sTypeSlug = "";
+            var sType = sTypeRaw
+              ? '<span class="ds-item-type-tag' +
+                (sTypeSlug ? " ds-item-type-tag--" + sTypeSlug : "") +
+                '"><span class="ds-item-type-tag__name">' +
+                esc(sTypeRaw) +
+                "</span></span>"
+              : "";
+            // "Shared" is a default-TRUE boolean (the file's convention, cf.
+            // the drawer's "Show Back"): every row the capture shows is shared,
+            // and a Not shared item carries no tag. Its own class, not
+            // .ds-tag--shared: Studio paints Shared solid (the screenshot, and
+            // the Studio drawer's captured #00699f), where read-only-tag's
+            // Type=Shared is captured at #cbe3ff.
+            var sShared =
+              props.Shared !== false
+                ? '<span class="ds-search-result-card__shared">Shared</span>'
+                : "";
+            var sTech = authored(props["Tech name"], "");
+            var sPct =
+              props.Completion !== undefined &&
+              props.Completion !== null &&
+              props.Completion !== ""
+                ? Math.max(
+                    0,
+                    Math.min(100, parseInt(String(props.Completion), 10) || 0),
+                  )
+                : null;
+            var sProgress =
+              sPct === null
+                ? ""
+                : '<div class="ds-progress ds-search-result-card__progress">' +
+                  '<div class="ds-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
+                  sPct +
+                  '">' +
+                  '<span class="ds-progress__fill" style="width:' +
+                  sPct +
+                  '%"></span>' +
+                  "</div>" +
+                  '<span class="ds-progress__percent">' +
+                  sPct +
+                  "%</span>" +
+                  "</div>";
+            var sConnection = authored(props.Connection, "");
+            var sDesc = authored(props.Description, props.Body, "");
+            // Properties: a comma list of "Label: value" pairs, the label
+            // drawn bold as the capture draws "Code:" and "Year:".
+            var sChips = parseItems(props.Properties, "")
+              .map(function (p) {
+                var at = p.indexOf(":");
+                return (
+                  '<span class="ds-search-result-card__chip">' +
+                  (at > 0
+                    ? '<span class="ds-search-result-card__chip-label">' +
+                      esc(p.slice(0, at + 1)) +
+                      "</span> " +
+                      esc(p.slice(at + 1).trim())
+                    : esc(p)) +
+                  "</span>"
+                );
+              })
+              .join("");
+            var sSuggestion = authored(props.Suggestion, "");
+            var sUpdated = authored(props["Last updated"], "");
+            return (
+              '<div class="' +
+              srcCls +
+              '">' +
+              '<div class="ds-search-result-card__header">' +
+              '<label class="ds-checkbox ds-search-result-card__select">' +
+              '<span class="ds-checkbox__box"><span class="ds-checkbox__check">' +
+              renderIcon("simple-check") +
+              "</span></span></label>" +
+              '<div class="ds-search-result-card__name">' +
+              sType +
+              sShared +
+              '<span class="ds-search-result-card__title">' +
+              esc(authored(props.Title, "Financial Summary EY2024")) +
+              "</span>" +
+              (sTech
+                ? '<span class="ds-search-result-card__tech">' +
+                  esc(sTech) +
+                  "</span>"
+                : "") +
+              "</div>" +
+              sProgress +
+              "</div>" +
+              '<div class="ds-search-result-card__details">' +
+              (sConnection
+                ? '<p class="ds-search-result-card__connection">Connection: ' +
+                  '<span class="ds-search-result-card__link">' +
+                  esc(sConnection) +
+                  "</span></p>"
+                : "") +
+              (sDesc
+                ? '<p class="ds-search-result-card__desc">' +
+                  esc(sDesc) +
+                  "</p>"
+                : '<p class="ds-search-result-card__desc ds-search-result-card__desc--empty">No summary available</p>') +
+              (sChips
+                ? '<div class="ds-search-result-card__chips">' +
+                  sChips +
+                  "</div>"
+                : "") +
+              (sSuggestion
+                ? '<span class="ds-search-result-card__suggestion">' +
+                  renderIcon("suggestion") +
+                  esc(sSuggestion) +
+                  "</span>"
+                : "") +
+              "</div>" +
+              (sUpdated
+                ? '<span class="ds-search-result-card__updated">Last updated: ' +
+                  esc(sUpdated) +
+                  "</span>"
+                : "") +
+              "</div>"
+            );
+          }
+
+          // Explorer's card. The fidelity oracle captures App=Explorer /
+          // State=Default, so this default stays faithful to that capture.
+          // Inlines the eyebrow/stage/catalog tags and the glossary item-type
+          // badge reusing EXISTING shared classes (.ds-tag / .ds-tag-stage /
           // .ds-tag--catalog / .ds-item-type) rather than
           // recursing into renderDSComponent, same idiom as card-for-items.
           // The stage pill carried a `.ds-tag--gray` modifier until the
@@ -4073,27 +4269,26 @@
           // .ds-tag's re-grounded Type=Default paint in this card's theme
           // mode, and its catalog child is captured at #ecffff / #d0efed,
           // which is exactly Type=Catalog.
-          var srcCls = "ds-search-result-card";
-          if (v.State === "Selected")
-            srcCls += " ds-search-result-card--selected";
-          if (v.State === "Focus") srcCls += " ds-search-result-card--focus";
-
-          var srcTitle = esc(props.Title || "Financial Summary EY2024");
-          var srcTech = esc(props["Tech name"] || "[Financial Summary EY2024]");
-          var srcType = esc(props.Type || "Category");
+          var srcTitle = esc(authored(props.Title, "Financial Summary EY2024"));
+          var srcTech = esc(authored(props["Tech name"], "[Financial Summary EY2024]"));
+          var srcType = esc(authored(props.Type, "Category"));
           // Stage and the glossary badge are OPTIONAL slots, the same shape
           // Task 1.2 fixed for checkbox/radio/toggle/dropdown-select-default/
           // text-input/label: `esc(props.X || "placeholder")` fed markup that
           // always drew, so a card authored without a stage or a glossary
           // relationship printed "Stage" / "VH" / "Vehicle" verbatim rather
           // than omitting the region. No prop, no markup at all, not even an
-          // empty span (see the two `? ... : ""` guards below in the return).
+          // empty span (see the `? ... : ""` guards below in the return). An
+          // authored empty catalog or description omits its region the same
+          // way.
           var srcStage = props.Stage ? esc(props.Stage) : "";
-          var srcCatalog = esc(props.Catalog || "Catalog");
+          var srcCatalog = esc(authored(props.Catalog, "Catalog"));
           var srcDesc = esc(
-            props.Description ||
-              props.Body ||
+            authored(
+              props.Description,
+              props.Body,
               "A product is anything that can be offered to a market that might satisfy a want or need by potential customers.",
+            ),
           );
           var srcProp1 = esc(
             props["Featured property 1"] || "Business Domain: IT",
@@ -4147,12 +4342,14 @@
               : "") +
             "</div>" +
             '<div class="ds-search-result-card__details">' +
-            '<span class="ds-tag ds-tag--catalog ds-search-result-card__catalog">' +
-            srcCatalog +
-            "</span>" +
-            '<p class="ds-search-result-card__desc">' +
-            srcDesc +
-            "</p>" +
+            (srcCatalog
+              ? '<span class="ds-tag ds-tag--catalog ds-search-result-card__catalog">' +
+                srcCatalog +
+                "</span>"
+              : "") +
+            (srcDesc
+              ? '<p class="ds-search-result-card__desc">' + srcDesc + "</p>"
+              : "") +
             '<div class="ds-search-result-card__props">' +
             '<span class="ds-search-result-card__prop">' +
             srcProp1 +

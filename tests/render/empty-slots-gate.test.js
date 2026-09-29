@@ -62,6 +62,8 @@ const contract = require("../../components/render/dist/render-contract.json");
 const EXEMPT = {
   "alert-banner.Title":
     "the Figma component has no title layer, so the alert renders message-only by design",
+  "drawer.Content":
+    "the selected tab's panel is the screen's own content (#708); the product has no text of its own for it, and the gallery's drawer already shows its sections",
 };
 
 test("no visible text slot renders empty", function () {

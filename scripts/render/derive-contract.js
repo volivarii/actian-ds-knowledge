@@ -254,6 +254,18 @@ function stripComments(block) {
     .replace(/^[ \t]*\/\/.*$/gm, "");
 }
 
+// The renderer's authored(props.A, props.B, "literal") helper states the same
+// default as `props.A || props.B || "literal"` (an authored empty string wins
+// there instead of falling through, #717), so it is read the same way: the
+// literal is the default of the chain's head.
+var AUTHORED_CHAIN = new RegExp(
+  "\\bauthored\\(\\s*" +
+    PROP_REF +
+    '(?:\\s*,\\s*props(?:\\.[A-Za-z_][A-Za-z0-9_]*|\\[\\s*"[^"]+"\\s*\\]))*' +
+    '\\s*,\\s*"((?:[^"\\\\]|\\\\.)*)"\\s*,?\\s*\\)',
+  "g",
+);
+
 function propsOf(rawBlock) {
   var block = stripComments(rawBlock);
   var names = Object.create(null);
@@ -265,7 +277,7 @@ function propsOf(rawBlock) {
   });
 
   var defaults = Object.create(null);
-  collect(DEFAULT_CHAIN, block, function (m) {
+  var recordDefault = function (m) {
     var head = m[1] || m[2];
     var literal = unescapeLiteral(m[3]);
     // An empty fallback is the absence of a default, not a default of "".
@@ -275,7 +287,9 @@ function propsOf(rawBlock) {
     // states one, decided by nothing but the order the two chains appear in.
     if (literal === "") return;
     if (defaults[head] === undefined) defaults[head] = literal;
-  });
+  };
+  collect(DEFAULT_CHAIN, block, recordDefault);
+  collect(AUTHORED_CHAIN, block, recordDefault);
 
   return Object.keys(names)
     .sort()

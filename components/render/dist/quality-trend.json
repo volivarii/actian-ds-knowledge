@@ -38,8 +38,8 @@
       "previous": 97
     },
     "oracleExamined": {
-      "value": 534,
-      "direction": "unchanged",
+      "value": 548,
+      "direction": "changed",
       "previous": 534
     },
     "geometryVerified": {
@@ -48,8 +48,8 @@
       "previous": 150
     },
     "geometryExamined": {
-      "value": 705,
-      "direction": "unchanged",
+      "value": 730,
+      "direction": "changed",
       "previous": 705
     },
     "geometryMismatch": {
@@ -330,6 +330,13 @@
   },
   "oracleSeries": [
     {
+      "date": "2026-09-29",
+      "version": "0.34.224",
+      "sha": "268d46d1",
+      "verified": 97,
+      "examined": 548
+    },
+    {
       "date": "2026-09-09",
       "version": "0.34.207",
       "sha": "be37e690",
@@ -405,16 +412,15 @@
       "sha": "ac51956a",
       "verified": 78,
       "examined": 432
-    },
-    {
-      "date": "2026-08-12",
-      "version": "0.34.123",
-      "sha": "137cefe2",
-      "verified": 78,
-      "examined": 438
     }
   ],
   "collapseSeries": [
+    {
+      "date": "2026-09-29",
+      "version": "0.34.224",
+      "sha": "268d46d1",
+      "unexplained": 41
+    },
     {
       "date": "2026-09-29",
       "version": "0.34.221",
@@ -479,13 +485,7 @@
       "date": "2026-08-31",
       "version": "0.34.159",
       "sha": "0014e8f3",
-      "unexplained": 54
-    },
-    {
-      "date": "2026-08-26",
-      "version": "0.34.155",
-      "sha": "8ea49c54",
-      "unexplained": 54
+      "unexplained": 55
     }
   ]
 }

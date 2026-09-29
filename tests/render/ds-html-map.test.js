@@ -1388,28 +1388,23 @@ test("search-result-card: State=Focus adds the --focus modifier (distinct from -
   );
 });
 
-test("search-result-card: App=Studio renders the base card with no --studio modifier", function () {
+test("search-result-card: App=Studio renders Studio's own card, on a --studio modifier with a real delta", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
     dsSlug: "search-result-card",
     variant: "App=Studio, State=Default",
     props: { Title: "Studio Result" },
   });
-  // Studio's structural swaps (button -> progress-bar-small, digram ->
-  // tag-read-only) are intentionally not built for this leaf -- there is no
-  // CSS delta, so App=Studio renders the BASE card with no root modifier
-  // (a modifier must carry a real visual delta, never a no-op namespace
-  // hook; see ds-base.css). This asserts it renders without error.
+  // Studio's card is a different structure (#722): checkbox, Shared tag,
+  // completion, a flat row with a bottom rule. The modifier carries that
+  // delta (the --studio rule in ds-base.css; the audit below checks it is not
+  // empty), and the parts are tested in tests/render/studio-variants.test.js.
   assert.match(
     html,
-    /class="ds-search-result-card"/,
-    "carries only the base class",
+    /class="ds-search-result-card ds-search-result-card--studio"/,
+    "carries the base class and the Studio modifier",
   );
-  assert.doesNotMatch(
-    html,
-    /ds-search-result-card--studio/,
-    "does not carry a no-op modifier class",
-  );
+  assert.match(html, /ds-search-result-card__select/, "draws the checkbox");
   assert.match(
     html,
     /<span class="ds-search-result-card__title">Studio Result<\/span>/,
@@ -1862,7 +1857,8 @@ test("no silent no-op modifiers remain among .ds-search-menu--*, .ds-whatsnew--*
   assert.doesNotMatch(css, /\.ds-search-menu--after-typed\s*\{/);
   assert.doesNotMatch(css, /\.ds-search-menu--before-typed\s*\{/);
   assert.doesNotMatch(css, /\.ds-whatsnew--empty\s*\{/);
-  assert.doesNotMatch(css, /\.ds-search-result-card--studio\s*\{/);
+  // --studio came back on 2026-09-29 as Studio's own card (#722), a rule with
+  // real declarations, which the loop above audits like every other modifier.
 });
 
 // ===================================================================== //
@@ -2698,7 +2694,7 @@ test("glossary-item-hierarchy: a side with no items is not emitted", function ()
   );
 });
 
-test("drawer: a Name alone renders the header and tabs and none of the specimen body", function () {
+test("drawer: a Name alone renders the header and none of the specimen body", function () {
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
     dsSlug: "drawer",
@@ -2735,7 +2731,9 @@ test("drawer: a Name alone renders the header and tabs and none of the specimen 
     /ds-progress/,
     "no progress bar without Completion",
   );
-  assert.match(html, /ds-drawer__tabs/, "the tab strip is chrome and stays");
+  // The tab strip is drawn from props.Tabs (#708): the fixed Overview /
+  // Lineage / Quality strip was a set no app has.
+  assert.doesNotMatch(html, /ds-drawer__tabs/, "no tab strip without Tabs");
 });
 
 test("drawer: body, meta and section props render in their own elements, escaped", function () {
@@ -3059,7 +3057,7 @@ test("search-result-card renders no stage pill and no glossary badge when Stage/
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
     dsSlug: "search-result-card",
-    variant: "App=Studio, State=Default",
+    variant: "App=Explorer, State=Default",
     props: { Title: "Foo", Type: "Dataset" },
   });
   assert.doesNotMatch(
@@ -3093,7 +3091,7 @@ test("positive control: search-result-card WITH Stage and Glossary props still r
   var DS = require(DS_PATH);
   var html = DS.renderDSComponent({
     dsSlug: "search-result-card",
-    variant: "App=Studio, State=Default",
+    variant: "App=Explorer, State=Default",
     props: {
       Stage: "Draft",
       "Glossary initials": "CX",
@@ -3119,7 +3117,7 @@ test("positive control: search-result-card renders the glossary badge when only 
   var DS = require(DS_PATH);
   var initialsOnly = DS.renderDSComponent({
     dsSlug: "search-result-card",
-    variant: "App=Studio, State=Default",
+    variant: "App=Explorer, State=Default",
     props: { "Glossary initials": "CX" },
   });
   assert.match(
