@@ -1924,7 +1924,12 @@
           // icon may be null (legacy path) or a slug string (grouped path).
           // modifier is "action" (an entry that does something, New Item) or
           // "sub" (a sub-item under its parent, Import's Select a file).
-          function renderNavItem(label, icon, isActive, modifier) {
+          // expanded is true/false for an item with sub-items (said to
+          // assistive tech as aria-expanded), undefined for any other item. An
+          // open item carries the anatomy's trailing chevron (Icon right,
+          // drawn pointing up in components/dist/media/side-nav/default.webp);
+          // a closed one carries none, as the product screenshot shows.
+          function renderNavItem(label, icon, isActive, modifier, expanded) {
             var itemCls = "ds-sidenav__item";
             if (modifier) itemCls += " ds-sidenav__item--" + modifier;
             if (isActive) itemCls += " is-active";
@@ -1934,11 +1939,21 @@
             return (
               '<a class="' +
               itemCls +
-              '">' +
+              '"' +
+              (expanded === true || expanded === false
+                ? ' aria-expanded="' + expanded + '"'
+                : "") +
+              ">" +
               iconHtml +
               '<span class="ds-sidenav__label">' +
               esc(label) +
-              "</span></a>"
+              "</span>" +
+              (expanded === true
+                ? '<span class="ds-sidenav__chevron" aria-hidden="true">' +
+                  renderIcon("arrow-up") +
+                  "</span>"
+                : "") +
+              "</a>"
             );
           }
 
@@ -1971,25 +1986,28 @@
             var navActive = resolveActive(allLabels, props.Active);
 
             // An item's sub-items render right after it, and only while the
-            // item or one of its sub-items is the active one: the anatomy
-            // (Opened/Closed=Closed) and the product screenshot both show
-            // Import closed until it is used (Vincent, 2026-09-29). They carry
-            // no icon of their own in the record, and no nesting below them.
+            // item or one of its sub-items is the active one (Vincent,
+            // 2026-09-29). The product screenshot shows Import closed; the
+            // Figma component is drawn open (default.webp), so the closed
+            // default is the screenshot's, which wins where the two disagree.
+            // Sub-items carry no icon of their own in the record, and no
+            // nesting below them.
             var renderGroup = function (g) {
               var groupItems = (g.items || [])
                 .map(function (it) {
-                  var row = renderNavItem(
-                    it.label || "",
-                    it.icon || null,
-                    (it.label || "") === navActive,
-                    it.kind === "action" ? "action" : null,
-                  );
                   var subs = it.children || [];
                   var open =
                     (it.label || "") === navActive ||
                     subs.some(function (ch) {
                       return (ch.label || "") === navActive;
                     });
+                  var row = renderNavItem(
+                    it.label || "",
+                    it.icon || null,
+                    (it.label || "") === navActive,
+                    it.kind === "action" ? "action" : null,
+                    subs.length ? open : undefined,
+                  );
                   if (!open) return row;
                   subs.forEach(function (ch) {
                     row += renderNavItem(
@@ -2010,8 +2028,10 @@
             // holds: the LAST of two or more groups (Access requests / Catalog
             // design / Analytics) is anchored to the bottom, and a single
             // group stays at the top.
+            // A group that carries `bottom` at all (true or false) means the
+            // caller placed every group, so the legacy rule stays out of it.
             var explicitBottom = groups.some(function (g) {
-              return g && g.bottom === true;
+              return g && typeof g.bottom === "boolean";
             });
             var topGroups, bottomGroups;
             if (explicitBottom) {

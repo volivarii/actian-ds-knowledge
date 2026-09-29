@@ -1243,13 +1243,19 @@
   text-decoration: none;
   cursor: pointer;
 }
-/* Sub-item (Import's Select a connection / Select a file): drawn under its
-   parent, indented by one icon slot plus its gap so the sub-item's own slot
-   sits under the parent's label. anatomy: nav item Level=Sub. */
-.ds-sidenav__item--sub {
-  padding-left: calc(
-    var(--zen-spacing-xs) * 2 + 16px
-  ); /* 8px + 8px gap + 16px icon slot */
+/* Sub-items (.ds-sidenav__item--sub, Import's Select a connection / Select a
+   file) take no rule of their own: their empty 16px icon slot already puts
+   the label under the parent's label, which is where
+   components/dist/media/side-nav/default.webp draws it. */
+/* Trailing chevron of an open item with sub-items — anatomy: Icon right,
+   16px, pushed to the row's right edge. */
+.ds-sidenav__chevron {
+  display: flex;
+  align-items: center;
+  width: 16px; /* anatomy: icon size (raw px) */
+  height: 16px;
+  margin-left: auto;
+  color: inherit;
 }
 /* Icon slot — anatomy: 16px square, SVG currentColor. Legacy path renders an
    empty span (no SVG) so we keep a small fixed box for visual alignment. */

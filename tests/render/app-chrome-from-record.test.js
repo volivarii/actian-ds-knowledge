@@ -115,3 +115,32 @@ test("an app with an empty sidebar gets no side-nav cell", () => {
   assert.equal(apps.explorer.sidebar.length, 0);
   assert.equal(cells(sideNav).Explorer, undefined);
 });
+
+// components/dist/media/side-nav/default.webp draws Import open: a chevron-up at
+// the row's right edge and the two sub-items with their labels lined up under
+// Import's label. The screenshot draws it closed with no chevron.
+test("an open item carries the anatomy's chevron and says it is expanded; a closed one neither", () => {
+  const open = studioRail("Import");
+  assert.match(open, /aria-expanded="true"[^>]*>(?:(?!<\/a>).)*Import(?:(?!<\/a>).)*ds-sidenav__chevron/);
+  const closed = cells(sideNav).Studio;
+  assert.match(closed, /aria-expanded="false"[^>]*>(?:(?!<\/a>).)*Import/);
+  assert.ok(!/ds-sidenav__chevron/.test(closed), "no chevron when closed (the screenshot shows none)");
+});
+
+test("a sub-item's label lines up with its parent's, as the Figma default draws it", () => {
+  const css = fs.readFileSync(path.join(ROOT, "components/render/renderer/ds-base.css"), "utf8");
+  const rule = /\.ds-sidenav__item--sub\s*\{([^}]*)\}/.exec(css);
+  assert.ok(!rule || !/padding/.test(rule[1]), "no extra indent: the empty icon slot already aligns the label");
+});
+
+test("a record with two groups and no bottom items keeps both groups at the top", () => {
+  const { navGroupsOf } = require("../../components/render/renderer/matrix.js");
+  const groups = navGroupsOf([
+    { label: "One", id: "one", group: "a" },
+    { label: "Two", id: "two", group: "b" },
+  ]);
+  const html = DS.renderDSComponent({ dsSlug: "side-nav", variant: "App=Admin", props: { Groups: JSON.stringify(groups) } });
+  const bottom = html.slice(html.indexOf("ds-sidenav__bottom"));
+  assert.deepEqual(labels(bottom), []);
+  assert.deepEqual(labels(html), ["One", "Two"]);
+});

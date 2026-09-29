@@ -338,7 +338,9 @@ function navItemOf(s) {
 }
 // Consecutive items sharing a `group` form one group (a divider where it
 // changes); items with `position: bottom` form the rail's bottom block, in
-// order, flagged `bottom: true` for the renderer.
+// order. Every group states its placement (`bottom: true` or `false`), so the
+// renderer never falls back to its legacy "last group goes to the bottom" rule
+// for a record that put nothing there.
 function navGroupsOf(sidebar) {
   var top = [];
   var bottom = [];
@@ -349,7 +351,7 @@ function navGroupsOf(sidebar) {
       return;
     }
     var g = s.group || "";
-    if (!top.length || g !== lastGroup) top.push({ items: [] });
+    if (!top.length || g !== lastGroup) top.push({ bottom: false, items: [] });
     lastGroup = g;
     top[top.length - 1].items.push(navItemOf(s));
   });
@@ -1227,4 +1229,5 @@ module.exports = {
   SPECIMEN_PROPS: SPECIMEN_PROPS,
   CSS_OWNERS: CSS_OWNERS,
   ownedPrefixes: ownedPrefixes,
+  navGroupsOf: navGroupsOf,
 };
