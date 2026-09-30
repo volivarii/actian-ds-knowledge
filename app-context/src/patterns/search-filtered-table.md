@@ -24,5 +24,3 @@ components:
   - table
 ---
 List table with an inline Search input directly above it and no separate filter sidebar. Common for member directories, group lists, scanner inventories, connection lists. Search filters table contents in place; a Filter button beside it may open a menu of further filters, but there is no rail of facets.
-
-Corrected 2026-09-30 against the running product (Administration > Users and contacts, `recipes/captures/admin-users.png`): this record said "one inline search input and nothing else". The page carries a Filter menu beside the search, and a Users / Contacts tab bar above it, so it is table-with-tabs as well. The recipe `search-filtered-table` composes it.
