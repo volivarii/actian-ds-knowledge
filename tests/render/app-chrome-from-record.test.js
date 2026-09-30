@@ -36,12 +36,12 @@ const VARIANT = { studio: "Studio", administration: "Admin" };
 const sideNav = deriveFragment("side-nav");
 const header = deriveFragment("global-header");
 
-// The gallery cell names no active item, so an item with sub-items is drawn
-// closed, as the anatomy (Opened/Closed=Closed) and the screenshot show Import.
-test("each app's side-nav cell shows its record's top-level labels, in order", () => {
+// An item with sub-items is drawn expanded by default, as the live product
+// and default.webp both draw Import, so its sub-items follow it in the list.
+test("each app's side-nav cell shows its record's labels in order, sub-items under their parent", () => {
   const c = cells(sideNav);
   for (const [slug, v] of Object.entries(VARIANT)) {
-    const want = apps[slug].sidebar.map((i) => i.label);
+    const want = apps[slug].sidebar.flatMap((i) => [i.label, ...(i.children || []).map((ch) => ch.label)]);
     assert.ok(c[v], "no " + v + " cell");
     assert.deepEqual(labels(c[v]), want, v);
   }
@@ -73,8 +73,8 @@ test("New Item is drawn as an action", () => {
   assert.match(studio, /ds-sidenav__item--action[^>]*>(?:(?!<\/a>).)*New Item/);
 });
 
-// Sub-items are drawn only while their parent or one of them is the active
-// item (Vincent, 2026-09-29): the product shows Import closed until it is used.
+// Sub-items follow their parent while it is expanded, the default, whichever
+// item is active (the live Studio, 2026-09-30).
 const DS = require("../../components/render/renderer/html-renderers/ds-html-map.js");
 // The Studio cell's own Groups (drawn from the record), rendered with an Active.
 const studioGroups = require("../../components/render/renderer/matrix.js")
@@ -87,16 +87,13 @@ function studioRail(active) {
     props: { Groups: studioGroups, Active: active },
   });
 }
-test("Import's sub-items stay hidden while neither Import nor a sub-item is active", () => {
-  assert.equal((cells(sideNav).Studio.match(/ds-sidenav__item--sub/g) || []).length, 0);
-  assert.equal((studioRail("Catalog").match(/ds-sidenav__item--sub/g) || []).length, 0);
-});
-test("Import's sub-items are drawn under it when Import or one of them is active", () => {
-  for (const active of ["Import", "Select a file"]) {
+test("Import's sub-items are drawn right under it, in the record's order", () => {
+  const subs = apps.studio.sidebar.find((it) => it.id === "import").children.map((c) => c.label);
+  for (const active of ["Catalog", "Import", "Select a file"]) {
     const html = studioRail(active);
     const at = labels(html);
     const i = at.indexOf("Import");
-    assert.deepEqual(at.slice(i, i + 3), ["Import", "Select a connection", "Select a file"], active);
+    assert.deepEqual(at.slice(i, i + 3), ["Import", ...subs], active);
     assert.equal((html.match(/ds-sidenav__item--sub/g) || []).length, 2, active);
   }
   assert.match(studioRail("Select a file"), /ds-sidenav__item--sub is-active"><span class="ds-sidenav__icon"><\/span><span class="ds-sidenav__label">Select a file/);
@@ -116,15 +113,33 @@ test("an app with an empty sidebar gets no side-nav cell", () => {
   assert.equal(cells(sideNav).Explorer, undefined);
 });
 
-// components/dist/media/side-nav/default.webp draws Import open: a chevron-up at
-// the row's right edge and the two sub-items with their labels lined up under
-// Import's label. The screenshot draws it closed with no chevron.
-test("an open item carries the anatomy's chevron and says it is expanded; a closed one neither", () => {
-  const open = studioRail("Import");
-  assert.match(open, /aria-expanded="true"[^>]*>(?:(?!<\/a>).)*Import(?:(?!<\/a>).)*ds-sidenav__chevron/);
-  const closed = cells(sideNav).Studio;
-  assert.match(closed, /aria-expanded="false"[^>]*>(?:(?!<\/a>).)*Import/);
-  assert.ok(!/ds-sidenav__chevron/.test(closed), "no chevron when closed (the screenshot shows none)");
+// Open or closed is the user's, and it persists across pages: on the live
+// Studio (2026-09-30) Import collapsed stayed collapsed on the Dashboard, and
+// expanded stayed open on the Catalog, whichever item was active. Expanded is
+// the default both the product and components/dist/media/side-nav/default.webp
+// draw: a chevron-up at the row's right edge and the sub-items under it.
+// Collapsed keeps a chevron, pointing down, and drops the sub-items.
+test("an item with sub-items is drawn expanded whatever is active, with the chevron up", () => {
+  for (const html of [cells(sideNav).Studio, studioRail("Catalog"), studioRail("Import")]) {
+    assert.match(html, /aria-expanded="true"[^>]*>(?:(?!<\/a>).)*Import(?:(?!<\/a>).)*ds-sidenav__chevron/);
+    assert.equal((html.match(/ds-sidenav__item--sub/g) || []).length, 2);
+  }
+});
+
+test("an item the screen marks collapsed keeps a chevron, down, and drops its sub-items", (t) => {
+  // Real glyphs, so the two chevrons can differ: the module draws no icon
+  // until one is injected.
+  DS.setIcons({ "arrow-up": { viewBox: "0 0 16 16", body: '<path d="up"/>' }, "arrow-down": { viewBox: "0 0 16 16", body: '<path d="down"/>' } });
+  t.after(() => DS.setIcons(null));
+  const up = DS.renderDSComponent({ dsSlug: "side-nav", variant: "App=Studio", props: { Groups: JSON.stringify([{ items: [{ label: "Import", children: [{ label: "Select a file" }] }] }]) } });
+  const down = DS.renderDSComponent({ dsSlug: "side-nav", variant: "App=Studio", props: { Groups: JSON.stringify([{ items: [{ label: "Import", expanded: false, children: [{ label: "Select a file" }] }] }]) } });
+  const chevron = (h) => h.slice(h.indexOf("ds-sidenav__chevron"), h.indexOf("</a>", h.indexOf("ds-sidenav__chevron")));
+  assert.match(down, /aria-expanded="false"[^>]*>(?:(?!<\/a>).)*Import(?:(?!<\/a>).)*ds-sidenav__chevron/);
+  assert.ok(!down.includes("Select a file"), "no sub-items when collapsed");
+  assert.notEqual(chevron(down), chevron(up), "the collapsed chevron is not the expanded one");
+  assert.ok(up.includes("Select a file"));
+  assert.match(chevron(down), /d="down"/);
+  assert.match(chevron(up), /d="up"/);
 });
 
 test("a sub-item's label lines up with its parent's, as the Figma default draws it", () => {

@@ -100,6 +100,34 @@ test("Studio's completion clamps to 0..100 and a hostile value cannot reach the 
   assert.ok(!/<img src=x|<b>|onload=/.test(h));
 });
 
+// Studio's live Catalog (manufacturing.zeenea.app, 2026-09-30) draws a
+// lifecycle stage pill left of the completion bar ("In Review", "Approved",
+// "Not staged") and a "Data Product: <name> / Connection: <name>" line. The
+// stage is the tenant's own word, so the screen passes its label and the
+// design system hue it maps to (read-only-tag's Stage-1..8), never a name the
+// renderer maps itself.
+test("a Studio card draws its lifecycle stage as a read-only stage tag, left of the completion", () => {
+  const html = card({ Title: "T", Stage: "In Review", "Stage type": "Stage-6", Completion: 100 });
+  assert.match(html, /<span class="ds-tag ds-tag--stage-6 ds-tag-stage ds-search-result-card__stage"><span class="ds-tag-stage__dot"><\/span>In Review<\/span>/);
+  assert.ok(html.indexOf("ds-search-result-card__stage") < html.indexOf("ds-search-result-card__progress"), "stage before completion");
+});
+
+test("a Studio stage with no type is the base stage tag, and no stage draws nothing", () => {
+  assert.match(card({ Stage: "Not staged" }), /class="ds-tag ds-tag--stage-1 ds-tag-stage ds-search-result-card__stage"/);
+  assert.ok(!card({ Title: "T" }).includes("ds-search-result-card__stage"));
+  assert.ok(!/onload|<b>/.test(card({ Stage: "<b>", "Stage type": 'x" onload="y' })));
+  assert.match(card({ Stage: "S", "Stage type": 'x" onload="y' }), /ds-tag--stage-1 /, "a malformed type falls back to Stage-1");
+});
+
+test("a Studio card's source line names the data product, then the connection", () => {
+  const html = card({ Title: "T", "Data product": "removal", Connection: "connPowerBI" });
+  assert.match(
+    html,
+    /<p class="ds-search-result-card__connection">Data Product: <span class="ds-search-result-card__link">removal<\/span> \/ Connection: <span class="ds-search-result-card__link">connPowerBI<\/span><\/p>/,
+  );
+  assert.match(card({ "Data product": "Customers" }), /__connection">Data Product: <span class="ds-search-result-card__link">Customers<\/span><\/p>/);
+});
+
 // ── drawer ─────────────────────────────────────────────────────────────────
 
 test("the Studio drawer is 550 wide and has no fixed Overview/Lineage/Quality strip", () => {
@@ -138,7 +166,7 @@ test("the render contract lists every prop the card reads, with the defaults it 
   const props = Object.fromEntries(
     deriveContract().slugs["search-result-card"].props.map((p) => [p.name, p.default]),
   );
-  for (const name of ["Title", "Tech name", "Type", "Catalog", "Description", "Body", "Connection", "Suggestion", "Last updated", "Completion", "Properties", "Shared"]) {
+  for (const name of ["Title", "Tech name", "Type", "Catalog", "Description", "Body", "Connection", "Suggestion", "Last updated", "Completion", "Properties", "Shared", "Stage", "Stage type", "Data product"]) {
     assert.ok(name in props, name);
   }
   assert.equal(props.Title, "Financial Summary EY2024");
