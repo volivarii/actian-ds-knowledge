@@ -123,6 +123,16 @@ section is a part several pages share, so its labels are parameters, and the pag
 knows what the product says. The derive fills them, and rejects a value for a placeholder the section
 does not carry.
 
+Every node carries a `name`, unique in the recipe once its sections are spliced in. The recipes carry
+the product's values, not tokens, so a screen built from one changes a node by its address ("set
+`Result 3 card`'s Title", "insert after `Divider after Item`"), and the name is that address. Name a
+node by its role, not its current content: `Count: Datasets`, `Save Filters button`, `Result 1 card`,
+so the address survives a new value. A section's names are written once in the section file; a recipe
+that spliced the same section twice would collide, and the check below says so. Every design system
+instance's `variant` uses only the axes and values `components/dist/registries/dskit.json` publishes
+for its slug: the HTML leaf may still shim a retired axis, a Figma push matches variants by name and
+would not. `tests/recipes-ds-native.test.js` checks both over the spliced tree (#719).
+
 ## Status: wired
 
 A recipe is derived per slug to `app-context/dist/recipes/<slug>.json`, validated against

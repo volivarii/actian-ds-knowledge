@@ -1,13 +1,18 @@
 "use strict";
 // Every page recipe is drawn with the design system and anchored to a real
-// screen (#715, #716, #718, #719). Four things per recipe:
+// screen (#715, #716, #718, #719). Six things per recipe:
 //   - it says whether its reference is the shipped product or a design;
 //   - a product reference names its screenshot, and it exists in captures/;
 //   - every node of its skeleton, the sections it splices in included, is a
 //     design system node: a Fat Marker node (`ref: "fm..."` or `library: "fm"`)
 //     draws a wireframe box where the product draws a component;
 //   - its labels, the sections it splices in included, carry the product's
-//     values, not {{placeholders}}.
+//     values, not {{placeholders}};
+//   - every design system instance's `variant` names axes and values the
+//     registry publishes for its slug: an HTML leaf may shim a retired axis,
+//     a Figma push matches variants by name and would not (#719);
+//   - every node carries a name, unique in the spliced recipe: the recipes
+//     carry values, not tokens, so a screen changes a node by its address.
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
@@ -47,6 +52,12 @@ function spliced(r) {
   return recipe.skeleton || {};
 }
 const tree = (r) => nodes(spliced(r));
+// slug -> the registry entry, whose `variants` maps each published axis to its values.
+const registry = Object.fromEntries(
+  Object.entries(read(path.join(ROOT, "components/dist/registries/dskit.json")).components).map(
+    ([key, c]) => [c.slug || key, c],
+  ),
+);
 const isFm = (n) => n.library === "fm" || /^fm/.test(n.ref || "");
 // A Fat Marker node stays only where the design system has no component to
 // draw it with, and each one is named here with that reason. An entry is a
@@ -80,6 +91,36 @@ for (const [f, r] of recipes) {
   test(f + ": no placeholder left in its labels", () => {
     const left = JSON.stringify(spliced(r)).match(/\{\{[^}]+\}\}/g) || [];
     assert.deepEqual(left, []);
+  });
+  test(f + ": every instance variant parses against the registry's axes", () => {
+    const wrong = [];
+    for (const n of tree(r)) {
+      if (n.library !== "ds" || !n.variant) continue;
+      const axes = registry[n.dsSlug] && registry[n.dsSlug].variants;
+      const who = (n.name || "(unnamed)") + ": " + n.dsSlug;
+      if (!axes) {
+        wrong.push(who + " has no registry entry");
+        continue;
+      }
+      for (const pair of n.variant.split(/,\s*/)) {
+        const [axis, value] = pair.split("=");
+        if (!(axis in axes)) wrong.push(who + " has no axis " + axis);
+        else if (!axes[axis].includes(value)) wrong.push(who + " " + axis + " has no value " + value);
+      }
+    }
+    assert.deepEqual(wrong, []);
+  });
+  test(f + ": every node carries a name, unique in the recipe", () => {
+    const all = tree(r);
+    assert.deepEqual(
+      all.filter((n) => !n.name).map((n) => n.type + " " + (n.dsSlug || n.content || "")),
+      [],
+    );
+    const seen = new Set();
+    assert.deepEqual(
+      all.map((n) => n.name).filter((name) => seen.has(name) || !seen.add(name)),
+      [],
+    );
   });
 }
 
