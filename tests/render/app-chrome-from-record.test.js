@@ -63,9 +63,11 @@ test("Studio's icons are the record's, and an item without one draws none", () =
   assert.equal((studio.match(/ds-sidenav__icon"><svg/g) || []).length, withIcon);
 });
 
-test("Admin's record names no icons, so its cell draws none", () => {
-  assert.ok(apps.administration.sidebar.every((i) => !i.icon));
-  assert.ok(!/ds-sidenav__icon"><svg/.test(cells(sideNav).Admin));
+test("Admin's icons are the record's, and an item without one draws none", () => {
+  const admin = cells(sideNav).Admin;
+  const withIcon = apps.administration.sidebar.filter((i) => i.icon).length;
+  assert.ok(withIcon > 0 && withIcon < apps.administration.sidebar.length, "the record should mix items with and without an icon");
+  assert.equal((admin.match(/ds-sidenav__icon"><svg/g) || []).length, withIcon);
 });
 
 test("New Item is drawn as an action", () => {
