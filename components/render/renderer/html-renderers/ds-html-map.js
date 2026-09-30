@@ -921,12 +921,14 @@
           // hard-codes the same 32px round chrome for this control on the
           // collapse header, from the same capture.
           //
-          // The glyph is `add`, which is the button's own captured default
-          // leading icon (registry `Leading icon` default instance, and the
-          // slug the label path already uses). Quoting the capture's default
-          // rather than choosing a glyph, because an icon-only button whose
-          // icon we invented would be a different kind of wrong.
+          // The glyph is the one `Icon` names (an icons.json slug: a drawer
+          // header's `view-detail` and `close`), else `add`, the button's own
+          // captured default leading icon (registry `Leading icon` default
+          // instance, and the slug the label path already uses). A slug the
+          // icon set does not carry falls back to that default rather than
+          // drawing nothing.
           if (v.Emphasis === "Icon-only") {
+            var btnIcon = renderIcon(String(props.Icon || "")) || renderIcon("add");
             return (
               '<button class="' +
               btnCls +
@@ -936,7 +938,7 @@
               esc(props.Label || "Button") +
               '">' +
               '<span class="ds-button__icon">' +
-              renderIcon("add") +
+              btnIcon +
               "</span>" +
               "</button>"
             );

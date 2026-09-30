@@ -128,6 +128,20 @@ test("a Studio card's source line names the data product, then the connection", 
   assert.match(card({ "Data product": "Customers" }), /__connection">Data Product: <span class="ds-search-result-card__link">Customers<\/span><\/p>/);
 });
 
+// An icon-only button drew `add` whatever it stood for, so a drawer header
+// built from buttons showed a plus where the product shows open-in-full-page
+// and close. `Icon` names the glyph (an icons.json slug); without it the
+// captured default `add` stays.
+test("an icon-only button draws the glyph its Icon names, add by default", (t) => {
+  DS.setIcons({ add: { viewBox: "0 0 16 16", body: '<path d="add"/>' }, close: { viewBox: "0 0 16 16", body: '<path d="close"/>' } });
+  t.after(() => DS.setIcons(null));
+  const b = (props) => DS.renderDSComponent({ dsSlug: "button", variant: "Emphasis=Icon-only", props });
+  assert.match(b({ Label: "Close", Icon: "close" }), /aria-label="Close"[\s\S]*d="close"/);
+  assert.match(b({ Label: "Add" }), /d="add"/);
+  assert.match(b({ Label: "X", Icon: "no-such-icon" }), /d="add"/, "an unknown slug falls back to the captured default");
+  assert.ok(!/onload/.test(b({ Label: "X", Icon: '"><img onload=x>' })));
+});
+
 // ── drawer ─────────────────────────────────────────────────────────────────
 
 test("the Studio drawer is 550 wide and has no fixed Overview/Lineage/Quality strip", () => {
