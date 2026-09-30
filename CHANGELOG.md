@@ -145,6 +145,7 @@ no entry defers its link to a placeholder.
 
 ### Removed
 
+- **Two patterns that are not screens.** `federated-knowledge-graph` (an architecture) and `mcp-server` (an API's tools) are removed from `app-context/src/patterns/`: a pattern names a page shape, and neither can have a recipe or a capture. The term "Federated knowledge graph" stays in the terminology. The graph loses their two nodes, 4 `in_app` edges and 1 `term_about` edge.
 - **Editor: the rail's link lists, the Manage popover and the neighborhood panel.** ([#732](https://github.com/volivarii/actian-ds-knowledge/pull/732)) The rail beside the body editor is the document's outline and nothing else: its References, Referenced by and In the graph lists, their per-section count pills, the compact map, the section inspector and the Manage connections popover are gone, with the code only they used (the grouping, the incoming-references feed and the two frontmatter ref writers), and the ref widgets the forms no longer show (`RefArrayWidget`, `A11yRefsWidget`, `TopicResultRow`): refs and their notes are edited in the Connections panel. The Connections section is now the one place that counts and edits a record's links. The three lists counted different things and disagreed on the same screen (0 and 45 for one record), and the popover wrote `a11y_refs` into guidance files, where the graph never reads them. Editor-only, version-neutral.
 
 ### Fixed
