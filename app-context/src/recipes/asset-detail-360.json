@@ -80,7 +80,8 @@
             }
           },
           {
-            "type": "DIVIDER"
+            "type": "DIVIDER",
+            "name": "Divider below tabs"
           },
           {
             "type": "FRAME",
@@ -113,6 +114,7 @@
                     "children": [
                       {
                         "type": "TEXT",
+                        "name": "Access request policy title",
                         "content": "Access request policy",
                         "font": "Inter:Semi Bold",
                         "size": 15,
@@ -120,6 +122,7 @@
                       },
                       {
                         "type": "INSTANCE",
+                        "name": "Access request policy select",
                         "library": "ds",
                         "dsSlug": "dropdown-select-default",
                         "variant": "Type=Default, State=Filled",
@@ -140,6 +143,7 @@
                     "children": [
                       {
                         "type": "TEXT",
+                        "name": "Glossary Items title",
                         "content": "Glossary Items (2)",
                         "font": "Inter:Semi Bold",
                         "size": 15,
@@ -147,6 +151,7 @@
                       },
                       {
                         "type": "INSTANCE",
+                        "name": "Glossary Items select",
                         "library": "ds",
                         "dsSlug": "dropdown-select-default",
                         "variant": "Type=Search/Multiple, State=Filled",
@@ -167,6 +172,7 @@
                     "children": [
                       {
                         "type": "TEXT",
+                        "name": "Description title",
                         "content": "Description",
                         "font": "Inter:Semi Bold",
                         "size": 15,
@@ -174,6 +180,7 @@
                       },
                       {
                         "type": "INSTANCE",
+                        "name": "Use source description checkbox",
                         "library": "ds",
                         "dsSlug": "checkbox",
                         "variant": "Selection=Unchecked, State=Default",
@@ -183,6 +190,7 @@
                       },
                       {
                         "type": "TEXT",
+                        "name": "Summary label",
                         "content": "Summary",
                         "font": "Inter:Semi Bold",
                         "size": 13,
@@ -190,6 +198,7 @@
                       },
                       {
                         "type": "TEXT",
+                        "name": "Summary text",
                         "content": "COUNT BY ORDER STATUS is a summary dataset sourced from the connPowerBI connection. It aggregates orders by their current status, providing a high-level operational view of order pipeline distribution.",
                         "font": "Inter:Regular",
                         "size": 13,
@@ -197,6 +206,7 @@
                       },
                       {
                         "type": "TEXT",
+                        "name": "Full description label",
                         "content": "Full description",
                         "font": "Inter:Semi Bold",
                         "size": 15,
@@ -204,6 +214,7 @@
                       },
                       {
                         "type": "TEXT",
+                        "name": "Full description heading",
                         "content": "COUNT BY ORDER STATUS",
                         "font": "Inter:Semi Bold",
                         "size": 18,
@@ -211,6 +222,7 @@
                       },
                       {
                         "type": "TEXT",
+                        "name": "Full description text",
                         "content": "COUNT BY ORDER STATUS is a summary dataset sourced from the connPowerBI connection. It aggregates orders by their current status, providing a high-level operational view of order pipeline distribution.",
                         "font": "Inter:Regular",
                         "size": 13,
@@ -218,6 +230,7 @@
                       },
                       {
                         "type": "INSTANCE",
+                        "name": "Full description table",
                         "library": "ds",
                         "dsSlug": "table",
                         "props": {
@@ -237,7 +250,8 @@
                         }
                       },
                       {
-                        "type": "DIVIDER"
+                        "type": "DIVIDER",
+                        "name": "Divider after Description"
                       }
                     ]
                   },
@@ -251,6 +265,7 @@
                     "children": [
                       {
                         "type": "TEXT",
+                        "name": "Data Model relations title",
                         "content": "Data Model relations (0)",
                         "font": "Inter:Semi Bold",
                         "size": 15,
@@ -268,6 +283,7 @@
                         "children": [
                           {
                             "type": "TEXT",
+                            "name": "Relations empty text",
                             "content": "No related Datasets",
                             "font": "Inter:Semi Bold",
                             "size": 13,
