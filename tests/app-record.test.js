@@ -24,6 +24,8 @@ const icons = Object.keys(
 const SCREENSHOT_WINS = {
   "Access request": "Access requests",
   "New item": "New Item",
+  // the live Studio, 2026-09-30
+  "Select a connection": "Select a data source",
 };
 
 // The anatomy's rail is two frames: the top frame (Main) and the bottom block.
