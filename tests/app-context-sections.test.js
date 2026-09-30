@@ -77,6 +77,7 @@ test("recipe schema accepts the derive's `sections` stamp", () => {
     description: "x",
     apps: ["studio"],
     derivedFrom: { surface: "x", capturedOn: "2026-08-18" },
+    reference: "product",
     skeleton: { chrome: "standard", content: [] },
     sections: ["item-header", "facet-tabs"],
   };
@@ -328,7 +329,7 @@ test("inlineSections: a SECTION node carrying keys other than type, section and 
   assert.equal(errors.length, 1);
   assert.match(
     errors[0],
-    /recipes\/r\.json: SECTION node at skeleton\/content\/0 carries keys other than type, section and slot \(variant\); slot is the one per-use override that exists, edit the section for anything else/,
+    /recipes\/r\.json: SECTION node at skeleton\/content\/0 carries keys other than type, section, slot and values \(variant\); slot and values are the per-use overrides that exist, edit the section for anything else/,
   );
   assert.deepEqual(out.skeleton.content, []);
 });

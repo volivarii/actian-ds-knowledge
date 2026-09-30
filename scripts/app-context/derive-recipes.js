@@ -179,7 +179,8 @@ function inlineSections(recipe, sectionsBySlug) {
           // file -- so it does not widen the set of per-use overrides beyond
           // this one narrow exception (the error below names it as such).
           const extraKeys = Object.keys(v).filter(
-            (k) => k !== "type" && k !== "section" && k !== "slot",
+            (k) =>
+              k !== "type" && k !== "section" && k !== "slot" && k !== "values",
           );
           if (extraKeys.length > 0) {
             errors.push(
@@ -188,9 +189,9 @@ function inlineSections(recipe, sectionsBySlug) {
                 label +
                 "/" +
                 i +
-                " carries keys other than type, section and slot (" +
+                " carries keys other than type, section, slot and values (" +
                 extraKeys.join(", ") +
-                "); slot is the one per-use override that exists, edit the section for anything else",
+                "); slot and values are the per-use overrides that exist, edit the section for anything else",
             );
             continue;
           }
@@ -199,9 +200,65 @@ function inlineSections(recipe, sectionsBySlug) {
             errors.push(where + ": unknown section '" + v.section + "'");
             continue;
           }
+          // `values` is the page's own product words for the section's
+          // {{placeholders}} (#719): a section is a part several pages share,
+          // so its labels are parameters and the page that splices it knows
+          // what the product says. Each key must be a placeholder the section
+          // carries, or it is a stale value that fills nothing. A placeholder
+          // given no value stays, for tests/recipes-ds-native.test.js to see.
+          const values = v.values === undefined ? {} : v.values;
+          if (
+            !values ||
+            typeof values !== "object" ||
+            Array.isArray(values) ||
+            Object.values(values).some((x) => typeof x !== "string")
+          ) {
+            errors.push(
+              where +
+                ": SECTION node at " +
+                label +
+                "/" +
+                i +
+                ": values must map each placeholder to a string",
+            );
+            continue;
+          }
+          const sectionText = JSON.stringify(section.skeleton.content);
+          const stale = Object.keys(values).filter(
+            (k) => !sectionText.includes("{{" + k + "}}"),
+          );
+          if (stale.length > 0) {
+            errors.push(
+              where +
+                ": SECTION node at " +
+                label +
+                "/" +
+                i +
+                ": values names " +
+                stale.join(", ") +
+                ", which section '" +
+                v.section +
+                "' does not carry",
+            );
+            continue;
+          }
           used.push(v.section);
+          const fill = (x) => {
+            if (typeof x === "string") {
+              return x.replace(/\{\{([^}]+)\}\}/g, (m, k) =>
+                Object.prototype.hasOwnProperty.call(values, k) ? values[k] : m,
+              );
+            }
+            if (Array.isArray(x)) return x.map(fill);
+            if (x && typeof x === "object") {
+              const o = {};
+              for (const [k, y] of Object.entries(x)) o[k] = fill(y);
+              return o;
+            }
+            return x;
+          };
           const spliced = section.skeleton.content.map((node) =>
-            JSON.parse(JSON.stringify(node)),
+            fill(JSON.parse(JSON.stringify(node))),
           );
           // Stamp onto the ROOT of the spliced subtree only: the top node(s)
           // of section.skeleton.content, never a descendant. A section with

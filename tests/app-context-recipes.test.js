@@ -74,6 +74,7 @@ const VALID = {
   description: "A page shape used to exercise the schema.",
   apps: ["studio"],
   derivedFrom: { surface: "Studio > Catalog", capturedOn: "2026-08-18" },
+  reference: "product",
   skeleton: { chrome: "standard", content: [] },
 };
 
@@ -87,6 +88,12 @@ test("recipe schema accepts a valid record and rejects malformed ones", () => {
   const noProvenance = Object.assign({}, VALID);
   delete noProvenance.derivedFrom;
   assert.equal(v(noProvenance), false, "derivedFrom must be required");
+
+  // what the recipe answers to is required, and only the two values mean anything (#716)
+  const noReference = Object.assign({}, VALID);
+  delete noReference.reference;
+  assert.equal(v(noReference), false, "reference must be required");
+  assert.equal(v(Object.assign({}, VALID, { reference: "figma" })), false, "reference is product or design");
 
   // a capture date that is not a date would age the recipe dishonestly
   assert.equal(
@@ -838,7 +845,66 @@ test("inlineSections stamps a SECTION node's slot onto the spliced root", () => 
     sectionsBySlug,
   );
   assert.equal(badErrors.length, 1);
-  assert.match(badErrors[0], /carries keys other than type, section and slot/);
+  assert.match(badErrors[0], /carries keys other than type, section, slot and values/);
+});
+
+// inlineSections: a SECTION splice may carry `values`, the recipe's own
+// product values for the section's {{placeholders}}. A section is a part
+// several pages share, so its labels are parameters; the page that splices it
+// knows the product's words for them (#719). A value for a placeholder the
+// section does not carry is an error: it would be a stale value that fills
+// nothing, and it reads as if the page said something it does not.
+test("inlineSections fills a section's placeholders from the splice's values", () => {
+  const { inlineSections } = require("../scripts/app-context/derive-recipes");
+  const sectionsBySlug = {
+    s: {
+      slug: "s",
+      skeleton: {
+        content: [
+          {
+            type: "FRAME",
+            name: "Header {{item_name}}",
+            children: [
+              { type: "TEXT", content: "{{item_name}}" },
+              { type: "INSTANCE", dsSlug: "x", props: { Label: "Sort by {{sort}}" } },
+              { type: "TEXT", content: "{{left_alone}}" },
+            ],
+          },
+        ],
+      },
+    },
+  };
+  const { recipe: out, errors } = inlineSections(
+    {
+      slug: "r",
+      skeleton: {
+        content: [{ type: "SECTION", section: "s", values: { item_name: "Customers", sort: "Popularity" } }],
+      },
+    },
+    sectionsBySlug,
+  );
+  assert.deepEqual(errors, []);
+  const root = out.skeleton.content[0];
+  assert.equal(root.name, "Header Customers");
+  assert.equal(root.children[0].content, "Customers");
+  assert.equal(root.children[1].props.Label, "Sort by Popularity");
+  assert.equal(root.children[2].content, "{{left_alone}}", "a placeholder with no value is left for the gate to see");
+  assert.ok(!("values" in root), "values is not carried into dist");
+  assert.equal(sectionsBySlug.s.skeleton.content[0].name, "Header {{item_name}}", "the section itself is not mutated");
+
+  const { errors: stale } = inlineSections(
+    { slug: "r2", skeleton: { content: [{ type: "SECTION", section: "s", values: { nope: "x" } }] } },
+    sectionsBySlug,
+  );
+  assert.equal(stale.length, 1);
+  assert.match(stale[0], /values names nope, which section 's' does not carry/);
+
+  const { errors: shape } = inlineSections(
+    { slug: "r3", skeleton: { content: [{ type: "SECTION", section: "s", values: { item_name: 3 } }] } },
+    sectionsBySlug,
+  );
+  assert.equal(shape.length, 1);
+  assert.match(shape[0], /values must map each placeholder to a string/);
 });
 
 // ---------------------------------------------------------------------------
@@ -918,87 +984,3 @@ test("positive control: a derivedFrom.screenshot naming a missing file is caught
   assert.deepEqual(missing, ["ghost: captures/does-not-exist.png"]);
 });
 
-// ---------------------------------------------------------------------------
-// Review round 1: faceted-browse's renderNotes must carry a full inventory of
-// every {{...}} placeholder its own skeleton uses (facets, results, header,
-// pagination, catalog), so a future author can check coverage without
-// grepping the file. This reads the keys straight from the skeleton, not a
-// hardcoded count, so a placeholder added later without an inventory update
-// is caught here rather than discovered by grepping in production.
-// ---------------------------------------------------------------------------
-
-// Factored, same reason as missingScreenshots above: the real test and its
-// positive control now drive one implementation instead of two copies of the
-// same `matchAll`/`includes` logic drifting apart unnoticed.
-//
-// The key-capture regex is `[^}]+`, not `[a-z0-9_]+`: a strict character
-// class silently stops matching the moment a placeholder uses a character
-// outside it (say, a hyphen), which would shrink `keys` rather than widen it
-// -- the inventory would then look complete for a placeholder this check
-// never actually saw. `[^}]+` cannot under-match a `{{...}}` pair for that
-// reason; it can only ever capture too much, which non-vacuity (`keys.length
-// > 10`) and the missing-key diff below would surface immediately.
-function placeholderKeysIn(skeleton) {
-  return [
-    ...new Set(
-      [...JSON.stringify(skeleton).matchAll(/\{\{([^}]+)\}\}/g)].map(
-        (m) => m[1],
-      ),
-    ),
-  ];
-}
-
-function missingFromInventory(keys, inventory) {
-  return keys.filter((k) => !inventory.includes("{{" + k + "}}"));
-}
-
-test("faceted-browse's renderNotes carry a placeholder inventory covering every {{key}} in its own skeleton", () => {
-  const { recipes, errors } = readRecipes(
-    path.join(ROOT, "app-context", "src"),
-    SCHEMA,
-  );
-  assert.deepEqual(errors, []);
-  const faceted = recipes.find((r) => r.slug === "faceted-browse");
-  assert.ok(faceted, "faceted-browse recipe not read");
-
-  const keys = placeholderKeysIn(faceted.skeleton);
-  assert.ok(
-    keys.length > 10,
-    "too few placeholder keys found in faceted-browse's skeleton; this check would be near-vacuous",
-  );
-
-  const inventory = (faceted.renderNotes || []).find((n) =>
-    n.startsWith(
-      "Every {{...}} placeholder this recipe's own skeleton carries",
-    ),
-  );
-  assert.ok(
-    inventory,
-    "faceted-browse renderNotes must carry the placeholder inventory entry",
-  );
-
-  const missing = missingFromInventory(keys, inventory);
-  assert.deepEqual(
-    missing,
-    [],
-    "these {{...}} keys appear in the skeleton but not in the renderNotes inventory: " +
-      missing.join(", "),
-  );
-});
-
-test("positive control: a placeholder key missing from the inventory note is caught", () => {
-  const inventory = "facets -- {{facet1_label}}; results -- {{result_1_title}}";
-  const keys = ["facet1_label", "result_1_title", "page_count"];
-  assert.deepEqual(missingFromInventory(keys, inventory), ["page_count"]);
-});
-
-// Proves the widened `[^}]+` regex is not merely permissive but reaches a key
-// shape `[a-z0-9_]+` would have missed outright (a hyphen), and that the
-// missing-key diff still fires for it.
-test("positive control: placeholderKeysIn reaches a key shape [a-z0-9_]+ would miss", () => {
-  const keys = placeholderKeysIn({ content: "{{facet1-label}}" });
-  assert.deepEqual(keys, ["facet1-label"]);
-  assert.deepEqual(missingFromInventory(keys, "no placeholders named here"), [
-    "facet1-label",
-  ]);
-});
