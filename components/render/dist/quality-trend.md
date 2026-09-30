@@ -42,6 +42,7 @@ Geometry coverage is **150 of 730** gap, padding and fixed-height declarations, 
 
 | Date | Version | Unexplained |
 | --- | --- | --- |
+| 2026-09-30 | v0.34.238 | 41 |
 | 2026-09-30 | v0.34.236 | 41 |
 | 2026-09-29 | v0.34.225 | 41 |
 | 2026-09-29 | v0.34.221 | 41 |
@@ -53,7 +54,6 @@ Geometry coverage is **150 of 730** gap, padding and fixed-height declarations, 
 | 2026-09-07 | v0.34.189 | 42 |
 | 2026-09-03 | v0.34.180 | 42 |
 | 2026-09-03 | v0.34.178 | 44 |
-| 2026-09-02 | v0.34.177 | 44 |
 
 ## Where the inline hex is
 
