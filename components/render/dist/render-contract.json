@@ -152,6 +152,9 @@
       "group": "Action",
       "props": [
         {
+          "name": "Icon"
+        },
+        {
           "name": "Label",
           "default": "Button"
         },
