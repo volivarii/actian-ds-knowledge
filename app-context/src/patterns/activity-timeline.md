@@ -18,4 +18,4 @@ when: >-
 components:
   - avatar
 ---
-Chronological timeline with date headers, user avatars, action descriptions.
+Chronological timeline on an item's Activity tab (`recipes/captures/activity-timeline.png`): month headings, a date marker per day on a vertical line, and one sentence per event led by an icon, such as '<user> changed the stage from 'Approved' to 'In Review''. The product draws no avatar on an event.
