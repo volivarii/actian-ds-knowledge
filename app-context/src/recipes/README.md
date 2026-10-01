@@ -112,10 +112,12 @@ what a reader compares a render TO, and the two answer different questions. The 
 what reads it, opening the render beside this file so a person (or a future automated check) can tell
 a faithful composition from a guess. Every recipe with `reference: "product"` names one, and
 `tests/recipes-ds-native.test.js` fails when the file is missing. The captures in `captures/` were taken
-on 2026-09-30 from `manufacturing.zeenea.app` at a 1440px viewport (saved 1370x897): they carry the
-product's pre-Actian wordmark and the capturing user's initials in the header, neither of which a
-recipe asserts. A capture showing other people's names or emails has them replaced before it is taken
-(`admin-users.png`). A recipe whose page is not in the product yet says `reference: "design"` and
+on 2026-09-30 and 2026-10-01 from `manufacturing.zeenea.app` at a 1440px viewport (saved 1370x897):
+they carry the product's pre-Actian wordmark and the capturing user's initials in the header (and
+first name, in `studio-dashboard.png`'s greeting), none of which a recipe asserts. A capture showing other people's names or emails has them replaced before
+it is taken (`admin-users.png`, `activity-timeline.png`). A capture no recipe names yet is the product
+reference for its pattern, cited in the pattern's body, and the screenshot the next recipe for that
+screen is composed against. A recipe whose page is not in the product yet says `reference: "design"` and
 names no screenshot.
 
 A SECTION splice may carry `values`, the page's own words for the section's `{{placeholders}}`: a
