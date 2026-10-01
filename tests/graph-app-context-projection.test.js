@@ -16,7 +16,7 @@ function project() {
   return g.build();
 }
 
-test("collectAppContext: node counts by type (3 app / 30 app_entity / 34 terminology_term / 31 ux_pattern / 6 persona)", function () {
+test("collectAppContext: node counts by type (3 app / 30 app_entity / 34 terminology_term / 29 ux_pattern / 6 persona)", function () {
   var out = project();
   var byType = {};
   out.nodes.forEach(function (n) {
@@ -25,9 +25,9 @@ test("collectAppContext: node counts by type (3 app / 30 app_entity / 34 termino
   assert.equal(byType.app, 3);
   assert.equal(byType.app_entity, 30);
   assert.equal(byType.terminology_term, 34);
-  assert.equal(byType.ux_pattern, 31);
+  assert.equal(byType.ux_pattern, 29);
   assert.equal(byType.persona, 6);
-  assert.equal(out.nodes.length, 104);
+  assert.equal(out.nodes.length, 102);
 });
 
 test("collectAppContext: app node carries title<-label and description<-purpose", function () {
@@ -76,7 +76,7 @@ test("collectAppContext: persona node carries title<-label and description", fun
   assert.equal(p.description, AC.personas["data-steward"].description);
 });
 
-test("derive(): emitted graph.json includes the app-context nodes (104 island nodes)", function () {
+test("derive(): emitted graph.json includes the app-context nodes (102 island nodes)", function () {
   D.derive();
   var g = JSON.parse(
     fs.readFileSync(path.join(ROOT, "graph/dist/graph.json"), "utf8"),
@@ -89,7 +89,7 @@ test("derive(): emitted graph.json includes the app-context nodes (104 island no
   var islandNodes = g.nodes.filter(function (n) {
     return ISLAND_PREFIXES.indexOf(String(n.id).split(":")[0]) !== -1;
   });
-  assert.equal(islandNodes.length, 104, "app-context island nodes");
+  assert.equal(islandNodes.length, 102, "app-context island nodes");
   assert.ok(
     g.nodes.some(function (n) {
       return n.id === "app:studio";
@@ -107,17 +107,17 @@ var VOCAB = JSON.parse(
   fs.readFileSync(path.join(ROOT, "graph/vocabulary.json"), "utf8"),
 );
 
-test("collectAppContext: edge counts (101 in_app / 42 entity_related / 17 term_about, 160 total)", function () {
+test("collectAppContext: edge counts (97 in_app / 42 entity_related / 16 term_about, 155 total)", function () {
   var edges = project().edges;
   function n(type) {
     return edges.filter(function (e) {
       return e.type === type;
     }).length;
   }
-  assert.equal(n("in_app"), 101);
+  assert.equal(n("in_app"), 97);
   assert.equal(n("entity_related"), 42);
-  assert.equal(n("term_about"), 17);
-  assert.equal(edges.length, 160);
+  assert.equal(n("term_about"), 16);
+  assert.equal(edges.length, 155);
 });
 
 test("collectAppContext: in_app edges point entities/patterns/personas to apps, asserted + provenance cites the dist", function () {
@@ -206,11 +206,11 @@ test("collectAppContext: entity_related carries the predicate name; endpoints ar
   assert.ok(contains.length > 1, "a multi-target verb projects one edge per target");
 });
 
-test("collectAppContext: term_about bridges (11 entity + 3 app + 3 pattern), inferred", function () {
+test("collectAppContext: term_about bridges (11 entity + 3 app + 2 pattern), inferred", function () {
   var ta = project().edges.filter(function (e) {
     return e.type === "term_about";
   });
-  assert.equal(ta.length, 17);
+  assert.equal(ta.length, 16);
   ta.forEach(function (e) {
     assert.equal(e.confidence, "inferred");
     assert.ok(e.source.startsWith("term:"));
@@ -359,7 +359,13 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   var islandEdges = g.edges.filter(function (e) {
     return inIsland(e.source) || inIsland(e.target);
   });
-  assert.equal(islandNodes.length, 104, "app-context island nodes");
+  assert.equal(islandNodes.length, 102, "app-context island nodes");
+  // 104 -> 102 nodes on 2026-09-30: the patterns federated-knowledge-graph and
+  // mcp-server were removed, being an architecture and an API rather than a
+  // screen. With them went 4 in_app edges (each was in Studio and Explorer) and
+  // the term_about edge from the term "Federated knowledge graph", which stays:
+  // 318 -> 313 edges. Neither pattern named a component, so no other edge moved.
+  //
   // 103 -> 104 nodes on 2026-09-29: the terminology gained last-updated
   // (Studio's "Last updated", replacing "last modified"; #710).
   //
@@ -378,7 +384,7 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // 266 -> 264 on 2026-08-31: analytics-dashboard and data-profiling-sampling
   // each stopped naming bar-graph, which the sync retired from the Figma library
   // with no replacement. Two pattern_component edges, no other change.
-  assert.equal(islandEdges.length, 318, "app-context island edges");
+  assert.equal(islandEdges.length, 313, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {

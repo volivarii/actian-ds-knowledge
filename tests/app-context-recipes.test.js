@@ -239,10 +239,12 @@ test("no recipe sets sizing.horizontal FILL inside a VERTICAL frame", () => {
   }
   // Non-vacuity PER RECIPE. A sum across all recipes hides a NEW one that is
   // walked not at all: the two existing recipes contribute enough on their own
-  // to keep any total comfortably green.
+  // to keep any total comfortably green. The bar is "walked at all": a page
+  // can be a single column of a few parts (search-filtered-table has five),
+  // and a higher bar would ask a small page to grow nodes to pass.
   for (const r of recipes) {
     assert.ok(
-      (perRecipe[r.slug] || 0) > 5,
+      (perRecipe[r.slug] || 0) > 0,
       r.slug +
         ": walked only " +
         (perRecipe[r.slug] || 0) +

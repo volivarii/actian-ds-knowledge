@@ -20,12 +20,17 @@
           "Administrator"
         ],
         "header": {
-          "type": "Admin"
+          "type": "Admin",
+          "actions": [
+            "app-switcher",
+            "avatar"
+          ]
         },
         "sidebar": [
           {
             "label": "Users and contacts",
-            "id": "users-and-contacts"
+            "id": "users-and-contacts",
+            "icon": "user-group"
           },
           {
             "label": "Catalogs",
@@ -37,23 +42,43 @@
           },
           {
             "label": "Connections",
-            "id": "connections"
+            "id": "connections",
+            "icon": "database"
           },
           {
             "label": "Scanners",
-            "id": "scanners"
+            "id": "scanners",
+            "icon": "scanner"
           },
           {
             "label": "API keys",
-            "id": "api-keys"
+            "id": "api-keys",
+            "icon": "api-key"
+          },
+          {
+            "label": "Agents",
+            "id": "agents",
+            "icon": "stars"
           },
           {
             "label": "Policies",
-            "id": "policies"
+            "id": "policies",
+            "icon": "security-services",
+            "children": [
+              {
+                "label": "Access requests",
+                "id": "policies-access-requests"
+              },
+              {
+                "label": "Lifecycles",
+                "id": "policies-lifecycles"
+              }
+            ]
           },
           {
             "label": "Maintenance mode",
-            "id": "maintenance-mode"
+            "id": "maintenance-mode",
+            "icon": "maintenance"
           }
         ],
         "signals": [
@@ -1629,21 +1654,6 @@
         ],
         "description": "Multi-catalog federation with scoped permissions and cross-catalog search."
       },
-      "federated-knowledge-graph": {
-        "label": "Federated knowledge graph",
-        "apps": [
-          "studio",
-          "explorer"
-        ],
-        "tags": [
-          "graph",
-          "architecture",
-          "metadata",
-          "ontology",
-          "federation"
-        ],
-        "description": "Underlying architecture connecting all metadata with domain-specific ontologies."
-      },
       "filter-groups-form": {
         "label": "Filter-groups edit form with sticky footer",
         "apps": [
@@ -1751,14 +1761,6 @@
         ],
         "description": "Explorer homepage: search-first with curated sections (carousels, filter chips, topic cards).\n\nThe card this screen shows was recorded as `card-for-items`, which Figma retired in the 2026-08-24 sync (#526). The reference is removed rather than repointed: `card-for-perimeter`, `card-for-grouped-content`, `search-result-card` and `radio-card` all survive, and choosing between them is a fact about the running product that nobody has checked for this screen. The two earlier corrections to this same slug (`analytics-dashboard`, `type-picker-grid`) were both made by looking at the product and both found a different component, so guessing here would be the third such error rather than the first.\n\nIt is not repointed at the new `card` either. That component is a blank container with a content slot, carries `status: in-progress`, and is a styling basis rather than something a screen composes as-is. `components` means what this pattern COMPOSES, so naming it there would assert something false. The basis relationship is already recorded where it belongs, between components: the family shares `group: \"Card\"` in the registry, and `registryAliases` routes `card-for-perimeter` and `card-for-grouped-content` to the `card` guideline doc."
       },
-      "mcp-server": {
-        "label": "Actian MCP Server",
-        "apps": [
-          "studio",
-          "explorer"
-        ],
-        "description": "7 tools for AI integrations (Find Glossary, Semantic Search, Get Data Model, etc.)."
-      },
       "metamodel-designer": {
         "label": "Metamodel Designer",
         "apps": [
@@ -1833,12 +1835,12 @@
           "collection",
           "single-search"
         ],
-        "when": "Use for a collection narrowed by ONE inline search input and nothing else, most often as the content of a detail tab rather than as a whole page. Do not use it for a page with a filter rail: that is faceted-browse. If tabs partition the collection, that is table-with-tabs.",
+        "when": "Use for a collection narrowed by an inline search input, with at most a Filter menu beside it, most often as the content of a detail tab or an administration page. Do not use it for a page with a filter rail: that is faceted-browse. If tabs partition the collection, the page is also table-with-tabs.",
         "components": [
           "search",
           "table"
         ],
-        "description": "List table with an inline Search input directly above it (no separate filter sidebar). Common for member directories, group lists, scanner inventories, connection lists. Pairs Page header → Search → Table. Search filters table contents in place; no other facets."
+        "description": "List table with an inline Search input directly above it and no separate filter sidebar. Common for member directories, group lists, scanner inventories, connection lists. Search filters table contents in place; a Filter button beside it may open a menu of further filters, but there is no rail of facets."
       },
       "smart-suggestions": {
         "label": "Smart suggestions",
