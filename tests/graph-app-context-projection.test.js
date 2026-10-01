@@ -364,7 +364,8 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // and federated-catalog were removed, the product showing neither as a screen.
   // With them went 2 in_app edges, 4 pattern_component edges (progress-bar-small,
   // table; search, table) and the term_about edge from the term "Federated
-  // Catalog", which stays: 313 -> 306 edges.
+  // Catalog", which stays. activity-timeline stopped naming avatar, the product
+  // leading each event with an icon: one more pattern_component edge. 313 -> 305.
   //
   // 104 -> 102 nodes on 2026-09-30: the patterns federated-knowledge-graph and
   // mcp-server were removed, being an architecture and an API rather than a
@@ -390,7 +391,7 @@ test("app-context nodes + edges survive losslessly into graph.jsonld", function 
   // 266 -> 264 on 2026-08-31: analytics-dashboard and data-profiling-sampling
   // each stopped naming bar-graph, which the sync retired from the Figma library
   // with no replacement. Two pattern_component edges, no other change.
-  assert.equal(islandEdges.length, 306, "app-context island edges");
+  assert.equal(islandEdges.length, 305, "app-context island edges");
 });
 
 test("collectAppContext: optional fields are omitted when absent; title falls back to slug/key", function () {
