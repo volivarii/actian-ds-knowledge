@@ -123,8 +123,14 @@ test("pattern + term schemas compile and validate", () => {
       slug: "import-wizard",
       label: "Import wizard",
       apps: ["studio"],
+      reference: "product",
+      screenshots: ["captures/import-wizard.png"],
     }),
     JSON.stringify(vp.errors),
+  );
+  assert.ok(
+    !vp({ _schema_version: 1, slug: "x", label: "X", apps: ["studio"] }),
+    "a pattern that does not say product or design is rejected",
   );
   const vt = ajv.compile(load("app-context-term.json"));
   assert.ok(
@@ -224,12 +230,13 @@ test("app-context-pattern schema: accepts optional components[]; still rejects u
       slug: "x",
       label: "X",
       apps: ["studio"],
+      reference: "product",
       components: ["table", "tabs"],
     }),
     "pattern with components[] is valid",
   );
   assert.ok(
-    v({ _schema_version: 1, slug: "x", label: "X", apps: ["studio"] }),
+    v({ _schema_version: 1, slug: "x", label: "X", apps: ["studio"], reference: "design" }),
     "pattern without components[] is still valid (optional)",
   );
   assert.ok(
@@ -238,6 +245,7 @@ test("app-context-pattern schema: accepts optional components[]; still rejects u
       slug: "x",
       label: "X",
       apps: ["studio"],
+      reference: "product",
       bogus: 1,
     }),
     "unknown key still rejected",
