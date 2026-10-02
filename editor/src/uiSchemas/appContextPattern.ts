@@ -41,6 +41,17 @@ export const appContextPatternUiSchema: UiSchema = {
     "ui:description":
       "When this shape is the right one, and which shape to reach for instead when it is not.",
   },
+  reference: {
+    "ui:title": "Reference",
+    "ui:description":
+      "product: the shipped product shows this pattern, and where it disagrees with a design, the product wins. design: the product does not show it yet, so the description follows a design.",
+  },
+  screenshots: {
+    "ui:title": "Product screenshots",
+    "ui:description":
+      "Captures of the product that show this pattern, as captures/<name>.png. Only for a product pattern.",
+    "ui:options": { addLabel: "screenshot" },
+  },
   tags: {
     "ui:title": "Tags",
     "ui:description":
